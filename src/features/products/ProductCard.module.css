@@ -1,0 +1,148 @@
+﻿/* Figma DS: Card/상품리스트 md — node 1:10544
+ * bg #FBF8F4, gap 24
+ * thumb white radius 20
+ * meta: 소분류(#999) | 뱃지(illustration-02 + orange-400)
+ * name 20/semibold black-400, price 32/bold
+ */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--color-background-400);
+}
+
+.link {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+  padding: 0;
+  color: inherit;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--color-orange-400);
+  outline-offset: 4px;
+  border-radius: 20px;
+}
+
+.thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--color-gray-50);
+  box-shadow: 4px 4px 10px rgb(250 247 243 / 25%);
+}
+
+.image {
+  width: auto;
+  max-width: 45%;
+  height: auto;
+  max-height: 70%;
+  object-fit: contain;
+}
+
+.placeholder {
+  font-size: 3rem;
+  opacity: 0.7;
+}
+
+.likeButton {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgb(45 36 31 / 55%);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.likeButton:hover {
+  color: var(--color-orange-400);
+}
+
+.likeButton:focus-visible {
+  outline: 2px solid var(--color-orange-400);
+  outline-offset: 2px;
+}
+
+.liked {
+  color: var(--color-orange-400);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.metaBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.category {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-gray-500);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 26px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.purchaseBadge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  background: var(--color-illustration-02);
+  color: var(--color-orange-400);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 26px;
+}
+
+.name {
+  margin: 0;
+  color: var(--color-black-400);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 32px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.price {
+  margin: 0;
+  color: var(--color-black-400);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 42px;
+}
