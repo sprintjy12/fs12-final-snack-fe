@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui";
-
 import styles from "./ProductsEmpty.module.css";
 
 export type ProductsEmptyProps = {
@@ -21,9 +19,9 @@ export function ProductsEmpty({
       <h2 className={styles.title}>{title}</h2>
       <p className={styles.description}>{description}</p>
       {onReset ? (
-        <Button variant="primary" size="sm" onClick={onReset}>
+        <button type="button" className={styles.resetButton} onClick={onReset}>
           필터 초기화
-        </Button>
+        </button>
       ) : null}
     </div>
   );

@@ -26,3 +26,27 @@
   color: rgb(45 36 31 / 55%);
   font-size: 0.9375rem;
 }
+
+.resetButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-orange-400);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-orange-400);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.resetButton:hover {
+  background: var(--color-background-400);
+}
+
+.resetButton:focus-visible {
+  outline: 2px solid var(--color-orange-400);
+  outline-offset: 2px;
+}
