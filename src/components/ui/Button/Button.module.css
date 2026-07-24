@@ -1,0 +1,113 @@
+/* Figma: Button/outlined/CTA
+ * - default: 주황 테두리/텍스트, 배경 투명
+ * - hover: 배경 Background/Background-400 (var(--color-background-400))
+ * - muted/disabled: 회색 테두리/텍스트
+ * - md: h 64, radius 16, padding 16 24, border 1
+ */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  background: transparent;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+}
+
+.fullWidth {
+  width: 100%;
+  max-width: 640px;
+}
+
+/* sizes */
+.sm {
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+}
+
+.md {
+  min-height: 64px;
+  padding: 16px 24px;
+  border-radius: 16px;
+  font-size: 1rem;
+}
+
+.lg {
+  min-height: 72px;
+  padding: 18px 28px;
+  border-radius: 16px;
+  font-size: 1.0625rem;
+}
+
+/* primary = outlined CTA (orange) */
+.primary {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: transparent;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--color-background-400);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.primary:disabled {
+  border-color: var(--color-gray-300);
+  color: var(--color-gray-400);
+  background: transparent;
+}
+
+/* secondary = outlined muted (grey) */
+.secondary {
+  border-color: var(--color-gray-300);
+  color: var(--color-gray-400);
+  background: transparent;
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--color-background-400);
+  border-color: var(--color-gray-300);
+  color: var(--foreground);
+}
+
+.secondary:disabled {
+  border-color: var(--color-gray-300);
+  color: var(--color-gray-400);
+  opacity: 0.7;
+}
+
+/* ghost — 아이콘/닫기 등 약한 액션 */
+.ghost {
+  border-color: transparent;
+  color: var(--foreground);
+  background: transparent;
+}
+
+.ghost:hover:not(:disabled) {
+  background: var(--color-background-400);
+}
+
+.ghost:disabled {
+  color: var(--color-gray-400);
+}
