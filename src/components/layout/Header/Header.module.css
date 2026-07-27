@@ -1,13 +1,13 @@
 /* Figma 상단바 맨 아래(1920×88)
- * padding 26 120, bg var(--color-background-400), border-bottom var(--color-line-200)
+ * padding 26 120, bg surface-muted, border-bottom border
  */
 
 .header {
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid var(--color-line-200);
-  background: var(--color-background-400);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
 }
 
 .inner {
@@ -58,28 +58,28 @@
 }
 
 .navLink {
-  color: var(--foreground);
+  color: var(--color-foreground);
   font-size: 0.9375rem;
   font-weight: 500;
   white-space: nowrap;
 }
 
 .navLinkMuted {
-  color: var(--color-gray-500);
+  color: var(--color-foreground-muted);
 }
 
 .navLink:hover {
-  color: var(--color-orange-400);
+  color: var(--color-accent);
 }
 
 .navLinkActive {
-  color: var(--color-orange-400);
+  color: var(--color-accent);
   font-weight: 600;
 }
 
 .categoryWrap {
-  border-top: 1px solid var(--color-line-200);
-  background: var(--color-background-400);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
 }
 
 .categoryRow {
@@ -93,7 +93,7 @@
   padding: 0 120px;
   overflow-x: auto;
   box-sizing: border-box;
-  border-bottom: 1px solid var(--color-line-200);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .categoryRow:last-child {
@@ -106,7 +106,7 @@
   align-items: center;
   height: 100%;
   padding: 0 8px;
-  color: var(--color-gray-500);
+  color: var(--color-foreground-muted);
   font-size: 0.9375rem;
   font-weight: 500;
   white-space: nowrap;
@@ -114,13 +114,13 @@
 }
 
 .categoryTab:hover {
-  color: var(--foreground);
+  color: var(--color-foreground);
 }
 
 .categoryTabActive {
-  color: var(--color-orange-400);
+  color: var(--color-accent);
   font-weight: 600;
-  border-bottom-color: var(--color-orange-400);
+  border-bottom-color: var(--color-accent);
 }
 
 .utils {
@@ -136,13 +136,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--color-gray-500);
+  color: var(--color-foreground-muted);
   font-size: 0.9375rem;
   font-weight: 500;
 }
 
 .utilLink:hover {
-  color: var(--color-orange-400);
+  color: var(--color-accent);
 }
 
 .utilLabel {
@@ -156,8 +156,8 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 999px;
-  background: var(--color-orange-400);
-  color: var(--color-gray-50);
+  background: var(--color-accent);
+  color: var(--color-surface);
   font-size: 0.6875rem;
   font-weight: 700;
   line-height: 1;
@@ -168,22 +168,22 @@
   width: 28px;
   height: 28px;
   border-radius: 999px;
-  border: 1px solid var(--color-line-200);
-  background: var(--color-gray-50);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .logoutButton {
   padding: 0;
   border: none;
   background: none;
-  color: var(--color-gray-500);
+  color: var(--color-foreground-muted);
   font-size: 0.9375rem;
   font-weight: 500;
   cursor: pointer;
 }
 
 .logoutButton:hover {
-  color: var(--color-orange-400);
+  color: var(--color-accent);
 }
 
 .menuButton {
@@ -204,7 +204,7 @@
   display: block;
   width: 18px;
   height: 2px;
-  background: var(--foreground);
+  background: var(--color-foreground);
 }
 
 .menuIcon {
@@ -228,8 +228,8 @@
 
 .navMobile {
   display: none;
-  border-top: 1px solid var(--color-line-200);
-  background: var(--color-background-400);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
 }
 
 .mobileList {
@@ -244,7 +244,7 @@
 .mobileLink {
   display: block;
   padding: 12px 4px;
-  color: var(--foreground);
+  color: var(--color-foreground);
   font-size: 1rem;
   font-weight: 500;
 }
