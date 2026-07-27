@@ -1,196 +1,208 @@
-import type { ComponentPropsWithoutRef } from "react";
+import type {
+  HTMLAttributes,
+  PropsWithChildren,
+  ReactNode,
+} from "react";
 
-const icons = {
-  "close-sm": { src: "/icons/close-sm.png", pixels: 24, sizeClass: "size-6" },
-  "close-md": { src: "/icons/close-md.png", pixels: 36, sizeClass: "size-9" },
-  "close-circle-sm": {
-    src: "/icons/close-circle-sm.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "close-circle-md": {
-    src: "/icons/close-circle-md.png",
-    pixels: 36,
-    sizeClass: "size-9",
-  },
-  "like-sm-default": {
-    src: "/icons/like-sm-default.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "like-sm-active": {
-    src: "/icons/like-sm-active.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "like-md-default": {
-    src: "/icons/like-md-default.png",
-    pixels: 36,
-    sizeClass: "size-9",
-  },
-  "like-md-active": {
-    src: "/icons/like-md-active.png",
-    pixels: 36,
-    sizeClass: "size-9",
-  },
-  "like-lg-default": {
-    src: "/icons/like-lg-default.png",
-    pixels: 48,
-    sizeClass: "size-12",
-  },
-  "like-lg-active": {
-    src: "/icons/like-lg-active.png",
-    pixels: 48,
-    sizeClass: "size-12",
-  },
-  "chevron-right-xs": {
-    src: "/icons/chevron-right-xs.png",
-    pixels: 20,
-    sizeClass: "size-5",
-  },
-  "chevron-right-sm": {
-    src: "/icons/chevron-right-sm.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "chevron-right-sm-thin": {
-    src: "/icons/chevron-right-sm-thin.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "chevron-right-md": {
-    src: "/icons/chevron-right-md.png",
-    pixels: 36,
-    sizeClass: "size-9",
-  },
-  "chevron-left-sm": {
-    src: "/icons/chevron-left-sm.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "chevron-left-sm-thin": {
-    src: "/icons/chevron-left-sm-thin.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "chevron-left-md": {
-    src: "/icons/chevron-left-md.png",
-    pixels: 36,
-    sizeClass: "size-9",
-  },
-  "chevron-up-xs": {
-    src: "/icons/chevron-up-xs.png",
-    pixels: 20,
-    sizeClass: "size-5",
-  },
-  "chevron-up-sm": {
-    src: "/icons/chevron-up-sm.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "chevron-up-md": {
-    src: "/icons/chevron-up-md.png",
-    pixels: 36,
-    sizeClass: "size-9",
-  },
-  "chevron-down-xs": {
-    src: "/icons/chevron-down-xs.png",
-    pixels: 20,
-    sizeClass: "size-5",
-  },
-  "chevron-down-sm": {
-    src: "/icons/chevron-down-sm.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "chevron-down-md": {
-    src: "/icons/chevron-down-md.png",
-    pixels: 36,
-    sizeClass: "size-9",
-  },
-  "visibility-on": {
-    src: "/icons/visibility-on.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "visibility-off": {
-    src: "/icons/visibility-off.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "menu-sm": { src: "/icons/menu-sm.png", pixels: 24, sizeClass: "size-6" },
-  "menu-md": { src: "/icons/menu-md.png", pixels: 36, sizeClass: "size-9" },
-  "cart-sm": { src: "/icons/cart-sm.png", pixels: 24, sizeClass: "size-6" },
-  "cart-md": { src: "/icons/cart-md.png", pixels: 36, sizeClass: "size-9" },
-  "cart-outlined-sm": {
-    src: "/icons/cart-outlined-sm.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "cart-outlined-md": {
-    src: "/icons/cart-outlined-md.png",
-    pixels: 36,
-    sizeClass: "size-9",
-  },
-  "profile-sm": {
-    src: "/icons/profile-sm.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "profile-md": {
-    src: "/icons/profile-md.png",
-    pixels: 36,
-    sizeClass: "size-9",
-  },
-  "plus-sm": { src: "/icons/plus-sm.png", pixels: 24, sizeClass: "size-6" },
-  "plus-md": { src: "/icons/plus-md.png", pixels: 36, sizeClass: "size-9" },
-  "search-sm": {
-    src: "/icons/search-sm.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "search-md": {
-    src: "/icons/search-md.png",
-    pixels: 36,
-    sizeClass: "size-9",
-  },
-  "kebab-menu-sm": {
-    src: "/icons/kebab-menu-sm.png",
-    pixels: 24,
-    sizeClass: "size-6",
-  },
-  "kebab-menu-md": {
-    src: "/icons/kebab-menu-md.png",
-    pixels: 36,
-    sizeClass: "size-9",
-  },
-  "link-sm": { src: "/icons/link-sm.png", pixels: 24, sizeClass: "size-6" },
-  "link-md": { src: "/icons/link-md.png", pixels: 36, sizeClass: "size-9" },
+const iconNames = [
+  "close",
+  "close-circle",
+  "like",
+  "chevron-right",
+  "chevron-left",
+  "chevron-up",
+  "chevron-down",
+  "visibility",
+  "menu",
+  "cart",
+  "profile",
+  "plus",
+  "search",
+  "kebab-menu",
+  "link",
+] as const;
+
+const iconKeys = new Set([
+  "close-sm",
+  "close-md",
+  "close-circle-sm",
+  "close-circle-md",
+  "like-sm-default",
+  "like-sm-active",
+  "like-md-default",
+  "like-md-active",
+  "like-lg-default",
+  "like-lg-active",
+  "chevron-right-xs",
+  "chevron-right-sm",
+  "chevron-right-sm-thin",
+  "chevron-right-md",
+  "chevron-left-sm",
+  "chevron-left-sm-thin",
+  "chevron-left-md",
+  "chevron-up-xs",
+  "chevron-up-sm",
+  "chevron-up-md",
+  "chevron-down-xs",
+  "chevron-down-sm",
+  "chevron-down-md",
+  "visibility-on",
+  "visibility-off",
+  "menu-sm",
+  "menu-md",
+  "cart-sm",
+  "cart-md",
+  "cart-outlined-sm",
+  "cart-outlined-md",
+  "profile-sm",
+  "profile-md",
+  "plus-sm",
+  "plus-md",
+  "search-sm",
+  "search-md",
+  "kebab-menu-sm",
+  "kebab-menu-md",
+  "link-sm",
+  "link-md",
+]);
+
+const multicolorIconKeys = new Set([
+  "close-circle-sm",
+  "close-circle-md",
+  "like-sm-default",
+  "like-md-default",
+  "like-lg-default",
+  "profile-sm",
+  "profile-md",
+  "link-sm",
+  "link-md",
+]);
+
+const sizeClasses = {
+  xs: "size-5",
+  sm: "size-6",
+  md: "size-9",
+  lg: "size-12",
 } as const;
 
-export type IconName = keyof typeof icons;
+export type IconName = (typeof iconNames)[number];
+export type IconSize = keyof typeof sizeClasses;
+export type IconVariant = "default" | "thin" | "outlined";
 
-type IconProps = Omit<
-  ComponentPropsWithoutRef<"img">,
-  "alt" | "height" | "src" | "width"
-> & {
+type IconProps = Omit<HTMLAttributes<HTMLSpanElement>, "children"> & {
   name: IconName;
+  size?: IconSize;
+  variant?: IconVariant;
+  active?: boolean;
   label?: string;
 };
 
-export function Icon({ name, label, className, ...props }: IconProps) {
-  const icon = icons[name];
+function getIconKey({
+  name,
+  size,
+  variant,
+  active,
+}: Required<Pick<IconProps, "name" | "size" | "variant" | "active">>) {
+  if (name === "like") {
+    return `${name}-${size}-${active ? "active" : "default"}`;
+  }
+
+  if (name === "visibility") {
+    return `${name}-${active ? "on" : "off"}`;
+  }
+
+  if (name === "cart") {
+    return `${name}${variant === "outlined" ? "-outlined" : ""}-${size}`;
+  }
+
+  if (
+    variant === "thin" &&
+    (name === "chevron-left" || name === "chevron-right")
+  ) {
+    return `${name}-${size}-thin`;
+  }
+
+  return `${name}-${size}`;
+}
+
+export function Icon({
+  name,
+  size = "sm",
+  variant = "default",
+  active = false,
+  label,
+  className,
+  style,
+  ...props
+}: IconProps) {
+  const iconKey = getIconKey({ name, size, variant, active });
+
+  if (!iconKeys.has(iconKey)) {
+    throw new Error(`지원하지 않는 아이콘 조합입니다: ${iconKey}`);
+  }
+
+  const src = `/icons/${iconKey}.svg`;
+  const isMulticolor = multicolorIconKeys.has(iconKey);
+  const iconStyle = isMulticolor
+    ? {
+        backgroundImage: `url("${src}")`,
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "contain",
+      }
+    : {
+        backgroundColor: "currentColor",
+        maskImage: `url("${src}")`,
+        maskPosition: "center",
+        maskRepeat: "no-repeat",
+        maskSize: "contain",
+        WebkitMaskImage: `url("${src}")`,
+        WebkitMaskPosition: "center",
+        WebkitMaskRepeat: "no-repeat",
+        WebkitMaskSize: "contain",
+      };
 
   return (
-    <img
+    <span
       {...props}
-      src={icon.src}
-      width={icon.pixels}
-      height={icon.pixels}
-      alt={label ?? ""}
+      role={label ? "img" : undefined}
+      aria-label={label}
       aria-hidden={label ? undefined : true}
-      className={`${icon.sizeClass} shrink-0 object-contain ${className ?? ""}`}
-      draggable={false}
+      className={`${sizeClasses[size]} inline-block shrink-0 ${
+        name === "like" && active ? "text-accent" : ""
+      } ${className ?? ""}`}
+      style={{ ...iconStyle, ...style }}
     />
+  );
+}
+
+type IconBadgeProps = PropsWithChildren<{
+  count: number;
+  label?: string;
+  className?: string;
+  badge?: ReactNode;
+}>;
+
+export function IconBadge({
+  count,
+  label,
+  className,
+  badge,
+  children,
+}: IconBadgeProps) {
+  const displayCount = count > 99 ? "99+" : count;
+
+  return (
+    <span className={`relative inline-flex ${className ?? ""}`}>
+      {children}
+      {count > 0 ? (
+        <span
+          aria-label={label ?? `${count}개`}
+          className="absolute -right-1 -top-1 inline-flex min-w-3.5 items-center justify-center rounded-full bg-accent px-1 text-[10px] leading-3.5 font-semibold text-surface"
+        >
+          {badge ?? displayCount}
+        </span>
+      ) : null}
+    </span>
   );
 }

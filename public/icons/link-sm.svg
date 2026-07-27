@@ -1,0 +1,9 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g id="Property 1=link, Property 2=sm">
+    <circle id="Ellipse 243" cx="12" cy="12" r="12" fill="#FDF0DF" />
+    <g id="link_alt">
+      <path id="Vector 21" d="M13.5 10.5L10.5 13.5" stroke="#F97B22" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+      <path id="Vector 563" d="M15 12.75L16.5 11.25C17.5355 10.2145 17.5355 8.53553 16.5 7.5C15.4645 6.46447 13.7855 6.46447 12.75 7.5L11.25 9M9 11.25L7.5 12.75C6.46447 13.7855 6.46447 15.4645 7.5 16.5C8.53553 17.5355 10.2145 17.5355 11.25 16.5L12.75 15" stroke="#F97B22" stroke-width="1.5" stroke-linecap="round" />
+    </g>
+  </g>
+</svg>
