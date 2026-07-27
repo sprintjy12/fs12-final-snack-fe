@@ -373,7 +373,7 @@ export default async function PurchaseHistoryPage({
                     page === "1"
                       ? "font-semibold text-foreground-strong"
                       : "font-medium text-snack-gray-300 xl:font-normal",
-                    page === "4" || page === "5" ? "hidden sm:flex" : "",
+                    page === "4" || page === "5" ? "hidden xl:flex" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
