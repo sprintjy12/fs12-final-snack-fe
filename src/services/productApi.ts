@@ -29,7 +29,8 @@ function filterMockProducts(params: ProductListParams = {}): Product[] {
         return b.price - a.price;
       case "latest":
       default:
-        return a.id - b.id;
+        // id가 클수록 최근 등록으로 가정
+        return b.id - a.id;
     }
   });
 
@@ -70,6 +71,8 @@ export async function getProducts(
 
 export async function getProduct(id: number): Promise<Product> {
   if (USE_MOCK) {
+    // 상세 스켈레톤 확인용 (실 API 연동 시 제거)
+    await new Promise((resolve) => setTimeout(resolve, 450));
     const product = DUMMY_PRODUCTS.find((item) => item.id === id);
     if (!product) {
       throw new Error(`Product not found: ${id}`);
