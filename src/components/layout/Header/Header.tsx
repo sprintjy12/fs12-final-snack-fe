@@ -25,12 +25,12 @@ export type HeaderProps = {
   className?: string;
 };
 
-const MUTED_NAV_HREFS = new Set(["/purchase-requests", "/products/mine"]);
+const MUTED_NAV_HREFS = new Set(["/purchase/requests", "/products/mine"]);
 
 /** Figma 일반 유저 상단바 */
 const DEFAULT_NAV_ITEMS: HeaderNavItem[] = [
   { href: "/products", label: "상품 리스트" },
-  { href: "/purchase-requests", label: "구매 요청 내역" },
+  { href: "/purchase/requests", label: "구매 요청 내역" },
   { href: "/products/mine", label: "상품 등록 내역" },
 ];
 
