@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { CommonImage, Icon } from "@/components/ui";
@@ -17,7 +16,6 @@ import {
 import { getProductPhotoSrc } from "@/lib/productMedia";
 import type { Product } from "@/types/productTypes";
 
-import { PurchaseRequestModal } from "./PurchaseRequestModal";
 import styles from "./cart.module.css";
 
 const SHIPPING_FEE = 3000;
@@ -32,11 +30,9 @@ function formatPrice(price: number) {
 }
 
 export default function CartPage() {
-  const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const [requestItems, setRequestItems] = useState<CartProduct[] | null>(null);
 
   useEffect(() => {
     const items = getCartItems();
@@ -69,15 +65,6 @@ export default function CartPage() {
   );
   const shippingFee = someSelected ? SHIPPING_FEE : 0;
   const orderTotal = productTotal + shippingFee;
-
-  const modalProductTotal =
-    requestItems?.reduce(
-      (total, item) => total + item.product.price * item.quantity,
-      0,
-    ) ?? 0;
-  const modalShippingFee =
-    requestItems && requestItems.length > 0 ? SHIPPING_FEE : 0;
-  const modalOrderTotal = modalProductTotal + modalShippingFee;
 
   const syncCart = (next: CartItem[]) => {
     setCartItems(next);
@@ -117,25 +104,6 @@ export default function CartPage() {
 
   const handleClearAll = () => {
     syncCart(clearCart());
-  };
-
-  const openRequestModal = (items: CartProduct[]) => {
-    if (items.length === 0) return;
-    setRequestItems(items);
-  };
-
-  const closeRequestModal = () => setRequestItems(null);
-
-  const handlePurchaseSubmit = (_payload: {
-    requester: string;
-    message: string;
-  }) => {
-    if (!requestItems?.length) return;
-    const ids = requestItems.map((item) => item.product.id);
-    syncCart(removeFromCartMany(ids));
-    setRequestItems(null);
-    // TODO: 구매 요청 API 연동 시 _payload + items 전달
-    router.push("/purchase-requests/complete");
   };
 
   return (
@@ -287,17 +255,6 @@ export default function CartPage() {
 
                       <div className={`${styles.tableCell} ${styles.orderCell}`}>
                         <strong>{formatPrice(lineTotal)}</strong>
-                        <button
-                          type="button"
-                          className={styles.immediateButton}
-                          onClick={() =>
-                            openRequestModal([
-                              { productId: product.id, product, quantity },
-                            ])
-                          }
-                        >
-                          즉시 요청
-                        </button>
                       </div>
 
                       <div
@@ -357,14 +314,6 @@ export default function CartPage() {
               </div>
 
               <div className={styles.summaryActions}>
-                <button
-                  type="button"
-                  className={styles.requestButton}
-                  disabled={!someSelected}
-                  onClick={() => openRequestModal(selectedProducts)}
-                >
-                  구매 요청
-                </button>
                 <Link href="/products" className={styles.continueLink}>
                   계속 쇼핑하기
                 </Link>
@@ -373,16 +322,6 @@ export default function CartPage() {
           </div>
         )}
       </div>
-
-      <PurchaseRequestModal
-        open={requestItems !== null}
-        items={requestItems ?? []}
-        productTotal={modalProductTotal}
-        shippingFee={modalShippingFee}
-        orderTotal={modalOrderTotal}
-        onClose={closeRequestModal}
-        onSubmit={handlePurchaseSubmit}
-      />
     </main>
   );
 }
