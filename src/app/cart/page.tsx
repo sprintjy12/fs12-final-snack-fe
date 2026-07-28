@@ -33,6 +33,9 @@ export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [failedImageIds, setFailedImageIds] = useState<Set<number>>(
+    () => new Set(),
+  );
 
   useEffect(() => {
     const items = getCartItems();
@@ -158,6 +161,8 @@ export default function CartPage() {
               <div className={styles.itemList}>
                 {cartProducts.map(({ product, quantity }) => {
                   const photoSrc = getProductPhotoSrc(product.photo);
+                  const showImage =
+                    Boolean(photoSrc) && !failedImageIds.has(product.id);
                   const lineTotal = product.price * quantity;
                   const isSelected = selectedIds.includes(product.id);
 
@@ -180,15 +185,20 @@ export default function CartPage() {
                           className={styles.productInfo}
                         >
                           <span className={styles.thumb}>
-                            {photoSrc ? (
+                            {showImage ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
-                                src={photoSrc}
+                                src={photoSrc!}
                                 alt=""
                                 className={styles.image}
-                                onError={(event) =>
-                                  event.currentTarget.remove()
-                                }
+                                onError={() => {
+                                  setFailedImageIds((prev) => {
+                                    if (prev.has(product.id)) return prev;
+                                    const next = new Set(prev);
+                                    next.add(product.id);
+                                    return next;
+                                  });
+                                }}
                               />
                             ) : null}
                           </span>
