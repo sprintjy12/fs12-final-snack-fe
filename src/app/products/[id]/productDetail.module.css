@@ -321,6 +321,10 @@
   line-height: 1.5;
 }
 
+.feedbackError {
+  color: var(--color-state-01);
+}
+
 .status {
   display: grid;
   place-items: center;

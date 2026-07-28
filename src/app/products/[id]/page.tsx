@@ -56,7 +56,10 @@ export default function ProductDetailPage() {
   const { data: product, isLoading, isError } = useProduct(id);
   const [quantity, setQuantity] = useState(1);
   const [imageFailed, setImageFailed] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     setQuantity(1);
@@ -80,8 +83,19 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart(product.id, quantity);
-    setFeedback(`${product.name} ${quantity}개를 장바구니에 담았습니다.`);
+    const saved = addToCart(product.id, quantity);
+    if (saved) {
+      setFeedback({
+        type: "success",
+        message: `${product.name} ${quantity}개를 장바구니에 담았습니다.`,
+      });
+      return;
+    }
+    setFeedback({
+      type: "error",
+      message:
+        "장바구니에 담지 못했습니다. 브라우저 저장소 설정을 확인해 주세요.",
+    });
   };
 
   if (!Number.isFinite(id) || id <= 0) {
@@ -269,8 +283,12 @@ export default function ProductDetailPage() {
             </div>
 
             {feedback ? (
-              <p className={styles.feedback} role="status" aria-live="polite">
-                {feedback}
+              <p
+                className={`${styles.feedback} ${feedback.type === "error" ? styles.feedbackError : ""}`}
+                role={feedback.type === "error" ? "alert" : "status"}
+                aria-live="polite"
+              >
+                {feedback.message}
               </p>
             ) : null}
           </div>

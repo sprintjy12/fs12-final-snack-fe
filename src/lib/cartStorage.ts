@@ -9,6 +9,32 @@ export type CartItem = {
   quantity: number;
 };
 
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
+/**
+ * 유한 수를 1..999 정수로 정규화.
+ * NaN / Infinity / 비숫자는 null.
+ */
+function normalizeQuantity(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  const floored = Math.floor(value);
+  return Math.min(MAX_QUANTITY, Math.max(MIN_QUANTITY, floored));
+}
+
+function isValidCartItem(value: unknown): value is CartItem {
+  if (typeof value !== "object" || value === null) return false;
+  const item = value as { productId?: unknown; quantity?: unknown };
+  return (
+    isPositiveInteger(item.productId) &&
+    typeof item.quantity === "number" &&
+    Number.isInteger(item.quantity) &&
+    item.quantity >= MIN_QUANTITY &&
+    item.quantity <= MAX_QUANTITY
+  );
+}
+
 function canUseStorage() {
   return typeof window !== "undefined" && Boolean(window.localStorage);
 }
@@ -18,12 +44,17 @@ function notifyCartChange() {
   window.dispatchEvent(new Event(CART_CHANGE_EVENT));
 }
 
-function saveCartItems(items: CartItem[]): CartItem[] {
-  if (canUseStorage()) {
+/** @returns 저장 성공 여부 */
+function saveCartItems(items: CartItem[]): boolean {
+  if (!canUseStorage()) return false;
+
+  try {
     window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+    notifyCartChange();
+    return true;
+  } catch {
+    return false;
   }
-  notifyCartChange();
-  return items;
 }
 
 export function getCartItems(): CartItem[] {
@@ -34,29 +65,22 @@ export function getCartItems(): CartItem[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item): item is CartItem =>
-        typeof item === "object" &&
-        item !== null &&
-        typeof (item as CartItem).productId === "number" &&
-        typeof (item as CartItem).quantity === "number",
-    );
+    return parsed.filter(isValidCartItem);
   } catch {
     return [];
   }
 }
 
 export function getCartItemCount(): number {
-  return getCartItems().reduce((sum, item) => {
-    const quantity = Number(item.quantity);
-    if (!Number.isFinite(quantity) || quantity <= 0) return sum;
-    return sum + Math.floor(quantity);
-  }, 0);
+  return getCartItems().reduce((sum, item) => sum + item.quantity, 0);
 }
 
-/** 같은 productId가 있으면 수량을 더함 */
-export function addToCart(productId: number, quantity: number): CartItem[] {
-  const nextQuantity = Math.max(MIN_QUANTITY, Math.floor(quantity));
+/** 같은 productId가 있으면 수량을 더함. @returns 저장 성공 여부 */
+export function addToCart(productId: number, quantity: number): boolean {
+  if (!isPositiveInteger(productId)) return false;
+  const nextQuantity = normalizeQuantity(quantity);
+  if (nextQuantity === null) return false;
+
   const items = getCartItems();
   const existing = items.find((item) => item.productId === productId);
 
@@ -72,45 +96,49 @@ export function addToCart(productId: number, quantity: number): CartItem[] {
             }
           : item,
       )
-    : [...items, { productId, quantity: Math.min(MAX_QUANTITY, nextQuantity) }];
+    : [...items, { productId, quantity: nextQuantity }];
 
   return saveCartItems(next);
 }
 
-/** 장바구니 수량을 절대값으로 설정 (1–999) */
+/** 장바구니 수량을 절대값으로 설정 (1–999). 실패 시 기존 목록 반환 */
 export function setCartQuantity(
   productId: number,
   quantity: number,
 ): CartItem[] {
-  const nextQuantity = Math.min(
-    MAX_QUANTITY,
-    Math.max(MIN_QUANTITY, Math.floor(quantity)),
-  );
+  if (!isPositiveInteger(productId)) return getCartItems();
+  const nextQuantity = normalizeQuantity(quantity);
   const items = getCartItems();
+  if (nextQuantity === null) return items;
   if (!items.some((item) => item.productId === productId)) return items;
 
-  return saveCartItems(
-    items.map((item) =>
-      item.productId === productId
-        ? { ...item, quantity: nextQuantity }
-        : item,
-    ),
+  const next = items.map((item) =>
+    item.productId === productId
+      ? { ...item, quantity: nextQuantity }
+      : item,
   );
+  return saveCartItems(next) ? next : items;
 }
 
+/** 실패 시 기존 목록 반환 */
 export function removeFromCart(productId: number): CartItem[] {
-  return saveCartItems(
-    getCartItems().filter((item) => item.productId !== productId),
-  );
+  const items = getCartItems();
+  if (!isPositiveInteger(productId)) return items;
+  const next = items.filter((item) => item.productId !== productId);
+  return saveCartItems(next) ? next : items;
 }
 
+/** 실패 시 기존 목록 반환 */
 export function removeFromCartMany(productIds: number[]): CartItem[] {
-  const removeSet = new Set(productIds);
-  return saveCartItems(
-    getCartItems().filter((item) => !removeSet.has(item.productId)),
-  );
+  const items = getCartItems();
+  const removeSet = new Set(productIds.filter(isPositiveInteger));
+  if (removeSet.size === 0) return items;
+  const next = items.filter((item) => !removeSet.has(item.productId));
+  return saveCartItems(next) ? next : items;
 }
 
+/** 실패 시 기존 목록 반환 */
 export function clearCart(): CartItem[] {
-  return saveCartItems([]);
+  const items = getCartItems();
+  return saveCartItems([]) ? [] : items;
 }
