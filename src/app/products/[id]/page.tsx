@@ -212,11 +212,8 @@ export default function ProductDetailPage() {
                 </dd>
               </div>
               <div className={styles.metaRow}>
-                <div className={styles.metaPair}>
-                  <dt className={styles.metaLabel}>배송비</dt>
-                  <dd className={styles.metaValue}>{DETAIL_COPY.shippingFee}</dd>
-                </div>
-                <span className={styles.metaPipe} aria-hidden="true" />
+                <dt className={styles.metaLabel}>배송비</dt>
+                <dd className={styles.metaValue}>{DETAIL_COPY.shippingFee}</dd>
                 <dd className={styles.metaMuted}>{DETAIL_COPY.shippingExtra}</dd>
               </div>
             </dl>

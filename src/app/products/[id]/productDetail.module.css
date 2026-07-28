@@ -65,9 +65,9 @@
 .gallery {
   display: grid;
   place-items: center;
-  flex-shrink: 0;
+  flex: 0 1 auto;
   box-sizing: border-box;
-  width: min(100%, 828px);
+  width: min(50%, 828px);
   aspect-ratio: 1 / 1;
   padding: 73px 120px;
   border-radius: 20px;
@@ -171,13 +171,6 @@
   margin: 0;
 }
 
-.metaPair {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-}
-
 .metaLabel {
   margin: 0;
   color: var(--color-foreground-strong);
@@ -197,6 +190,9 @@
 }
 
 .metaMuted {
+  display: inline-flex;
+  align-items: center;
+  gap: 24px;
   margin: 0;
   margin-inline-start: 0;
   color: var(--color-snack-gray-300);
@@ -205,11 +201,12 @@
   line-height: 32px;
 }
 
-.metaPipe {
+.metaMuted::before {
+  content: "";
+  flex-shrink: 0;
   width: 1px;
   height: 12px;
   background: var(--color-snack-gray-200);
-  flex-shrink: 0;
 }
 
 .actions {
