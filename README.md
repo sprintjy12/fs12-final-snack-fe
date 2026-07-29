@@ -34,3 +34,9 @@ public/                 # 정적 파일
 ```
 
 기능별 코드는 `src/features/<기능명>` 아래에 컴포넌트, 훅, 타입을 함께 두는 방식을 권장합니다.
+
+## API Example
+
+팀 공통 API 연동 예제는 아래 경로를 참고하세요.
+
+src/app/posts-sample/
