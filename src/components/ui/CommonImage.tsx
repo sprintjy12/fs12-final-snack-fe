@@ -57,6 +57,42 @@ const commonImages = {
       height: 564,
     },
   },
+  "modal-reject": {
+    sm: {
+      src: "/images/common/modal-reject.svg",
+      width: 184,
+      height: 145,
+    },
+    md: {
+      src: "/images/common/modal-reject.svg",
+      width: 260,
+      height: 204,
+    },
+  },
+  "modal-approve": {
+    sm: {
+      src: "/images/common/modal-approve.svg",
+      width: 184,
+      height: 103,
+    },
+    md: {
+      src: "/images/common/modal-approve.svg",
+      width: 240,
+      height: 134,
+    },
+  },
+  "modal-warning": {
+    sm: {
+      src: "/images/common/modal-warning.svg",
+      width: 184,
+      height: 157,
+    },
+    md: {
+      src: "/images/common/modal-warning.svg",
+      width: 230,
+      height: 196,
+    },
+  },
 } as const;
 
 export type CommonImageName = keyof typeof commonImages;
