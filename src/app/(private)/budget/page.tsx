@@ -6,6 +6,9 @@ import { z } from "zod";
 
 import { showToast } from "@/components/ui";
 
+const MAX_SAFE_BUDGET = BigInt(Number.MAX_SAFE_INTEGER);
+
+/** Number 변환 없이 문자열로 천 단위 구분을 적용해 큰 수의 정밀도를 유지합니다. */
 function formatBudgetValue(value: string) {
   const digits = value.replace(/\D/g, "");
 
@@ -13,7 +16,8 @@ function formatBudgetValue(value: string) {
     return "";
   }
 
-  return Number(digits).toLocaleString("ko-KR");
+  const normalized = digits.replace(/^0+(?=\d)/, "");
+  return normalized.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 function toBudgetDigits(value: string) {
@@ -28,7 +32,11 @@ const createBudgetFieldSchema = (label: string) =>
     .refine(
       (value) => /^\d+$/.test(toBudgetDigits(value)),
       `${label}은 숫자만 입력할 수 있어요.`,
-    );
+    )
+    .refine((value) => {
+      const digits = toBudgetDigits(value);
+      return BigInt(digits) <= MAX_SAFE_BUDGET;
+    }, `${label}이 너무 커요. 다시 입력해 주세요.`);
 
 const budgetFormSchema = z.object({
   monthlyBudget: createBudgetFieldSchema("이번 달 예산"),
@@ -70,9 +78,10 @@ export default function BudgetPage() {
     }
 
     // TODO: 예산 수정 API 연동
+    // 정밀도 유지를 위해 숫자 문자열로 전달하거나, 도메인 검증 후 변환합니다.
     // const payload = {
-    //   monthlyBudget: Number(toBudgetDigits(result.data.monthlyBudget)),
-    //   startingBudget: Number(toBudgetDigits(result.data.startingBudget)),
+    //   monthlyBudget: toBudgetDigits(result.data.monthlyBudget),
+    //   startingBudget: toBudgetDigits(result.data.startingBudget),
     // };
     showToast("예산이 변경되었습니다.");
   };
