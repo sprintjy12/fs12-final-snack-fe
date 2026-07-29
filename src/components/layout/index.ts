@@ -1,2 +1,2 @@
-export { Header } from "./Header/Header";
-export type { HeaderNavItem, HeaderProps } from "./Header/Header";
+export { Header } from "./Header";
+export type { HeaderNavItem, HeaderProps } from "./Header";
