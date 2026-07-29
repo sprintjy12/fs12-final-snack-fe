@@ -11,3 +11,4 @@ export {
   type IconVariant,
 } from "./Icon";
 export { LandingPrompt } from "./LandingPrompt";
+export { Modal, type ModalAction, type ModalProps } from "./Modal";
