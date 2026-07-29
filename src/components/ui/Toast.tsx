@@ -21,7 +21,8 @@ export type ToastOptions = {
 export type ToastProps = {
   open: boolean;
   message: string;
-  onClose?: () => void;
+  /** 제어형 Toast는 닫기 상태를 부모가 관리하므로 onClose가 필요합니다. */
+  onClose: () => void;
   duration?: number;
 };
 
@@ -65,7 +66,7 @@ function ToastBanner({
   onClose,
 }: {
   message: string;
-  onClose?: () => void;
+  onClose: () => void;
 }) {
   const messageId = useId();
 
@@ -104,7 +105,7 @@ function ToastPortal({
   onClose,
 }: {
   message: string;
-  onClose?: () => void;
+  onClose: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
 
@@ -142,7 +143,7 @@ export function Toast({
     }
 
     const timer = window.setTimeout(() => {
-      onClose?.();
+      onClose();
     }, duration);
 
     return () => window.clearTimeout(timer);
