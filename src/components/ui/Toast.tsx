@@ -5,7 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useId,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -24,6 +24,8 @@ export type ToastProps = {
   /** 제어형 Toast는 닫기 상태를 부모가 관리하므로 onClose가 필요합니다. */
   onClose: () => void;
   duration?: number;
+  /** 같은 문구를 다시 표시할 때 자동 닫힘 타이머를 초기화하기 위한 식별자 */
+  id?: number;
 };
 
 type ToastItem = {
@@ -68,22 +70,11 @@ function ToastBanner({
   message: string;
   onClose: () => void;
 }) {
-  const messageId = useId();
-
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-      aria-labelledby={messageId}
-      className="flex min-h-16 w-full items-start justify-between gap-3 rounded-lg bg-snack-background-500 px-[30px] py-[19px] md:w-[524px]"
-    >
+    <div className="flex min-h-16 w-full items-start justify-between gap-3 rounded-lg bg-snack-background-500 px-[30px] py-[19px] md:w-[524px]">
       <div className="flex min-w-0 flex-1 items-start gap-3">
         <Icon name="completed" size="sm" className="mt-0.5 text-accent" />
-        <p
-          id={messageId}
-          className="min-w-0 flex-1 text-base leading-[26px] tracking-[-0.16px] break-all text-accent"
-        >
+        <p className="min-w-0 flex-1 text-base leading-[26px] tracking-[-0.16px] break-all text-accent">
           {message}
         </p>
       </div>
@@ -101,9 +92,11 @@ function ToastBanner({
 }
 
 function ToastPortal({
+  open,
   message,
   onClose,
 }: {
+  open: boolean;
   message: string;
   onClose: () => void;
 }) {
@@ -117,10 +110,20 @@ function ToastPortal({
     return null;
   }
 
+  // aria-live 영역은 항상 DOM에 두고, 열릴 때 내부 메시지만 바꿉니다.
   return createPortal(
     <div className="pointer-events-none fixed inset-x-0 top-[54px] z-[60] flex justify-center md:top-16 xl:top-[88px]">
-      <div className="pointer-events-auto w-full md:w-auto">
-        <ToastBanner message={message} onClose={onClose} />
+      <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        className="w-full md:w-auto"
+      >
+        {open && message ? (
+          <div className="pointer-events-auto">
+            <ToastBanner message={message} onClose={onClose} />
+          </div>
+        ) : null}
       </div>
     </div>,
     document.body,
@@ -136,24 +139,33 @@ export function Toast({
   message,
   onClose,
   duration = DEFAULT_DURATION,
+  id,
 }: ToastProps) {
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!open || duration <= 0) {
       return;
     }
 
     const timer = window.setTimeout(() => {
-      onClose();
+      onCloseRef.current();
     }, duration);
 
     return () => window.clearTimeout(timer);
-  }, [open, duration, onClose, message]);
+  }, [open, duration, message, id]);
 
-  if (!open || !message) {
-    return null;
-  }
-
-  return <ToastPortal message={message} onClose={onClose} />;
+  return (
+    <ToastPortal
+      open={open && Boolean(message)}
+      message={message}
+      onClose={onClose}
+    />
+  );
 }
 
 /**
@@ -189,15 +201,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast: show, dismissToast: dismiss }}>
       {children}
-      {toast ? (
-        <Toast
-          key={toast.id}
-          open
-          message={toast.message}
-          duration={toast.duration}
-          onClose={dismiss}
-        />
-      ) : null}
+      <Toast
+        id={toast?.id}
+        open={toast !== null}
+        message={toast?.message ?? ""}
+        duration={toast?.duration ?? DEFAULT_DURATION}
+        onClose={dismiss}
+      />
     </ToastContext.Provider>
   );
 }
