@@ -50,6 +50,15 @@ function isNavItemActive(
     return pathname === "/purchase/requests" && view !== "history";
   }
 
+  if (href === "/admin") {
+    return (
+      pathname === "/admin" ||
+      pathname.startsWith("/admin/") ||
+      pathname === "/budget" ||
+      pathname.startsWith("/budget/")
+    );
+  }
+
   const [path] = href.split("?");
   return pathname === path || pathname.startsWith(`${path}/`);
 }

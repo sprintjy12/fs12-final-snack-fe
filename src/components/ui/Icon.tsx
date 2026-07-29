@@ -7,6 +7,7 @@ import type {
 const iconNames = [
   "close",
   "close-circle",
+  "completed",
   "like",
   "chevron-right",
   "chevron-left",
@@ -27,6 +28,8 @@ const iconKeys = new Set([
   "close-md",
   "close-circle-sm",
   "close-circle-md",
+  "completed-sm",
+  "completed-md",
   "like-sm-default",
   "like-sm-active",
   "like-md-default",
