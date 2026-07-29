@@ -54,6 +54,27 @@ function isNavItemActive(
   return pathname === path || pathname.startsWith(`${path}/`);
 }
 
+function getActiveNavHref(
+  navItems: readonly HeaderNavItem[],
+  pathname: string,
+  view: string | null,
+) {
+  const matchedItems = navItems.filter((navItem) =>
+    isNavItemActive(navItem.href, pathname, view),
+  );
+
+  if (matchedItems.length === 0) {
+    return null;
+  }
+
+  return matchedItems.reduce((longestItem, navItem) => {
+    const longestPath = longestItem.href.split("?")[0] ?? longestItem.href;
+    const currentPath = navItem.href.split("?")[0] ?? navItem.href;
+
+    return currentPath.length > longestPath.length ? navItem : longestItem;
+  }).href;
+}
+
 export function Header({
   cartCount = 2,
   navItems = DEFAULT_NAV_ITEMS,
@@ -63,6 +84,7 @@ export function Header({
   const searchParams = useSearchParams();
   const view = searchParams.get("view");
   const showCartBadge = cartCount > 0;
+  const activeHref = getActiveNavHref(navItems, pathname, view);
 
   return (
     <header className="border-b border-border bg-surface-muted">
@@ -96,11 +118,7 @@ export function Header({
           <nav className="hidden xl:block" aria-label="주요 메뉴">
             <ul className="flex items-center gap-10">
               {navItems.map((navigation) => {
-                const active = isNavItemActive(
-                  navigation.href,
-                  pathname,
-                  view,
-                );
+                const active = navigation.href === activeHref;
 
                 return (
                   <li key={`${navigation.href}-${navigation.label}`}>
