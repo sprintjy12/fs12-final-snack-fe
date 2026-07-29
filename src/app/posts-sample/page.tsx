@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
+import { z } from "zod";
 
 import {
   useCreatePost,
@@ -23,7 +24,7 @@ import {
  * 2. usePosts.ts     → useUsers.ts
  * 3. postTypes.ts    → userTypes.ts
  * 4. queryKeys.posts → queryKeys.users
- * 5. posts-sample 페이지는 API 연동 방식을 설명하기 위한 참고 예제입니다. 
+ * 5. posts-sample 페이지는 API 연동 방식을 설명하기 위한 참고 예제입니다.
  *    실제 서비스에서는 페이지를 복사하지 말고 Hook과 API 함수만 재사용하세요.
  *
  * 와 같은 방식으로 복사하여 사용하면 됩니다.
@@ -41,7 +42,6 @@ import {
  * =====================================================
  */
 
-
 /**
  * API → Hook → Component 호출 흐름을 보여주는 참고 페이지입니다.
  * 새 도메인에서는 Hook 이름과 요청 필드만 바꾸고 같은 로딩, 에러, mutation 흐름을 재사용합니다.
@@ -50,13 +50,44 @@ const inputClassName =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 outline-none focus:border-accent";
 const buttonClassName =
   "rounded-lg bg-accent px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50";
+const fieldErrorClassName = "mt-1 text-sm text-danger";
+
+// required 속성만으로는 공백 입력을 막기 어려워
+// Zod로 정제와 검증을 함께 처리합니다.
+// 프론트 검증은 UX용이고, 백엔드 검증도 함께 필요합니다.
+const postFormSchema = z.object({
+  title: z.string().trim().min(1, "제목을 입력해 주세요."),
+  content: z.string().trim().min(1, "내용을 입력해 주세요."),
+});
+
+type PostFormErrors = {
+  title?: string;
+  content?: string;
+};
+
+type UpdateFormErrors = PostFormErrors & {
+  postId?: string;
+};
+
+const getPostFormErrors = (
+  error: z.ZodError<z.infer<typeof postFormSchema>>,
+): PostFormErrors => {
+  const fieldErrors = error.flatten().fieldErrors;
+
+  return {
+    title: fieldErrors.title?.[0],
+    content: fieldErrors.content?.[0],
+  };
+};
 
 const PostsSamplePage = () => {
   const [createTitle, setCreateTitle] = useState("");
   const [createContent, setCreateContent] = useState("");
+  const [createErrors, setCreateErrors] = useState<PostFormErrors>({});
   const [updatePostId, setUpdatePostId] = useState("");
   const [updateTitle, setUpdateTitle] = useState("");
   const [updateContent, setUpdateContent] = useState("");
+  const [updateErrors, setUpdateErrors] = useState<UpdateFormErrors>({});
 
   const {
     data: posts = [],
@@ -76,33 +107,57 @@ const PostsSamplePage = () => {
   const handleCreateSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const title = createTitle.trim();
-    const content = createContent.trim();
-    if (!title || !content) return;
+    // safeParse는 예외를 던지지 않아 화면에서 검증 결과를 바로 처리할 수 있습니다.
+    const result = postFormSchema.safeParse({
+      title: createTitle,
+      content: createContent,
+    });
 
-    createPostMutation.mutate(
-      { title, content },
-      {
-        onSuccess: () => {
-          setCreateTitle("");
-          setCreateContent("");
-        },
+    if (!result.success) {
+      setCreateErrors(getPostFormErrors(result.error));
+      return;
+    }
+
+    setCreateErrors({});
+    // trim이 적용된 result.data를 mutation에 전달합니다.
+    createPostMutation.mutate(result.data, {
+      onSuccess: () => {
+        setCreateTitle("");
+        setCreateContent("");
       },
-    );
+    });
   };
 
   const handleUpdateSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const postId = Number(updatePostId);
-    const title = updateTitle.trim();
-    const content = updateContent.trim();
-    if (!Number.isInteger(postId) || postId <= 0 || !title || !content) return;
+    const nextErrors: UpdateFormErrors = {};
 
+    if (!Number.isInteger(postId) || postId <= 0) {
+      nextErrors.postId = "올바른 게시글 ID를 입력해 주세요.";
+    }
+
+    const result = postFormSchema.safeParse({
+      title: updateTitle,
+      content: updateContent,
+    });
+
+    if (!result.success) {
+      Object.assign(nextErrors, getPostFormErrors(result.error));
+    }
+
+    if (nextErrors.postId || !result.success) {
+      setUpdateErrors(nextErrors);
+      return;
+    }
+
+    const request = result.data;
+    setUpdateErrors({});
     updatePostMutation.mutate(
       {
         postId,
-        request: { title, content },
+        request,
       },
       {
         onSuccess: () => {
@@ -138,7 +193,11 @@ const PostsSamplePage = () => {
           >
             게시글 생성
           </h2>
-          <form className="mt-4 space-y-3" onSubmit={handleCreateSubmit}>
+          <form
+            className="mt-4 space-y-3"
+            onSubmit={handleCreateSubmit}
+            noValidate
+          >
             <div>
               <label htmlFor="create-title" className="mb-1 block font-medium">
                 제목
@@ -149,7 +208,20 @@ const PostsSamplePage = () => {
                 onChange={(event) => setCreateTitle(event.target.value)}
                 className={inputClassName}
                 required
+                aria-invalid={Boolean(createErrors.title)}
+                aria-describedby={
+                  createErrors.title ? "create-title-error" : undefined
+                }
               />
+              {createErrors.title ? (
+                <p
+                  id="create-title-error"
+                  role="alert"
+                  className={fieldErrorClassName}
+                >
+                  {createErrors.title}
+                </p>
+              ) : null}
             </div>
             <div>
               <label
@@ -165,7 +237,20 @@ const PostsSamplePage = () => {
                 className={inputClassName}
                 rows={3}
                 required
+                aria-invalid={Boolean(createErrors.content)}
+                aria-describedby={
+                  createErrors.content ? "create-content-error" : undefined
+                }
               />
+              {createErrors.content ? (
+                <p
+                  id="create-content-error"
+                  role="alert"
+                  className={fieldErrorClassName}
+                >
+                  {createErrors.content}
+                </p>
+              ) : null}
             </div>
             <button
               type="submit"
@@ -184,7 +269,11 @@ const PostsSamplePage = () => {
           >
             게시글 수정
           </h2>
-          <form className="mt-4 space-y-3" onSubmit={handleUpdateSubmit}>
+          <form
+            className="mt-4 space-y-3"
+            onSubmit={handleUpdateSubmit}
+            noValidate
+          >
             <div>
               <label htmlFor="update-id" className="mb-1 block font-medium">
                 게시글 ID
@@ -197,7 +286,20 @@ const PostsSamplePage = () => {
                 onChange={(event) => setUpdatePostId(event.target.value)}
                 className={inputClassName}
                 required
+                aria-invalid={Boolean(updateErrors.postId)}
+                aria-describedby={
+                  updateErrors.postId ? "update-id-error" : undefined
+                }
               />
+              {updateErrors.postId ? (
+                <p
+                  id="update-id-error"
+                  role="alert"
+                  className={fieldErrorClassName}
+                >
+                  {updateErrors.postId}
+                </p>
+              ) : null}
             </div>
             <div>
               <label htmlFor="update-title" className="mb-1 block font-medium">
@@ -209,7 +311,20 @@ const PostsSamplePage = () => {
                 onChange={(event) => setUpdateTitle(event.target.value)}
                 className={inputClassName}
                 required
+                aria-invalid={Boolean(updateErrors.title)}
+                aria-describedby={
+                  updateErrors.title ? "update-title-error" : undefined
+                }
               />
+              {updateErrors.title ? (
+                <p
+                  id="update-title-error"
+                  role="alert"
+                  className={fieldErrorClassName}
+                >
+                  {updateErrors.title}
+                </p>
+              ) : null}
             </div>
             <div>
               <label
@@ -225,7 +340,20 @@ const PostsSamplePage = () => {
                 className={inputClassName}
                 rows={3}
                 required
+                aria-invalid={Boolean(updateErrors.content)}
+                aria-describedby={
+                  updateErrors.content ? "update-content-error" : undefined
+                }
               />
+              {updateErrors.content ? (
+                <p
+                  id="update-content-error"
+                  role="alert"
+                  className={fieldErrorClassName}
+                >
+                  {updateErrors.content}
+                </p>
+              ) : null}
             </div>
             <button
               type="submit"
