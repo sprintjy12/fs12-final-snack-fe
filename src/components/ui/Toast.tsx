@@ -21,8 +21,11 @@ export type ToastOptions = {
 export type ToastProps = {
   open: boolean;
   message: string;
-  onClose?: () => void;
+  /** 제어형 Toast는 닫기 상태를 부모가 관리하므로 onClose가 필요합니다. */
+  onClose: () => void;
   duration?: number;
+  /** 같은 문구를 다시 표시할 때 자동 닫힘 타이머를 초기화하기 위한 식별자 */
+  id?: number;
 };
 
 type ToastItem = {
@@ -65,7 +68,7 @@ function ToastBanner({
   onClose,
 }: {
   message: string;
-  onClose?: () => void;
+  onClose: () => void;
 }) {
   return (
     <div className="flex min-h-16 w-full items-start justify-between gap-3 rounded-lg bg-snack-background-500 px-[30px] py-[19px] md:w-[524px]">
@@ -95,7 +98,7 @@ function ToastPortal({
 }: {
   open: boolean;
   message: string;
-  onClose?: () => void;
+  onClose: () => void;
 }) {
   const [mounted, setMounted] = useState(false);
 
@@ -136,6 +139,7 @@ export function Toast({
   message,
   onClose,
   duration = DEFAULT_DURATION,
+  id,
 }: ToastProps) {
   const onCloseRef = useRef(onClose);
 
@@ -149,11 +153,11 @@ export function Toast({
     }
 
     const timer = window.setTimeout(() => {
-      onCloseRef.current?.();
+      onCloseRef.current();
     }, duration);
 
     return () => window.clearTimeout(timer);
-  }, [open, duration, message]);
+  }, [open, duration, message, id]);
 
   return (
     <ToastPortal
@@ -198,6 +202,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ showToast: show, dismissToast: dismiss }}>
       {children}
       <Toast
+        id={toast?.id}
         open={toast !== null}
         message={toast?.message ?? ""}
         duration={toast?.duration ?? DEFAULT_DURATION}
