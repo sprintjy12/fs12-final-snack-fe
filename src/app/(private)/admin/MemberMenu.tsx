@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui";
+import { useOutsideDismiss } from "@/hooks/useOutsideDismiss";
 
 type MemberMenuProps = {
   memberName: string;
@@ -19,34 +20,10 @@ export function MemberMenu({
   const menuId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
-      const target = event.target as Node | null;
-      if (target && !containerRef.current?.contains(target)) {
-        setOpen(false);
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("touchstart", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("touchstart", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open]);
+  useOutsideDismiss(containerRef, {
+    enabled: open,
+    onDismiss: () => setOpen(false),
+  });
 
   return (
     <div ref={containerRef} className="relative shrink-0">

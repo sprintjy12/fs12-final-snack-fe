@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 import { Icon, ModalShell, showToast } from "@/components/ui";
+import { useOutsideDismiss } from "@/hooks/useOutsideDismiss";
 
 export type MemberRole = "admin" | "member";
 
@@ -37,19 +38,26 @@ export function ChangeMemberRoleModal({
 }: ChangeMemberRoleModalProps) {
   const titleId = useId();
   const roleListId = useId();
+  const roleLabelId = useId();
   const roleMenuRef = useRef<HTMLDivElement>(null);
+  const highlightedRoleIndexRef = useRef(0);
 
   const [role, setRole] = useState<MemberRole>("admin");
   const [roleOpen, setRoleOpen] = useState(false);
+  const [highlightedRoleIndex, setHighlightedRoleIndex] = useState(0);
 
   useEffect(() => {
     if (!open || !member) {
       setRoleOpen(false);
+      setHighlightedRoleIndex(0);
+      highlightedRoleIndexRef.current = 0;
       return;
     }
 
     setRole(member.role);
     setRoleOpen(false);
+    setHighlightedRoleIndex(0);
+    highlightedRoleIndexRef.current = 0;
   }, [open, member]);
 
   useEffect(() => {
@@ -57,21 +65,58 @@ export function ChangeMemberRoleModal({
       return;
     }
 
-    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
-      const target = event.target as Node | null;
-      if (target && !roleMenuRef.current?.contains(target)) {
+    const selectedIndex = Math.max(
+      0,
+      ROLE_OPTIONS.findIndex((option) => option.value === role),
+    );
+    setHighlightedRoleIndex(selectedIndex);
+    highlightedRoleIndexRef.current = selectedIndex;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setHighlightedRoleIndex((currentIndex) => {
+          const nextIndex = (currentIndex + 1) % ROLE_OPTIONS.length;
+          highlightedRoleIndexRef.current = nextIndex;
+          return nextIndex;
+        });
+        return;
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setHighlightedRoleIndex((currentIndex) => {
+          const nextIndex =
+            (currentIndex - 1 + ROLE_OPTIONS.length) % ROLE_OPTIONS.length;
+          highlightedRoleIndexRef.current = nextIndex;
+          return nextIndex;
+        });
+        return;
+      }
+
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        const selectedOption = ROLE_OPTIONS[highlightedRoleIndexRef.current];
+        if (!selectedOption) {
+          return;
+        }
+        setRole(selectedOption.value);
         setRoleOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown, true);
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown, true);
     };
-  }, [roleOpen]);
+  }, [roleOpen, role]);
+
+  useOutsideDismiss(roleMenuRef, {
+    enabled: roleOpen,
+    onDismiss: () => setRoleOpen(false),
+    stopEscapePropagation: true,
+  });
 
   const selectedRoleLabel =
     ROLE_OPTIONS.find((option) => option.value === role)?.label ?? "관리자";
@@ -110,22 +155,27 @@ export function ChangeMemberRoleModal({
         <div className="h-px w-full shrink-0 bg-border" />
 
         <div className="flex w-full flex-col gap-4 xl:gap-8">
-          <div className="flex w-full flex-col gap-4">
-            <span className="text-base leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
-              이름
-            </span>
-            <div className={readOnlyFieldClassName}>{member?.name}</div>
-          </div>
+          <dl className="contents">
+            <div className="flex w-full flex-col gap-4">
+              <dt className="text-base leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
+                이름
+              </dt>
+              <dd className={readOnlyFieldClassName}>{member?.name}</dd>
+            </div>
+
+            <div className="flex w-full flex-col gap-4">
+              <dt className="text-base leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
+                이메일
+              </dt>
+              <dd className={readOnlyFieldClassName}>{member?.email}</dd>
+            </div>
+          </dl>
 
           <div className="flex w-full flex-col gap-4">
-            <span className="text-base leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
-              이메일
-            </span>
-            <div className={readOnlyFieldClassName}>{member?.email}</div>
-          </div>
-
-          <div className="flex w-full flex-col gap-4">
-            <span className="text-base leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
+            <span
+              id={roleLabelId}
+              className="text-base leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8"
+            >
               권한
             </span>
             <div ref={roleMenuRef} className="relative w-full">
@@ -134,6 +184,7 @@ export function ChangeMemberRoleModal({
                 aria-haspopup="listbox"
                 aria-expanded={roleOpen}
                 aria-controls={roleListId}
+                aria-labelledby={roleLabelId}
                 onClick={() => setRoleOpen((previous) => !previous)}
                 className="flex h-[54px] w-full cursor-pointer items-center justify-between gap-2 rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-left text-foreground xl:h-16"
               >
@@ -165,30 +216,30 @@ export function ChangeMemberRoleModal({
                 <ul
                   id={roleListId}
                   role="listbox"
-                  aria-label="권한 선택"
+                  aria-labelledby={roleLabelId}
+                  aria-activedescendant={`${roleListId}-option-${highlightedRoleIndex}`}
                   className="absolute top-[calc(100%+8px)] right-0 left-0 z-10 overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
                 >
-                  {ROLE_OPTIONS.map((option) => (
-                    <li
-                      key={option.value}
-                      role="option"
-                      aria-selected={role === option.value}
-                    >
-                      <button
-                        type="button"
+                  {ROLE_OPTIONS.map((option, index) => (
+                    <li key={option.value} role="presentation">
+                      <div
+                        id={`${roleListId}-option-${index}`}
+                        role="option"
+                        tabIndex={-1}
+                        aria-selected={role === option.value}
                         onClick={() => {
                           setRole(option.value);
                           setRoleOpen(false);
                         }}
                         className={[
                           "flex h-11 w-full cursor-pointer items-center px-4 text-sm leading-6 xl:h-14 xl:text-xl xl:leading-8",
-                          role === option.value
+                          role === option.value || highlightedRoleIndex === index
                             ? "bg-snack-background-500 font-semibold text-accent"
                             : "bg-transparent font-medium text-foreground",
                         ].join(" ")}
                       >
                         {option.label}
-                      </button>
+                      </div>
                     </li>
                   ))}
                 </ul>

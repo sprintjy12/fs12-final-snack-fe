@@ -46,12 +46,17 @@ const budgetFormSchema = z.object({
 function getBudgetToastMessage(
   error: z.ZodError<z.infer<typeof budgetFormSchema>>,
 ) {
-  const fieldErrors = error.flatten().fieldErrors;
+  const { fieldErrors } = z.flattenError(error);
   const monthlyMessage = fieldErrors.monthlyBudget?.[0];
   const startingMessage = fieldErrors.startingBudget?.[0];
 
-  const isMonthlyMissing = monthlyMessage?.includes("입력해 주세요");
-  const isStartingMissing = startingMessage?.includes("입력해 주세요");
+  // 문구 매칭 대신 too_small(빈 값) 코드로 구분합니다.
+  const isMonthlyMissing = error.issues.some(
+    (issue) => issue.path[0] === "monthlyBudget" && issue.code === "too_small",
+  );
+  const isStartingMissing = error.issues.some(
+    (issue) => issue.path[0] === "startingBudget" && issue.code === "too_small",
+  );
 
   if (isMonthlyMissing && isStartingMissing) {
     return "이번 달 예산, 매달 시작 예산을 입력해 주세요.";

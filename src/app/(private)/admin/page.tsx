@@ -80,6 +80,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             <input
               type="text"
               inputMode="search"
+              aria-label="이름으로 검색"
               placeholder="이름으로 검색하세요"
               className="h-[54px] w-full rounded-2xl border border-border bg-surface py-3.5 pr-4 pl-11 text-sm leading-6 text-foreground outline-none placeholder:text-snack-gray-500 xl:h-16 xl:pr-6 xl:pl-[68px] xl:text-xl xl:leading-8"
             />
