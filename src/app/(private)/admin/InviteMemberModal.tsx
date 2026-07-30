@@ -69,6 +69,7 @@ export function InviteMemberModal({
   const titleId = useId();
   const roleListId = useId();
   const roleLabelId = useId();
+  const roleValueId = useId();
   const roleMenuRef = useRef<HTMLDivElement>(null);
   const highlightedRoleIndexRef = useRef(0);
 
@@ -235,10 +236,12 @@ export function InviteMemberModal({
             <div ref={roleMenuRef} className="relative w-full">
               <button
                 type="button"
+                role="combobox"
                 aria-haspopup="listbox"
                 aria-expanded={roleOpen}
                 aria-controls={roleListId}
-                aria-labelledby={roleLabelId}
+                aria-autocomplete="none"
+                aria-labelledby={`${roleLabelId} ${roleValueId}`}
                 aria-activedescendant={
                   roleOpen
                     ? `${roleListId}-option-${highlightedRoleIndex}`
@@ -247,7 +250,10 @@ export function InviteMemberModal({
                 onClick={() => setRoleOpen((previous) => !previous)}
                 className="flex h-[54px] w-full cursor-pointer items-center justify-between gap-2 rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-left text-foreground xl:h-16"
               >
-                <span className="min-w-0 flex-1 truncate text-sm leading-6 xl:text-xl xl:leading-8">
+                <span
+                  id={roleValueId}
+                  className="min-w-0 flex-1 truncate text-sm leading-6 xl:text-xl xl:leading-8"
+                >
                   {selectedRoleLabel}
                 </span>
                 {/* Icon의 inline-block/baseline 정렬을 flex 박스로 보정 */}
