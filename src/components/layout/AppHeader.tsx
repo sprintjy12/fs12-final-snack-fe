@@ -34,12 +34,13 @@ function HeaderWithCartCount() {
   return <Header cartCount={cartCount} />;
 }
 
-/** 표지(`/`), 모달 샘플에서는 헤더를 숨깁니다. */
+/** 표지(`/`), 샘플 페이지에서는 헤더를 숨깁니다. */
 export function AppHeader() {
   const pathname = usePathname();
-  const isModalSampleRoute = pathname === "/modal-sample";
+  const isSampleRoute =
+    pathname === "/modal-sample" || pathname === "/toast-sample";
 
-  if (pathname === "/" || isModalSampleRoute) {
+  if (pathname === "/" || isSampleRoute) {
     return null;
   }
 
