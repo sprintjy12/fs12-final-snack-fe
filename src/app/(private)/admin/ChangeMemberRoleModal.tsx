@@ -73,6 +73,15 @@ export function ChangeMemberRoleModal({
     highlightedRoleIndexRef.current = selectedIndex;
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // 드롭다운 밖(입력칸·제출 버튼 등)으로 Tab 이동 시 Enter/Space를 가로채지 않습니다.
+      const target = event.target;
+      if (
+        !(target instanceof Node) ||
+        !roleMenuRef.current?.contains(target)
+      ) {
+        return;
+      }
+
       if (event.key === "ArrowDown") {
         event.preventDefault();
         setHighlightedRoleIndex((currentIndex) => {
@@ -185,6 +194,11 @@ export function ChangeMemberRoleModal({
                 aria-expanded={roleOpen}
                 aria-controls={roleListId}
                 aria-labelledby={roleLabelId}
+                aria-activedescendant={
+                  roleOpen
+                    ? `${roleListId}-option-${highlightedRoleIndex}`
+                    : undefined
+                }
                 onClick={() => setRoleOpen((previous) => !previous)}
                 className="flex h-[54px] w-full cursor-pointer items-center justify-between gap-2 rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-left text-foreground xl:h-16"
               >
@@ -217,7 +231,6 @@ export function ChangeMemberRoleModal({
                   id={roleListId}
                   role="listbox"
                   aria-labelledby={roleLabelId}
-                  aria-activedescendant={`${roleListId}-option-${highlightedRoleIndex}`}
                   className="absolute top-[calc(100%+8px)] right-0 left-0 z-10 overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
                 >
                   {ROLE_OPTIONS.map((option, index) => (
