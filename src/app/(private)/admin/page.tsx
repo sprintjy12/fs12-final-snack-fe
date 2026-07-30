@@ -1,0 +1,158 @@
+import Image from "next/image";
+import Link from "next/link";
+
+import { AdminInviteButton } from "@/app/(private)/admin/AdminInviteButton";
+import { AdminMemberList } from "@/app/(private)/admin/AdminMemberList";
+import { Icon } from "@/components/ui";
+
+const members = [
+  { id: 1, name: "김스낵", email: "sn@codeit.com", role: "admin" as const },
+  { id: 2, name: "김스낵", email: "sn@codeit.com", role: "admin" as const },
+  { id: 3, name: "김스낵", email: "sn@codeit.com", role: "member" as const },
+  { id: 4, name: "김스낵", email: "sn@codeit.com", role: "member" as const },
+  { id: 5, name: "김스낵", email: "sn@codeit.com", role: "member" as const },
+  { id: 6, name: "김스낵", email: "sn@codeit.com", role: "member" as const },
+  { id: 7, name: "김스낵", email: "sn@codeit.com", role: "member" as const },
+  { id: 8, name: "김스낵", email: "sn@codeit.com", role: "member" as const },
+];
+
+type AdminPageProps = {
+  searchParams: Promise<{
+    empty?: string;
+  }>;
+};
+
+export default async function AdminPage({ searchParams }: AdminPageProps) {
+  const { empty } = await searchParams;
+  const visibleMembers = empty === "true" ? [] : members;
+  const hasMembers = visibleMembers.length > 0;
+
+  return (
+    <main className="min-h-screen bg-surface-muted pb-20 text-foreground">
+      {/* 관리 하위 탭 */}
+      <nav
+        aria-label="관리 메뉴"
+        className="border-b border-border bg-surface-muted"
+      >
+        <div className="mx-auto flex max-w-[1680px] items-center gap-3 px-6 xl:h-16 xl:px-[120px]">
+          <Link
+            href="/admin"
+            aria-current="page"
+            className="flex items-center justify-center border-b-2 border-accent px-2.5 py-3.5 text-sm leading-6 font-bold text-accent xl:h-16 xl:px-2.5 xl:text-lg xl:leading-[26px]"
+          >
+            회원 관리
+          </Link>
+          <Link
+            href="/budget"
+            className="flex items-center justify-center px-2.5 py-3.5 text-sm leading-6 font-medium text-snack-gray-400 xl:h-16 xl:px-4 xl:text-lg xl:leading-[26px]"
+          >
+            예산 관리
+          </Link>
+        </div>
+      </nav>
+
+      {/* 타이틀 + 초대 버튼 (Mobile/Tablet) */}
+      <section className="border-b border-border px-6 xl:border-0 xl:px-[120px]">
+        <div className="mx-auto flex h-16 max-w-[1680px] items-center justify-between xl:h-24 xl:py-4">
+          <h1 className="text-xl leading-8 font-semibold text-foreground-strong xl:text-[32px] xl:leading-[42px]">
+            회원 관리
+          </h1>
+
+          <AdminInviteButton className="flex cursor-pointer items-center justify-center gap-0 rounded-2xl bg-transparent py-1 text-sm leading-6 font-semibold text-accent xl:hidden">
+            <Icon name="plus" size="sm" className="text-accent" />
+            회원 초대
+          </AdminInviteButton>
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-[1680px] px-6 pt-4 md:pt-6 xl:px-[120px] xl:pt-0">
+        {/* 검색 + Desktop 초대 */}
+        <div className="flex items-center gap-6 xl:justify-end">
+          <label className="relative flex w-full items-center xl:w-[402px]">
+            <span className="pointer-events-none absolute left-4 flex items-center text-snack-gray-500 xl:left-6">
+              <span className="xl:hidden">
+                <Icon name="search" size="sm" />
+              </span>
+              <span className="hidden xl:inline-flex">
+                <Icon name="search" size="md" />
+              </span>
+            </span>
+            <input
+              type="text"
+              inputMode="search"
+              aria-label="이름으로 검색"
+              placeholder="이름으로 검색하세요"
+              className="h-[54px] w-full rounded-2xl border border-border bg-surface py-3.5 pr-4 pl-11 text-sm leading-6 text-foreground outline-none placeholder:text-snack-gray-500 xl:h-16 xl:pr-6 xl:pl-[68px] xl:text-xl xl:leading-8"
+            />
+          </label>
+
+          <AdminInviteButton className="hidden h-16 w-[213px] shrink-0 cursor-pointer items-center justify-center rounded-2xl bg-accent p-4 text-xl leading-8 font-semibold text-surface xl:flex">
+            회원 초대하기
+          </AdminInviteButton>
+        </div>
+
+        {hasMembers ? (
+          <>
+            {/* Desktop 테이블 헤더 */}
+            <div className="mt-6 hidden xl:block">
+              <div className="flex h-20 w-full items-center justify-center rounded-full border border-snack-gray-200 bg-surface px-20">
+                <div className="flex w-full items-center justify-between">
+                  <div className="flex items-center gap-10">
+                    <div className="flex h-20 w-[250px] items-center justify-center px-10 text-xl leading-8 font-medium text-snack-black-100">
+                      이름
+                    </div>
+                    <div className="flex h-20 w-[300px] items-center justify-center text-xl leading-8 font-medium text-snack-black-100">
+                      메일
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="flex h-20 w-[250px] items-center justify-center text-xl leading-8 font-medium text-snack-black-100">
+                      권한
+                    </div>
+                    <div className="flex h-20 w-[250px] items-center justify-center text-xl leading-8 font-medium text-snack-black-100">
+                      비고
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <AdminMemberList members={visibleMembers} />
+          </>
+        ) : (
+          <section
+            aria-label="회원 없음"
+            className="flex justify-center pt-[64px] md:pt-[104px] xl:pt-[155px]"
+          >
+            <div className="flex w-[375px] flex-col items-center gap-6 xl:w-[388px] xl:gap-10">
+              <div className="flex h-[210px] w-[180px] items-center justify-center xl:h-[288px] xl:w-[252px]">
+                <picture>
+                  <source
+                    media="(min-width: 1280px)"
+                    srcSet="/images/common/empty-members-md.svg"
+                  />
+                  <Image
+                    src="/images/common/empty-members-sm.svg"
+                    alt=""
+                    width={180}
+                    height={210}
+                    className="block h-auto w-[180px] xl:w-[252px]"
+                  />
+                </picture>
+              </div>
+              <div className="flex w-full flex-col items-center gap-2.5 xl:gap-6">
+                <p className="text-lg leading-[26px] font-semibold text-snack-gray-500 xl:text-2xl xl:leading-8">
+                  아직 회원이 없어요
+                </p>
+                <p className="text-center text-sm leading-6 font-medium text-snack-gray-400 xl:text-xl xl:leading-8">
+                  <span className="block">함께 이용할 회원을 초대하고</span>
+                  <span className="block">간식 구매를 통합 관리하세요</span>
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
+    </main>
+  );
+}

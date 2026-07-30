@@ -1,15 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import {
-  useEffect,
-  useId,
-  useState,
-  type MouseEvent,
-  type ReactNode,
-} from "react";
-import { createPortal } from "react-dom";
+import { useId, type ReactNode } from "react";
 
+import { ModalShell } from "@/components/ui/ModalShell";
+
+/**
+ * Modal — 일러스트 확인/결과 안내 모달입니다.
+ *
+ * 리팩터 메모:
+ * - 오버레이·Esc·스크롤 잠금은 `ModalShell`로 옮겼습니다.
+ * - 이 컴포넌트는 "강아지 일러스트 + 제목 + 설명 + 버튼" 패턴만 유지합니다.
+ * - 회원 초대처럼 폼이 있는 모달은 이 API를 억지로 확장하지 말고
+ *   `ModalShell` 위에 폼 UI를 따로 구성하세요. (`/modal-sample` 참고)
+ *
+ * 호출 API(`title` / `illustration` / `primaryAction` 등)는 기존과 동일합니다.
+ */
 export type ModalAction = {
   label: string;
   /** 클릭 시 실행할 페이지별 핸들러 (API 호출, 상태 변경 등) */
@@ -36,7 +42,8 @@ export type ModalProps = {
 function ModalActionButton({ action }: { action: ModalAction }) {
   const isPrimary = action.variant !== "secondary";
   const className = [
-    "flex h-[54px] w-full cursor-pointer items-center justify-center rounded-2xl p-4 text-base leading-[26px] font-semibold md:h-16 md:w-[310px] md:text-xl md:leading-8",
+    // Desktop(xl)만 가로형 CTA. Tablet/Mobile은 시안 sm(375) 세로 스택
+    "flex h-[54px] w-full cursor-pointer items-center justify-center rounded-2xl p-4 text-base leading-[26px] font-semibold xl:h-16 xl:w-[310px] xl:text-xl xl:leading-8",
     isPrimary
       ? "bg-accent text-surface"
       : "bg-snack-background-500 text-accent",
@@ -69,99 +76,56 @@ export function Modal({
 }: ModalProps) {
   const titleId = useId();
   const descriptionId = useId();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose?.();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [open, onClose]);
-
-  if (!mounted || !open) {
-    return null;
-  }
-
-  const handleOverlayClick = (event: MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget && closeOnOverlayClick) {
-      onClose?.();
-    }
-  };
 
   const actions = [secondaryAction, primaryAction].filter(
     (action): action is ModalAction => Boolean(action),
   );
 
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-snack-black-500/40 px-0 md:items-center md:px-6"
-      onClick={handleOverlayClick}
-      role="presentation"
+  return (
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      closeOnOverlayClick={closeOnOverlayClick}
+      aria-labelledby={titleId}
+      aria-describedby={description ? descriptionId : undefined}
+      className="flex max-w-[375px] flex-col items-center gap-8 px-6 py-8 xl:max-w-[704px] xl:gap-12 xl:px-8 xl:pt-12 xl:pb-10"
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={description ? descriptionId : undefined}
-        className="flex w-full max-w-[375px] flex-col items-center gap-[26px] rounded-t-[32px] bg-surface-muted px-6 py-8 shadow-[4px_4px_5px_rgba(169,169,169,0.2)] md:max-w-[704px] md:gap-12 md:rounded-[32px] md:px-8 md:pt-12 md:pb-10"
-      >
-        <div className="flex w-full flex-col items-center gap-4 md:gap-6">
-          {illustration ? (
-            <div className="flex h-[148px] w-[184px] items-center justify-center md:h-[190px] md:w-[260px]">
-              {illustration}
-            </div>
-          ) : null}
-
-          <div className="flex w-full flex-col items-center gap-4 md:gap-6">
-            <h2
-              id={titleId}
-              className="text-center text-xl leading-8 font-bold text-foreground-strong md:text-2xl"
-            >
-              {title}
-            </h2>
-
-            {description ? (
-              <div
-                id={descriptionId}
-                className="text-center text-sm leading-6 font-medium text-snack-gray-400 md:text-xl md:leading-8"
-              >
-                {description}
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        {actions.length > 0 ? (
-          <div className="flex w-full flex-col-reverse gap-4 md:flex-row md:justify-between md:gap-5">
-            {actions.map((action) => (
-              <ModalActionButton
-                key={`${action.variant ?? "primary"}-${action.label}`}
-                action={action}
-              />
-            ))}
+      <div className="flex w-full flex-col items-center gap-4 xl:gap-6">
+        {illustration ? (
+          <div className="flex h-[160px] w-[180px] items-center justify-center xl:h-[190px] xl:w-[260px]">
+            {illustration}
           </div>
         ) : null}
+
+        <div className="flex w-full flex-col items-center gap-4 xl:gap-6">
+          <h2
+            id={titleId}
+            className="text-center text-xl leading-8 font-bold text-foreground-strong xl:text-2xl"
+          >
+            {title}
+          </h2>
+
+          {description ? (
+            <div
+              id={descriptionId}
+              className="text-center text-sm leading-6 font-medium text-snack-gray-400 xl:text-xl xl:leading-8"
+            >
+              {description}
+            </div>
+          ) : null}
+        </div>
       </div>
-    </div>,
-    document.body,
+
+      {actions.length > 0 ? (
+        <div className="flex w-full flex-col-reverse gap-4 xl:flex-row xl:justify-between xl:gap-5">
+          {actions.map((action) => (
+            <ModalActionButton
+              key={`${action.variant ?? "primary"}-${action.label}`}
+              action={action}
+            />
+          ))}
+        </div>
+      ) : null}
+    </ModalShell>
   );
 }
