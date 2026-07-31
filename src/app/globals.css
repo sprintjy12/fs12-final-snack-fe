@@ -39,6 +39,12 @@
 }
 
 @theme inline {
+  /*
+   * Figma Tablet 프레임이 744px라 Tailwind 기본 md(768px)와 어긋납니다.
+   * 시안 기준으로 맞추지 않으면 744~767 구간에서 모바일 스타일이 적용됩니다.
+   */
+  --breakpoint-md: 744px;
+
   --font-sans: var(--font-pretendard);
 
   --color-snack-black-100: var(--snack-black-100);
