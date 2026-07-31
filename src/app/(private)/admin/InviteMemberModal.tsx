@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import { z } from "zod";
 
-import { Icon, ModalShell, showToast } from "@/components/ui";
-import { useOutsideDismiss } from "@/hooks/useOutsideDismiss";
+import {
+  Button,
+  ModalShell,
+  Select,
+  TextField,
+  showToast,
+} from "@/components/ui";
 
 export type InviteMemberRole = "admin" | "member";
 
@@ -41,8 +46,6 @@ function getInviteToastMessage(
   const nameMessage = fieldErrors.name?.[0];
   const emailMessage = fieldErrors.email?.[0];
 
-  // 문구 매칭 대신 too_small(빈 값) 코드로 구분합니다.
-  // "올바른 이메일을 입력해 주세요."도 "입력해 주세요"를 포함해 오인될 수 있습니다.
   const isNameMissing = error.issues.some(
     (issue) => issue.path[0] === "name" && issue.code === "too_small",
   );
@@ -67,98 +70,19 @@ export function InviteMemberModal({
   onSubmit,
 }: InviteMemberModalProps) {
   const titleId = useId();
-  const roleListId = useId();
   const roleLabelId = useId();
-  const roleValueId = useId();
-  const roleMenuRef = useRef<HTMLDivElement>(null);
-  const highlightedRoleIndexRef = useRef(0);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<InviteMemberRole>("admin");
-  const [roleOpen, setRoleOpen] = useState(false);
-  const [highlightedRoleIndex, setHighlightedRoleIndex] = useState(0);
 
   useEffect(() => {
     if (!open) {
       setName("");
       setEmail("");
       setRole("admin");
-      setRoleOpen(false);
-      setHighlightedRoleIndex(0);
-      highlightedRoleIndexRef.current = 0;
     }
   }, [open]);
-
-  useEffect(() => {
-    if (!roleOpen) {
-      return;
-    }
-
-    const selectedIndex = Math.max(
-      0,
-      ROLE_OPTIONS.findIndex((option) => option.value === role),
-    );
-    setHighlightedRoleIndex(selectedIndex);
-    highlightedRoleIndexRef.current = selectedIndex;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // 드롭다운 밖(입력칸·제출 버튼 등)으로 Tab 이동 시 Enter/Space를 가로채지 않습니다.
-      const target = event.target;
-      if (
-        !(target instanceof Node) ||
-        !roleMenuRef.current?.contains(target)
-      ) {
-        return;
-      }
-
-      if (event.key === "ArrowDown") {
-        event.preventDefault();
-        setHighlightedRoleIndex((currentIndex) => {
-          const nextIndex = (currentIndex + 1) % ROLE_OPTIONS.length;
-          highlightedRoleIndexRef.current = nextIndex;
-          return nextIndex;
-        });
-        return;
-      }
-
-      if (event.key === "ArrowUp") {
-        event.preventDefault();
-        setHighlightedRoleIndex((currentIndex) => {
-          const nextIndex =
-            (currentIndex - 1 + ROLE_OPTIONS.length) % ROLE_OPTIONS.length;
-          highlightedRoleIndexRef.current = nextIndex;
-          return nextIndex;
-        });
-        return;
-      }
-
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        const selectedOption = ROLE_OPTIONS[highlightedRoleIndexRef.current];
-        if (!selectedOption) {
-          return;
-        }
-        setRole(selectedOption.value);
-        setRoleOpen(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown, true);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown, true);
-    };
-  }, [roleOpen, role]);
-
-  useOutsideDismiss(roleMenuRef, {
-    enabled: roleOpen,
-    onDismiss: () => setRoleOpen(false),
-    stopEscapePropagation: true,
-  });
-
-  const selectedRoleLabel =
-    ROLE_OPTIONS.find((option) => option.value === role)?.label ?? "관리자";
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -202,13 +126,12 @@ export function InviteMemberModal({
             <span className="text-base leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
               이름
             </span>
-            <input
+            <TextField
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="이름을 입력해주세요"
               autoComplete="name"
-              className="h-[54px] w-full rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-sm leading-6 text-foreground outline-none placeholder:text-snack-gray-400 xl:h-16 xl:text-xl xl:leading-8"
             />
           </label>
 
@@ -216,13 +139,12 @@ export function InviteMemberModal({
             <span className="text-base leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
               이메일
             </span>
-            <input
+            <TextField
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="이메일을 입력해주세요"
               autoComplete="email"
-              className="h-[54px] w-full rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-sm leading-6 text-foreground outline-none placeholder:text-snack-gray-400 xl:h-16 xl:text-xl xl:leading-8"
             />
           </label>
 
@@ -233,94 +155,31 @@ export function InviteMemberModal({
             >
               권한
             </span>
-            <div ref={roleMenuRef} className="relative w-full">
-              <button
-                type="button"
-                role="combobox"
-                aria-haspopup="listbox"
-                aria-expanded={roleOpen}
-                aria-controls={roleListId}
-                aria-autocomplete="none"
-                aria-labelledby={`${roleLabelId} ${roleValueId}`}
-                aria-activedescendant={
-                  roleOpen
-                    ? `${roleListId}-option-${highlightedRoleIndex}`
-                    : undefined
-                }
-                onClick={() => setRoleOpen((previous) => !previous)}
-                className="flex h-[54px] w-full cursor-pointer items-center justify-between gap-2 rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-left text-foreground xl:h-16"
-              >
-                <span
-                  id={roleValueId}
-                  className="min-w-0 flex-1 truncate text-sm leading-6 xl:text-xl xl:leading-8"
-                >
-                  {selectedRoleLabel}
-                </span>
-                {/* Icon의 inline-block/baseline 정렬을 flex 박스로 보정 */}
-                <span
-                  aria-hidden
-                  className="flex size-6 shrink-0 items-center justify-center text-accent xl:size-9"
-                >
-                  <span className="flex size-full items-center justify-center xl:hidden">
-                    <Icon name="chevron-down" size="sm" className="block" />
-                  </span>
-                  <span className="hidden size-full items-center justify-center xl:flex">
-                    <Icon name="chevron-down" size="md" className="block" />
-                  </span>
-                </span>
-              </button>
-
-              {roleOpen ? (
-                <ul
-                  id={roleListId}
-                  role="listbox"
-                  aria-labelledby={roleLabelId}
-                  className="absolute top-[calc(100%+8px)] right-0 left-0 z-10 overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_4px_16px_rgba(0,0,0,0.08)]"
-                >
-                  {ROLE_OPTIONS.map((option, index) => (
-                    <li key={option.value} role="presentation">
-                      <div
-                        id={`${roleListId}-option-${index}`}
-                        role="option"
-                        tabIndex={-1}
-                        aria-selected={role === option.value}
-                        onClick={() => {
-                          setRole(option.value);
-                          setRoleOpen(false);
-                        }}
-                        className={[
-                          "flex h-11 w-full cursor-pointer items-center px-4 text-sm leading-6 xl:h-14 xl:text-xl xl:leading-8",
-                          role === option.value || highlightedRoleIndex === index
-                            ? "bg-snack-background-500 font-semibold text-accent"
-                            : "bg-transparent font-medium text-foreground",
-                        ].join(" ")}
-                      >
-                        {option.label}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </div>
+            <Select
+              options={ROLE_OPTIONS}
+              value={role}
+              onChange={setRole}
+              labelId={roleLabelId}
+              flipChevron={false}
+            />
           </div>
         </div>
 
         <div className="flex w-full items-center justify-between gap-3 xl:gap-5">
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            width="modal"
+            className="flex-1"
             onClick={onClose}
-            className="flex h-[54px] flex-1 cursor-pointer items-center justify-center rounded-2xl bg-snack-background-500 p-4 text-base leading-[26px] font-semibold text-accent xl:h-16 xl:max-w-[310px] xl:flex-none xl:w-[310px] xl:text-xl xl:leading-8"
           >
             취소
-          </button>
-          <button
-            type="submit"
-            className="flex h-[54px] flex-1 cursor-pointer items-center justify-center rounded-2xl bg-accent p-4 text-base leading-[26px] font-semibold text-surface xl:h-16 xl:max-w-[310px] xl:flex-none xl:w-[310px] xl:text-xl xl:leading-8"
-          >
+          </Button>
+          <Button type="submit" width="modal" className="flex-1">
             {/* Mobile/Tablet: 초대하기 / Desktop: 등록하기 */}
             <span className="xl:hidden">초대하기</span>
             <span className="hidden xl:inline">등록하기</span>
-          </button>
+          </Button>
         </div>
       </form>
     </ModalShell>

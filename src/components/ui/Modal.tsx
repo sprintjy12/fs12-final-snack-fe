@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useId, type ReactNode } from "react";
 
+import { Button } from "@/components/ui/Button";
 import { ModalShell } from "@/components/ui/ModalShell";
 
 /**
@@ -40,27 +40,15 @@ export type ModalProps = {
 };
 
 function ModalActionButton({ action }: { action: ModalAction }) {
-  const isPrimary = action.variant !== "secondary";
-  const className = [
-    // Desktop(xl)만 가로형 CTA. Tablet/Mobile은 시안 sm(375) 세로 스택
-    "flex h-[54px] w-full cursor-pointer items-center justify-center rounded-2xl p-4 text-base leading-[26px] font-semibold xl:h-16 xl:w-[310px] xl:text-xl xl:leading-8",
-    isPrimary
-      ? "bg-accent text-surface"
-      : "bg-snack-background-500 text-accent",
-  ].join(" ");
-
-  if (action.href) {
-    return (
-      <Link href={action.href} onClick={action.onClick} className={className}>
-        {action.label}
-      </Link>
-    );
-  }
-
   return (
-    <button type="button" onClick={action.onClick} className={className}>
+    <Button
+      variant={action.variant === "secondary" ? "secondary" : "primary"}
+      width="modal"
+      href={action.href}
+      onClick={action.onClick}
+    >
       {action.label}
-    </button>
+    </Button>
   );
 }
 

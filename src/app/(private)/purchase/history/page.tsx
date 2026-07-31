@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { Icon } from "@/components/ui";
+import { EmptyState, Icon, Pagination } from "@/components/ui";
 
 const summaryCards = [
   {
@@ -206,91 +206,32 @@ export default async function PurchaseHistoryPage({
         </section>
 
         {!hasPurchaseHistory ? (
-          <section
+          <EmptyState
             aria-label="구매 내역 없음"
-            className="flex justify-center pt-16 md:pt-40 xl:pt-[179px]"
-          >
-            <div className="flex h-[202px] w-[327px] flex-col items-center gap-6 xl:h-[304px] xl:w-[388px] xl:gap-10">
-              <div className="flex h-[130px] w-[180px] items-center justify-center xl:h-[200px] xl:w-[280px]">
-                <picture>
-                  <source
-                    media="(min-width: 1280px)"
-                    srcSet="/images/common/empty-purchase-md.svg"
-                  />
-                  <Image
-                    src="/images/common/empty-purchase-sm.svg"
-                    alt=""
-                    width={180}
-                    height={130}
-                    className="block h-auto w-[180px] xl:w-[280px]"
-                  />
-                </picture>
-              </div>
-              <p className="text-center text-sm leading-6 font-medium whitespace-nowrap text-snack-gray-400 xl:text-xl xl:leading-8">
+            image="empty-purchase"
+            className="pt-16 md:pt-40 xl:pt-[179px]"
+            contentClassName="h-[202px] w-[327px] xl:h-[304px] xl:w-[388px]"
+            description={
+              <>
                 <span className="block">구매한 내역이 없어요</span>
                 <span className="block">
                   구매 요청을 승인하고 상품을 주문해보세요!
                 </span>
-              </p>
-            </div>
-          </section>
+              </>
+            }
+          />
         ) : null}
 
-        <nav
+        <Pagination
           aria-label="구매 내역 페이지"
+          items={paginationItems}
+          previousDisabled
+          collapseMiddlePages
           className={[
-            "mt-4 items-center justify-center gap-2 py-2 md:mt-8 md:py-0 xl:mt-10 xl:gap-2.5",
+            "mt-4 py-2 md:mt-8 md:py-0 xl:mt-10",
             hasPurchaseHistory ? "flex" : "hidden",
           ].join(" ")}
-        >
-          <button
-            type="button"
-            aria-label="이전 페이지"
-            disabled
-            className="flex size-[34px] items-center justify-center rounded-md text-snack-gray-300 disabled:cursor-not-allowed xl:size-12 xl:rounded-lg"
-          >
-            <Icon name="chevron-left" size="sm" />
-          </button>
-
-          <div className="flex items-center gap-1">
-            {paginationItems.map((page) =>
-              page === "more" ? (
-                <span
-                  key={page}
-                  aria-hidden="true"
-                  className="flex size-[34px] items-center justify-center text-snack-gray-300 xl:size-12"
-                >
-                  ···
-                </span>
-              ) : (
-                <button
-                  key={page}
-                  type="button"
-                  aria-current={page === "1" ? "page" : undefined}
-                  className={[
-                    "flex size-[34px] items-center justify-center rounded-md text-base leading-[26px] xl:size-12 xl:rounded-lg xl:text-lg",
-                    page === "1"
-                      ? "font-semibold text-foreground-strong"
-                      : "font-medium text-snack-gray-300 xl:font-normal",
-                    page === "4" || page === "5" ? "hidden xl:flex" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                >
-                  {page}
-                </button>
-              ),
-            )}
-          </div>
-
-          <button
-            type="button"
-            aria-label="다음 페이지"
-            className="flex size-[34px] items-center justify-center rounded-md text-foreground-strong xl:size-12 xl:rounded-lg"
-          >
-            <Icon name="chevron-right" size="sm" />
-          </button>
-        </nav>
+        />
       </div>
     </main>
   );

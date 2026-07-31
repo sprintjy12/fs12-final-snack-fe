@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { Icon } from "@/components/ui";
+import { Button, Icon } from "@/components/ui";
 
 const requestedItems = Array.from({ length: 6 }, (_, index) => ({
   id: index + 1,
@@ -181,18 +181,19 @@ const PurchaseRequestDetailPage = async ({
           </div>
 
           <div className="mt-8 flex w-full gap-3 md:mt-16 md:w-[696px] md:gap-5 xl:mt-6 xl:w-full xl:gap-[23px]">
-            <button
-              type="button"
-              className="flex h-[54px] flex-1 cursor-pointer items-center justify-center rounded-2xl bg-snack-background-300 p-4 text-sm leading-6 font-semibold text-foreground-muted xl:h-16 xl:text-xl xl:leading-8"
+            <Button
+              variant="muted"
+              width="full"
+              className="flex-1 text-sm leading-6 xl:text-xl xl:leading-8"
             >
               요청 반려
-            </button>
-            <button
-              type="button"
-              className="flex h-[54px] flex-1 cursor-pointer items-center justify-center rounded-2xl bg-accent p-4 text-sm leading-6 font-semibold text-surface xl:h-16 xl:text-xl xl:leading-8"
+            </Button>
+            <Button
+              width="full"
+              className="flex-1 text-sm leading-6 xl:text-xl xl:leading-8"
             >
               요청 승인
-            </button>
+            </Button>
           </div>
         </section>
       </div>

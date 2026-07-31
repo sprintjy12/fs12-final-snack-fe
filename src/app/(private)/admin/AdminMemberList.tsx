@@ -13,7 +13,7 @@ import {
   WithdrawMemberModal,
   type WithdrawMemberTarget,
 } from "@/app/(private)/admin/WithdrawMemberModal";
-import { Icon } from "@/components/ui";
+import { Pagination } from "@/components/ui";
 
 export type AdminMember = {
   id: number;
@@ -174,55 +174,12 @@ export function AdminMemberList({ members }: AdminMemberListProps) {
         ))}
       </ul>
 
-      <nav
+      <Pagination
         aria-label="회원 목록 페이지"
-        className="mt-4 flex items-center justify-center gap-2 py-2 md:mt-8 xl:mt-10 xl:gap-2.5"
-      >
-        <button
-          type="button"
-          aria-label="이전 페이지"
-          disabled
-          className="flex size-[34px] items-center justify-center rounded-md text-snack-gray-300 disabled:cursor-not-allowed xl:size-12 xl:rounded-lg"
-        >
-          <Icon name="chevron-left" size="sm" />
-        </button>
-
-        <div className="flex items-center gap-1">
-          {paginationItems.map((page) =>
-            page === "more" ? (
-              <span
-                key={page}
-                aria-hidden="true"
-                className="flex size-[34px] items-center justify-center text-snack-gray-300 xl:size-12"
-              >
-                ···
-              </span>
-            ) : (
-              <button
-                key={page}
-                type="button"
-                aria-current={page === "1" ? "page" : undefined}
-                className={[
-                  "flex size-[34px] items-center justify-center rounded-md text-base leading-[26px] xl:size-12 xl:rounded-lg xl:text-lg",
-                  page === "1"
-                    ? "font-semibold text-foreground-strong"
-                    : "font-medium text-snack-gray-300",
-                ].join(" ")}
-              >
-                {page}
-              </button>
-            ),
-          )}
-        </div>
-
-        <button
-          type="button"
-          aria-label="다음 페이지"
-          className="flex size-[34px] items-center justify-center rounded-md text-foreground-strong xl:size-12 xl:rounded-lg"
-        >
-          <Icon name="chevron-right" size="sm" />
-        </button>
-      </nav>
+        items={paginationItems}
+        previousDisabled
+        className="mt-4 py-2 md:mt-8 xl:mt-10"
+      />
 
       <ChangeMemberRoleModal
         open={Boolean(roleTarget)}

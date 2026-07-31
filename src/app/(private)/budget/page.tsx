@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
-import { showToast } from "@/components/ui";
+import { Button, TextField, showToast } from "@/components/ui";
 
 const MAX_SAFE_BUDGET = BigInt(Number.MAX_SAFE_INTEGER);
 
@@ -130,7 +130,7 @@ export default function BudgetPage() {
               <span className="text-sm leading-6 font-medium text-foreground-strong md:text-xl md:leading-8">
                 이번 달 예산
               </span>
-              <input
+              <TextField
                 type="text"
                 inputMode="numeric"
                 autoComplete="off"
@@ -138,7 +138,7 @@ export default function BudgetPage() {
                 onChange={(event) =>
                   setMonthlyBudget(formatBudgetValue(event.target.value))
                 }
-                className="h-[54px] w-full rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-sm leading-6 text-snack-gray-400 outline-none md:h-16 md:text-xl md:leading-8"
+                className="text-snack-gray-400 md:h-16 md:text-xl md:leading-8 xl:h-16"
               />
             </label>
 
@@ -146,7 +146,7 @@ export default function BudgetPage() {
               <span className="text-sm leading-6 font-medium text-foreground-strong md:text-xl md:leading-8">
                 매달 시작 예산
               </span>
-              <input
+              <TextField
                 type="text"
                 inputMode="numeric"
                 autoComplete="off"
@@ -154,17 +154,14 @@ export default function BudgetPage() {
                 onChange={(event) =>
                   setStartingBudget(formatBudgetValue(event.target.value))
                 }
-                className="h-[54px] w-full rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-sm leading-6 text-snack-gray-400 outline-none md:h-16 md:text-xl md:leading-8"
+                className="text-snack-gray-400 md:h-16 md:text-xl md:leading-8 xl:h-16"
               />
             </label>
           </div>
 
-          <button
-            type="submit"
-            className="mt-8 flex h-[54px] w-full cursor-pointer items-center justify-center rounded-2xl bg-accent p-4 text-base leading-[26px] font-semibold text-surface md:mt-14 md:h-16 md:text-xl md:leading-8"
-          >
+          <Button type="submit" width="full" className="mt-8 md:mt-14">
             수정하기
-          </button>
+          </Button>
         </form>
       </div>
     </main>
