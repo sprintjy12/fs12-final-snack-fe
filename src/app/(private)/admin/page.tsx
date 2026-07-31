@@ -1,9 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import { AdminInviteButton } from "@/app/(private)/admin/AdminInviteButton";
 import { AdminMemberList } from "@/app/(private)/admin/AdminMemberList";
-import { Icon } from "@/components/ui";
+import { EmptyState, Icon } from "@/components/ui";
 
 const members = [
   { id: 1, name: "김스낵", email: "sn@codeit.com", role: "admin" as const },
@@ -120,37 +119,19 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             <AdminMemberList members={visibleMembers} />
           </>
         ) : (
-          <section
+          <EmptyState
             aria-label="회원 없음"
-            className="flex justify-center pt-[64px] md:pt-[104px] xl:pt-[155px]"
-          >
-            <div className="flex w-[375px] flex-col items-center gap-6 xl:w-[388px] xl:gap-10">
-              <div className="flex h-[210px] w-[180px] items-center justify-center xl:h-[288px] xl:w-[252px]">
-                <picture>
-                  <source
-                    media="(min-width: 1280px)"
-                    srcSet="/images/common/empty-members-md.svg"
-                  />
-                  <Image
-                    src="/images/common/empty-members-sm.svg"
-                    alt=""
-                    width={180}
-                    height={210}
-                    className="block h-auto w-[180px] xl:w-[252px]"
-                  />
-                </picture>
-              </div>
-              <div className="flex w-full flex-col items-center gap-2.5 xl:gap-6">
-                <p className="text-lg leading-[26px] font-semibold text-snack-gray-500 xl:text-2xl xl:leading-8">
-                  아직 회원이 없어요
-                </p>
-                <p className="text-center text-sm leading-6 font-medium text-snack-gray-400 xl:text-xl xl:leading-8">
-                  <span className="block">함께 이용할 회원을 초대하고</span>
-                  <span className="block">간식 구매를 통합 관리하세요</span>
-                </p>
-              </div>
-            </div>
-          </section>
+            image="empty-members"
+            title="아직 회원이 없어요"
+            className="pt-[64px] md:pt-[104px] xl:pt-[155px]"
+            contentClassName="w-[375px] xl:w-[388px]"
+            description={
+              <>
+                <span className="block">함께 이용할 회원을 초대하고</span>
+                <span className="block">간식 구매를 통합 관리하세요</span>
+              </>
+            }
+          />
         )}
       </div>
     </main>
