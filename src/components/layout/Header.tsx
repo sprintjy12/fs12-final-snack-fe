@@ -3,7 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useState } from "react";
 
+import { MobileSidebar } from "@/components/layout/MobileSidebar";
 import { Icon } from "@/components/ui";
 
 export type HeaderNavItem = {
@@ -94,102 +96,116 @@ export function Header({
   const view = searchParams.get("view");
   const showCartBadge = cartCount > 0;
   const activeHref = getActiveNavHref(navItems, pathname, view);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <header className="border-b border-border bg-surface-muted">
-      <div className="mx-auto flex h-[54px] max-w-[1680px] items-center justify-between px-6 md:h-16 xl:h-[88px] xl:px-0">
-        <div className="flex items-center gap-6 xl:gap-16">
-          <button
-            type="button"
-            aria-label="메뉴 열기"
-            className="flex size-6 items-center justify-center text-snack-gray-400 xl:hidden"
-          >
-            <Icon name="menu" size="sm" />
-          </button>
+    <>
+      <header className="border-b border-border bg-surface-muted">
+        <div className="mx-auto flex h-[54px] max-w-[1680px] items-center justify-between px-6 md:h-16 xl:h-[88px] xl:px-0">
+          <div className="flex items-center gap-6 xl:gap-16">
+            <button
+              type="button"
+              aria-label="메뉴 열기"
+              aria-expanded={sidebarOpen}
+              aria-controls="mobile-sidebar"
+              onClick={() => setSidebarOpen(true)}
+              className="flex size-6 cursor-pointer items-center justify-center text-snack-gray-400 xl:hidden"
+            >
+              <Icon name="menu" size="sm" />
+            </button>
 
-          <Link href="/" aria-label="Snack 홈" className="shrink-0">
-            <picture>
-              <source
-                media="(min-width: 1280px)"
-                srcSet="/images/common/logo-text-md.svg"
+            <Link href="/" aria-label="Snack 홈" className="shrink-0">
+              <picture>
+                <source
+                  media="(min-width: 1280px)"
+                  srcSet="/images/common/logo-text-md.svg"
+                />
+                <Image
+                  src="/images/common/logo-text-sm.svg"
+                  alt="Snack"
+                  width={80}
+                  height={54}
+                  priority
+                  className="block h-[54px] w-20 xl:h-[88px] xl:w-[126px]"
+                />
+              </picture>
+            </Link>
+
+            <nav className="hidden xl:block" aria-label="주요 메뉴">
+              <ul className="flex items-center gap-10">
+                {navItems.map((navigation) => {
+                  const active = navigation.href === activeHref;
+
+                  return (
+                    <li key={`${navigation.href}-${navigation.label}`}>
+                      <Link
+                        href={navigation.href}
+                        aria-current={active ? "page" : undefined}
+                        className={[
+                          "flex h-[88px] items-center whitespace-nowrap px-4 text-xl leading-8 font-bold",
+                          active ? "text-accent" : "text-snack-gray-400",
+                        ].join(" ")}
+                      >
+                        {navigation.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-4 xl:gap-12">
+            <Link
+              href="/cart"
+              aria-label={
+                showCartBadge
+                  ? `장바구니, 상품 ${cartCount}개`
+                  : "장바구니"
+              }
+              className="relative flex items-center text-snack-gray-400 xl:gap-2 xl:px-4"
+            >
+              <Icon
+                name="cart"
+                size="sm"
+                variant="outlined"
+                className="xl:hidden"
               />
-              <Image
-                src="/images/common/logo-text-sm.svg"
-                alt="Snack"
-                width={80}
-                height={54}
-                priority
-                className="block h-[54px] w-20 xl:h-[88px] xl:w-[126px]"
-              />
-            </picture>
-          </Link>
-
-          <nav className="hidden xl:block" aria-label="주요 메뉴">
-            <ul className="flex items-center gap-10">
-              {navItems.map((navigation) => {
-                const active = navigation.href === activeHref;
-
-                return (
-                  <li key={`${navigation.href}-${navigation.label}`}>
-                    <Link
-                      href={navigation.href}
-                      aria-current={active ? "page" : undefined}
-                      className={[
-                        "flex h-[88px] items-center whitespace-nowrap px-4 text-xl leading-8 font-bold",
-                        active ? "text-accent" : "text-snack-gray-400",
-                      ].join(" ")}
-                    >
-                      {navigation.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-4 xl:gap-12">
-          <Link
-            href="/cart"
-            aria-label={
-              showCartBadge
-                ? `장바구니, 상품 ${cartCount}개`
-                : "장바구니"
-            }
-            className="relative flex items-center text-snack-gray-400 xl:gap-2 xl:px-4"
-          >
-            <Icon
-              name="cart"
-              size="sm"
-              variant="outlined"
-              className="xl:hidden"
-            />
-            <span className="hidden text-xl leading-8 font-bold text-snack-gray-300 xl:inline">
-              Cart
-            </span>
-            {showCartBadge ? (
-              <span className="absolute -top-1.5 -right-1.5 flex min-w-3.5 items-center justify-center rounded-full bg-accent px-1 text-[10px] leading-3.5 font-semibold text-surface xl:static xl:min-w-0 xl:px-3.5 xl:text-xl xl:leading-8 xl:font-bold">
-                {cartCount}
+              <span className="hidden text-xl leading-8 font-bold text-snack-gray-300 xl:inline">
+                Cart
               </span>
-            ) : null}
-          </Link>
+              {showCartBadge ? (
+                <span className="absolute -top-1.5 -right-1.5 flex min-w-3.5 items-center justify-center rounded-full bg-accent px-1 text-[10px] leading-3.5 font-semibold text-surface xl:static xl:min-w-0 xl:px-3.5 xl:text-xl xl:leading-8 xl:font-bold">
+                  {cartCount}
+                </span>
+              ) : null}
+            </Link>
 
-          <Link href="/profile" aria-label="프로필" className="xl:px-4">
-            <Icon name="profile" size="sm" className="xl:hidden" />
-            <span className="hidden text-xl leading-8 font-bold text-snack-gray-300 xl:inline">
-              Profile
-            </span>
-          </Link>
+            <Link href="/profile" aria-label="프로필" className="xl:px-4">
+              <Icon name="profile" size="sm" className="xl:hidden" />
+              <span className="hidden text-xl leading-8 font-bold text-snack-gray-300 xl:inline">
+                Profile
+              </span>
+            </Link>
 
-          <button
-            type="button"
-            onClick={onLogout}
-            className="hidden cursor-pointer bg-transparent text-xl leading-8 font-bold text-snack-gray-300 xl:block xl:px-4"
-          >
-            Logout
-          </button>
+            <button
+              type="button"
+              onClick={onLogout}
+              className="hidden cursor-pointer bg-transparent text-xl leading-8 font-bold text-snack-gray-300 xl:block xl:px-4"
+            >
+              Logout
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      <MobileSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        navItems={navItems}
+        activeHref={activeHref}
+        onLogout={onLogout}
+      />
+    </>
   );
 }
