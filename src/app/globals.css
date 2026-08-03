@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+:root {
+  --snack-black-100: #6b6b6b;
+  --snack-black-200: #525252;
+  --snack-black-300: #373737;
+  --snack-black-400: #1f1f1f;
+  --snack-black-500: #040404;
+
+  --snack-gray-50: #ffffff;
+  --snack-gray-100: #e9e9e9;
+  --snack-gray-200: #e0e0e0;
+  --snack-gray-300: #c4c4c4;
+  --snack-gray-400: #ababab;
+  --snack-gray-500: #999999;
+
+  --snack-orange-100: #fef3eb;
+  --snack-orange-200: #fde1cd;
+  --snack-orange-300: #fcc49c;
+  --snack-orange-400: #f97b22;
+
+  --snack-illustration-100: #ffbde8;
+  --snack-illustration-200: #fee8b0;
+  --snack-illustration-300: #9ca777;
+  --snack-illustration-400: #7c9070;
+  --snack-illustration-500: #5cb783;
+  --snack-illustration-600: #64d396;
+
+  --snack-background-100: #fafafa;
+  --snack-background-200: #f7f7f7;
+  --snack-background-300: #efefef;
+  --snack-background-400: #fbf8f4;
+  --snack-background-500: #fdf0df;
+
+  --snack-line-100: #f2f2f2;
+  --snack-line-200: #e6e6e6;
+
+  --snack-state-100: #f63b20;
+}
+
+@theme inline {
+  /*
+   * Figma Tablet 프레임이 744px라 Tailwind 기본 md(768px)와 어긋납니다.
+   * 시안 기준으로 맞추지 않으면 744~767 구간에서 모바일 스타일이 적용됩니다.
+   */
+  --breakpoint-md: 744px;
+
+  --font-sans: var(--font-pretendard);
+
+  --color-snack-black-100: var(--snack-black-100);
+  --color-snack-black-200: var(--snack-black-200);
+  --color-snack-black-300: var(--snack-black-300);
+  --color-snack-black-400: var(--snack-black-400);
+  --color-snack-black-500: var(--snack-black-500);
+
+  --color-snack-gray-50: var(--snack-gray-50);
+  --color-snack-gray-100: var(--snack-gray-100);
+  --color-snack-gray-200: var(--snack-gray-200);
+  --color-snack-gray-300: var(--snack-gray-300);
+  --color-snack-gray-400: var(--snack-gray-400);
+  --color-snack-gray-500: var(--snack-gray-500);
+
+  --color-snack-orange-100: var(--snack-orange-100);
+  --color-snack-orange-200: var(--snack-orange-200);
+  --color-snack-orange-300: var(--snack-orange-300);
+  --color-snack-orange-400: var(--snack-orange-400);
+
+  --color-snack-illustration-100: var(--snack-illustration-100);
+  --color-snack-illustration-200: var(--snack-illustration-200);
+  --color-snack-illustration-300: var(--snack-illustration-300);
+  --color-snack-illustration-400: var(--snack-illustration-400);
+  --color-snack-illustration-500: var(--snack-illustration-500);
+  --color-snack-illustration-600: var(--snack-illustration-600);
+
+  --color-snack-background-100: var(--snack-background-100);
+  --color-snack-background-200: var(--snack-background-200);
+  --color-snack-background-300: var(--snack-background-300);
+  --color-snack-background-400: var(--snack-background-400);
+  --color-snack-background-500: var(--snack-background-500);
+
+  --color-snack-line-100: var(--snack-line-100);
+  --color-snack-line-200: var(--snack-line-200);
+  --color-snack-state-100: var(--snack-state-100);
+
+  --color-background: var(--snack-background-500);
+  --color-surface: var(--snack-gray-50);
+  --color-surface-muted: var(--snack-background-400);
+  --color-foreground: var(--snack-black-300);
+  --color-foreground-strong: var(--snack-black-400);
+  --color-foreground-muted: var(--snack-gray-500);
+  --color-accent: var(--snack-orange-400);
+  --color-accent-subtle: var(--snack-orange-100);
+  --color-border: var(--snack-line-200);
+  --color-border-subtle: var(--snack-line-100);
+  --color-danger: var(--snack-state-100);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-pretendard), Arial, Helvetica, sans-serif;
+}
+
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+}

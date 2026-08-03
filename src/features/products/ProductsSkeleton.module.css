@@ -1,0 +1,58 @@
+﻿.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 40px 24px;
+  width: 100%;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  background: transparent;
+}
+
+.thumb {
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+  background: linear-gradient(
+    90deg,
+    rgb(45 36 31 / 6%) 25%,
+    rgb(45 36 31 / 10%) 50%,
+    rgb(45 36 31 / 6%) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+
+.line,
+.lineShort,
+.linePrice {
+  height: 14px;
+  border-radius: 999px;
+  background: rgb(45 36 31 / 8%);
+}
+
+.line {
+  width: 70%;
+}
+
+.lineShort {
+  width: 45%;
+}
+
+.linePrice {
+  width: 35%;
+  height: 18px;
+  margin-top: 4px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}

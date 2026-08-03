@@ -1,4 +1,13 @@
 node_modules
 .next
+.vercel
+out
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
 .env
 .env.local
+.env.*.local
+!.env.sample
+.cursor
+.agents

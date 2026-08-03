@@ -1,0 +1,23 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import { Suspense } from "react";
+
+import { Header } from "@/components/layout";
+
+/** 표지(`/`), 샘플 페이지에서는 헤더를 숨깁니다. */
+export function AppHeader() {
+  const pathname = usePathname();
+  const isSampleRoute =
+    pathname === "/modal-sample" || pathname === "/toast-sample";
+
+  if (pathname === "/" || isSampleRoute) {
+    return null;
+  }
+
+  return (
+    <Suspense fallback={null}>
+      <Header cartCount={2} />
+    </Suspense>
+  );
+}

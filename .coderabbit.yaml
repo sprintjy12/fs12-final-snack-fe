@@ -1,0 +1,155 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: ko-KR
+
+tone_instructions: >
+  친절하고 이해하기 쉬운 한국어로 리뷰하세요.
+  사소한 취향 차이보다 실제 버그, 유지보수성, 타입 안정성, 보안 및 접근성을 우선하세요.
+  초급 개발자도 이해할 수 있도록 문제의 이유와 수정 방향을 짧고 구체적으로 설명하세요.
+  팀 컨벤션 위반은 공격적으로 표현하지 말고, 수정이 필요한 위치와 올바른 예시를 함께 제안하세요.
+
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: false
+  review_status: true
+  changed_files_summary: true
+  collapse_walkthrough: true
+  request_changes_workflow: false
+
+  auto_title_instructions: >
+    PR 제목은 '타입 : 제목' 형식으로 작성하세요.
+    허용 타입은 feat, add, fix, edit, refactor, design입니다.
+    예: 'feat : 로그인 기능 구현'
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - dev
+      - main
+    ignore_title_keywords:
+      - WIP
+      - DRAFT
+
+  pre_merge_checks:
+    title:
+      mode: warning
+      requirements: >
+        PR 제목은 반드시 '타입 : 제목' 형식을 사용합니다.
+        허용 타입은 feat, add, fix, edit, refactor, design입니다.
+        콜론 앞뒤에는 공백을 하나씩 둡니다.
+        예: 'design : 공통 아이콘 추가'
+    description:
+      mode: warning
+    docstrings:
+      mode: off
+
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/.next/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/coverage/**"
+    - "!**/package-lock.json"
+    - "!**/public/**/*.png"
+    - "!**/public/**/*.jpg"
+    - "!**/public/**/*.jpeg"
+    - "!**/public/**/*.gif"
+    - "!**/public/**/*.webp"
+    - "!**/public/**/*.ico"
+
+  path_instructions:
+    - path: "**/*.{ts,tsx,js,jsx}"
+      instructions: |
+        아래 팀 공통 컨벤션을 검토하세요.
+
+        [함수 작성]
+        - 일반 함수 표현식보다 화살표 함수 형식을 우선 사용합니다.
+          예: const handleSubmit = () => {};
+        - 중첩 조건문을 줄일 수 있다면 얼리 리턴을 우선 사용합니다.
+        - 단, 프레임워크 요구사항이나 함수 선언이 명확히 더 적절한 경우에는 불필요하게 지적하지 않습니다.
+
+        [이벤트 함수명]
+        - 이벤트 핸들러는 handle + 액션 형식으로 작성합니다.
+          예: handleCardClick, handleSubmit, handleChange
+        - onClick에 직접 작성한 단순 한 줄 콜백까지 무조건 분리하라고 요구하지 않습니다.
+
+        [콜백 매개변수 이름]
+        - map, filter, find 등의 콜백 매개변수는 item, data 같은 모호한 이름보다
+          실제 데이터 의미가 드러나는 이름을 사용합니다.
+        - 중첩 콜백에서는 바깥 변수명과 충돌하지 않는 직관적인 축약형을 사용할 수 있습니다.
+          예: todos.map((todo) => todo.items.filter((item) => ...))
+        - 의미를 알기 어려운 한 글자 변수만 지적합니다.
+
+        [유효성 검사]
+        - 사용자 입력, 폼 데이터, API 응답 등 런타임 검증이 필요한 곳은 Zod 사용 여부를 확인합니다.
+        - 단순한 내부 값이나 이미 신뢰 가능한 타입까지 무조건 Zod를 요구하지 않습니다.
+        - 이메일, 비밀번호 길이, 필수값 등 요구사항과 스키마가 일치하는지 확인합니다.
+
+        [네이밍]
+        - React 컴포넌트 파일은 PascalCase를 사용합니다.
+          예: PhotoCard.tsx, Header.tsx
+        - 일반 유틸, 서비스, 훅 파일은 camelCase를 사용합니다.
+          예: notificationService.ts, useUser.ts
+        - Next.js 라우팅 폴더는 kebab-case를 사용합니다.
+          예: my-page, my-sales
+        - 라우팅에 포함하지 않을 폴더는 App Router의 route group 소괄호를 사용합니다.
+          예: (private), (public)
+        - Next.js 예약 파일명(page.tsx, layout.tsx, loading.tsx 등)은 예외로 처리합니다.
+
+        [기본 품질]
+        - 실제 오류 가능성, 잘못된 상태 처리, 비동기 처리 누락을 우선 확인합니다.
+        - 불필요한 any, 타입 단언 남용, nullable 값 처리 누락을 확인합니다.
+        - 단순한 취향 차이나 자동 포매터가 해결할 문제에는 코멘트하지 않습니다.
+
+    - path: "src/app/**"
+      instructions: |
+        Next.js App Router 기준으로 검토하세요.
+        - 라우팅 폴더는 kebab-case인지 확인합니다.
+        - 라우팅에서 제외할 그룹 폴더는 (private), (public)처럼 소괄호를 사용했는지 확인합니다.
+        - 서버 컴포넌트와 클라이언트 컴포넌트의 구분이 적절한지 확인합니다.
+        - loading, error, not-found 등 필요한 상태 처리가 빠졌는지 확인합니다.
+        - 서버 전용 정보나 환경 변수가 클라이언트에 노출되지 않는지 확인합니다.
+        - 페이지 및 레이아웃 중복, 잘못된 데이터 패칭 위치를 확인합니다.
+
+    - path: "src/components/**"
+      instructions: |
+        React 컴포넌트 파일명이 PascalCase인지 확인하세요.
+        재사용성과 접근성을 중심으로 검토하세요.
+        - props 타입, 기본값, 이벤트 타입이 명확한지 확인합니다.
+        - 이벤트 함수명은 handle + 액션 형식인지 확인합니다.
+        - 버튼, 링크, 폼 요소의 시맨틱 태그와 키보드 접근성을 확인합니다.
+        - 이미지 alt, label 연결, aria 속성 누락을 확인합니다.
+        - 지나치게 큰 컴포넌트나 명백한 중복만 분리 제안합니다.
+
+    - path: "src/hooks/**"
+      instructions: |
+        훅 파일명은 useUser.ts처럼 camelCase이며 use 접두사를 사용하는지 확인하세요.
+        커스텀 훅과 TanStack Query 사용을 검토하세요.
+        - queryKey가 안정적이고 일관적인지 확인합니다.
+        - enabled, staleTime, retry, invalidateQueries 사용이 의도와 맞는지 확인합니다.
+        - 로딩, 에러, 빈 데이터 상태 처리 누락을 확인합니다.
+        - 훅 규칙 위반과 불필요한 상태 복제를 확인합니다.
+
+    - path: "**/*.css"
+      instructions: |
+        Tailwind CSS를 프로젝트의 표준 스타일링 방식으로 사용했는지 검토하세요.
+        - 새 스타일을 일반 CSS로 무분별하게 추가하지 않았는지 확인합니다.
+        - Tailwind로 표현 가능한 스타일을 인라인 style 객체로 반복하지 않았는지 확인합니다.
+        - 임의값의 과도한 반복과 공통 디자인 토큰 누락을 확인합니다.
+        - 반응형 스타일과 접근 가능한 색상 대비 누락을 확인합니다.
+        - 전역 스타일, 폰트 선언, 애니메이션 등 CSS가 더 적절한 경우에는 예외로 처리합니다.
+        - 단순한 Tailwind 클래스 순서에는 코멘트하지 않습니다.
+
+    - path: "**/*Schema.{ts,js}"
+      instructions: |
+        Zod 스키마를 검토하세요.
+        - 폼 및 API 요구사항과 필수값, 이메일 형식, 문자열 길이 조건이 일치하는지 확인합니다.
+        - 프론트와 백엔드가 공유하는 규칙이 서로 어긋날 가능성을 확인합니다.
+        - 오류 메시지가 사용자에게 이해 가능한지 확인합니다.
+
+    - path: "**/*.test.{ts,tsx,js,jsx}"
+      instructions: |
+        테스트가 실제 사용자 동작과 핵심 분기를 검증하는지 확인합니다.
+        구현 세부사항에 과도하게 의존하거나 의미 없는 스냅샷 테스트는 지적합니다.
