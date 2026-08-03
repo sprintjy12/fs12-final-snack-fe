@@ -78,7 +78,7 @@ export function MobileSidebar({
         aria-labelledby={titleId}
         className="absolute inset-y-0 left-0 flex w-[220px] flex-col bg-surface"
       >
-        <div className="flex h-[54px] shrink-0 items-center justify-end px-4">
+        <div className="flex h-[54px] shrink-0 items-center justify-end border-b border-solid border-border px-4">
           <span id={titleId} className="sr-only">
             메뉴
           </span>
