@@ -167,11 +167,11 @@ export function MobileSidebar({
 
   return createPortal(
     <div className="fixed inset-0 z-50 xl:hidden" role="presentation">
-      {/* 딤 오버레이 — 클릭 닫기용, Tab 순서에서는 제외 */}
+      {/* 딤 오버레이 — 클릭 닫기용. AT에는 숨기고, 닫기는 X 버튼/Escape만 안내 */}
       <button
         type="button"
         tabIndex={-1}
-        aria-label="메뉴 닫기"
+        aria-hidden="true"
         className="absolute inset-0 cursor-pointer bg-snack-black-500/40"
         onClick={onClose}
       />
