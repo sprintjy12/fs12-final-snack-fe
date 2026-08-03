@@ -31,7 +31,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       {/* 관리 하위 탭 */}
       <nav
         aria-label="관리 메뉴"
-        className="border-b border-border bg-surface-muted"
+        className="border-b border-solid border-border bg-surface-muted"
       >
         <div className="mx-auto flex max-w-[1680px] items-center gap-3 px-6 xl:h-16 xl:px-[120px]">
           <Link
