@@ -46,15 +46,14 @@ export default function HomePage() {
         </div>
 
         <div className="mx-auto mt-3 flex w-full max-w-[742px] flex-col items-center gap-6 text-center lg:mt-[108px] lg:gap-12">
-          <CommonImage
-            name="logo-landing"
-            size="md"
-            label="Snack"
-            className="h-auto w-full max-w-[504px]"
-          />
-          <p className="m-0 box-border flex w-full items-center justify-center rounded-full border-[3px] border-snack-orange-300 bg-surface px-[18px] py-3.5 text-[clamp(0.9375rem,1.4vw,1.625rem)] leading-[1.25] font-bold whitespace-normal text-accent lg:border-4 lg:px-8 lg:py-5">
-            흩어진 간식 구매처를 통합하고, 기수별 지출을 똑똑하게 관리하세요
-          </p>
++          <h1 className="m-0 w-full">
++            <CommonImage
++              name="logo-landing"
++              size="md"
++              label="Snack"
++              className="h-auto w-full max-w-[504px]"
++            />
++          </h1>
         </div>
 
         <div className="relative mx-auto mt-6 flex w-full max-w-[1674px] flex-col items-center overflow-visible lg:mt-[clamp(24px,5vw,80px)]">
