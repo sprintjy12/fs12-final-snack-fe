@@ -46,14 +46,14 @@ export default function HomePage() {
         </div>
 
         <div className="mx-auto mt-3 flex w-full max-w-[742px] flex-col items-center gap-6 text-center lg:mt-[108px] lg:gap-12">
-+          <h1 className="m-0 w-full">
-+            <CommonImage
-+              name="logo-landing"
-+              size="md"
-+              label="Snack"
-+              className="h-auto w-full max-w-[504px]"
-+            />
-+          </h1>
+          <h1 className="m-0 w-full">
+           <CommonImage
+             name="logo-landing"
+              size="md"
+              label="Snack"
+              className="h-auto w-full max-w-[504px]"
+            />
+          </h1>
         </div>
 
         <div className="relative mx-auto mt-6 flex w-full max-w-[1674px] flex-col items-center overflow-visible lg:mt-[clamp(24px,5vw,80px)]">
