@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 
 import { getProductPhotoSrc } from "@/lib/productMedia";
 
@@ -21,17 +22,38 @@ const MOCK_SUMMARY = {
   source: "mock" as const,
 };
 
-type CompleteSummary = {
-  name: string;
-  extraCount: number;
-  totalCount: number;
-  totalAmount: number;
-  categoryLabel: string;
-  photo: string;
-  requestMessage: string;
-  orderId: string | null;
-  source: "mock" | "be-api" | "session";
-};
+const finiteNumberSchema = z.number().finite();
+
+const completeSummarySchema = z
+  .object({
+    name: z.string().min(1),
+    totalCount: finiteNumberSchema,
+    totalAmount: finiteNumberSchema,
+    extraCount: finiteNumberSchema.optional(),
+    categoryLabel: z.string().optional(),
+    photo: z.string().optional(),
+    requestMessage: z.string().optional(),
+    orderId: z.string().nullable().optional(),
+    source: z.enum(["mock", "be-api", "session"]).optional(),
+  })
+  .transform((data) => ({
+    name: data.name,
+    totalCount: data.totalCount,
+    totalAmount: data.totalAmount,
+    extraCount:
+      data.extraCount !== undefined
+        ? Math.max(0, data.extraCount)
+        : Math.max(0, data.totalCount - 1),
+    categoryLabel: data.categoryLabel ?? "",
+    photo: data.photo ?? "",
+    requestMessage: data.requestMessage ?? "",
+    orderId: data.orderId ?? null,
+    source: data.source === "be-api" ? ("be-api" as const) : ("session" as const),
+  }));
+
+type CompleteSummary =
+  | typeof MOCK_SUMMARY
+  | z.infer<typeof completeSummarySchema>;
 
 function formatPrice(price: number) {
   return `${price.toLocaleString("ko-KR")}원`;
@@ -43,30 +65,16 @@ function formatProductLabel(name: string, extraCount: number) {
 }
 
 function parseSummary(raw: unknown): CompleteSummary | null {
-  if (!raw || typeof raw !== "object") return null;
-  const data = raw as Record<string, unknown>;
-  const name = typeof data.name === "string" ? data.name : null;
-  const totalCount = Number(data.totalCount);
-  const totalAmount = Number(data.totalAmount);
-  if (!name || !Number.isFinite(totalCount) || !Number.isFinite(totalAmount)) {
+  const result = completeSummarySchema.safeParse(raw);
+  return result.success ? result.data : null;
+}
+
+function parseSessionSummary(raw: string): CompleteSummary | null {
+  try {
+    return parseSummary(JSON.parse(raw) as unknown);
+  } catch {
     return null;
   }
-  const extraCount = Number(data.extraCount);
-  return {
-    name,
-    totalCount,
-    totalAmount,
-    extraCount: Number.isFinite(extraCount)
-      ? Math.max(0, extraCount)
-      : Math.max(0, totalCount - 1),
-    categoryLabel:
-      typeof data.categoryLabel === "string" ? data.categoryLabel : "",
-    photo: typeof data.photo === "string" ? data.photo : "",
-    requestMessage:
-      typeof data.requestMessage === "string" ? data.requestMessage : "",
-    orderId: typeof data.orderId === "string" ? data.orderId : null,
-    source: data.source === "be-api" ? "be-api" : "session",
-  };
 }
 
 const buttonBase =
@@ -85,18 +93,18 @@ function PurchaseRequestCompleteContent() {
     let cancelled = false;
 
     async function load() {
-      try {
-        const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
-        if (sessionRaw) {
-          const parsed = parseSummary(JSON.parse(sessionRaw));
-          if (parsed && !cancelled) {
-            setSummary(parsed);
-            setLoadState("ready");
-            return;
-          }
+      const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+      if (sessionRaw) {
+        const parsed = parseSessionSummary(sessionRaw);
+        if (parsed && !cancelled) {
+          setSummary(parsed);
+          setLoadState("ready");
+          return;
         }
+      }
 
-        if (fromApi) {
+      if (fromApi) {
+        try {
           const response = await fetch("/complete-preview.json", {
             cache: "no-store",
           });
@@ -108,9 +116,9 @@ function PurchaseRequestCompleteContent() {
               return;
             }
           }
+        } catch {
+          // fall through to mock
         }
-      } catch {
-        // fall through to mock
       }
 
       if (!cancelled) {
