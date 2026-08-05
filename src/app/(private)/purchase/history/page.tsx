@@ -9,26 +9,10 @@ import {
   Pagination,
   type PaginationItem,
 } from "@/components/ui";
+import { useBudgetSummary } from "@/hooks/queries/useBudgetSummary";
 import { useOrders } from "@/hooks/queries/useOrders";
+import type { BudgetSummaryData } from "@/types/budgetTypes";
 import type { OrderListItem, OrderListSort } from "@/types/orderTypes";
-
-const summaryCards = [
-  {
-    title: "이번 달 지출액",
-    description: "지난 달: 2,000,000원",
-    amount: "126,000원",
-  },
-  {
-    title: "이번 달 남은 예산",
-    description: "지난 달보다 50,000원 더 많아요",
-    amount: "150,000원",
-  },
-  {
-    title: "올해 총 지출액",
-    description: "지난 해보다 1,000,000원 더 지출했어요",
-    amount: "23,000,000원",
-  },
-] as const;
 
 const PAGE_SIZE = 10;
 
@@ -45,6 +29,60 @@ const formatDate = (iso: string) => {
 };
 
 const formatPrice = (price: number) => `${price.toLocaleString("ko-KR")}`;
+
+const formatWon = (price: number) => `${formatPrice(price)}원`;
+
+const buildSummaryCards = (summary: BudgetSummaryData | undefined) => {
+  if (!summary) {
+    return [
+      {
+        title: "이번 달 지출액",
+        description: "불러오는 중…",
+        amount: "-",
+      },
+      {
+        title: "이번 달 남은 예산",
+        description: "불러오는 중…",
+        amount: "-",
+      },
+      {
+        title: "올해 총 지출액",
+        description: "불러오는 중…",
+        amount: "-",
+      },
+    ] as const;
+  }
+
+  const remainingDiff = summary.remainingDiffFromPreviousMonth;
+  const remainingDiffText =
+    remainingDiff >= 0
+      ? `지난 달보다 ${formatWon(remainingDiff)} 더 많아요`
+      : `지난 달보다 ${formatWon(Math.abs(remainingDiff))} 더 적어요`;
+
+  const spentDiff = summary.spentDiffFromPreviousYear;
+  const spentDiffText =
+    spentDiff >= 0
+      ? `지난 해보다 ${formatWon(spentDiff)} 더 지출했어요`
+      : `지난 해보다 ${formatWon(Math.abs(spentDiff))} 덜 지출했어요`;
+
+  return [
+    {
+      title: "이번 달 지출액",
+      description: `지난 달: ${formatWon(summary.previousMonth.spent)}`,
+      amount: formatWon(summary.currentMonth.spent),
+    },
+    {
+      title: "이번 달 남은 예산",
+      description: remainingDiffText,
+      amount: formatWon(summary.currentMonth.remaining),
+    },
+    {
+      title: "올해 총 지출액",
+      description: spentDiffText,
+      amount: formatWon(summary.currentYear.spent),
+    },
+  ] as const;
+};
 
 const formatProductName = (order: OrderListItem) => {
   const { firstProductName, itemCount } = order;
@@ -84,6 +122,12 @@ export default function PurchaseHistoryPage() {
     limit: PAGE_SIZE,
     sort,
   });
+  const { data: budgetSummaryResponse } = useBudgetSummary();
+
+  const summaryCards = useMemo(
+    () => buildSummaryCards(budgetSummaryResponse?.data),
+    [budgetSummaryResponse?.data],
+  );
 
   const orders = data?.data ?? [];
   const pagination = data?.pagination;
