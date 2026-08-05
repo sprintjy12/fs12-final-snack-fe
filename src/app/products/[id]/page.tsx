@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Icon } from "@/components/ui";
-import { useProduct } from "@/hooks/useProducts";
+import { useProduct } from "@/hooks/queries/useProducts";
 import { addToCart } from "@/lib/cartStorage";
 import { getProductPhotoSrc } from "@/lib/productMedia";
 

@@ -9,7 +9,7 @@ import {
   ProductsEmpty,
   ProductsSkeleton,
 } from "@/features/products";
-import { useProducts } from "@/hooks/useProducts";
+import { useProducts } from "@/hooks/queries/useProducts";
 import type { ProductListParams } from "@/types/productTypes";
 
 import styles from "./products.module.css";

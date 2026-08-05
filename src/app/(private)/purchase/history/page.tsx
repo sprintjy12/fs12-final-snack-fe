@@ -9,7 +9,7 @@ import {
   Pagination,
   type PaginationItem,
 } from "@/components/ui";
-import { useOrders } from "@/hooks/useOrders";
+import { useOrders } from "@/hooks/queries/useOrders";
 import type { OrderListItem, OrderListSort } from "@/types/orderTypes";
 
 const summaryCards = [
