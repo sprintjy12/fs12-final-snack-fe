@@ -1,5 +1,10 @@
 import { apiClient } from "@/api/core/apiClient";
-import { getAccessToken, setAccessToken } from "@/lib/authStorage";
+import {
+  clearAccessToken,
+  getAccessToken,
+  isAccessTokenValid,
+  setAccessToken,
+} from "@/lib/authStorage";
 
 type LoginResponse = {
   message: string;
@@ -20,11 +25,16 @@ type LoginResponse = {
  * 로그인 페이지 연동 전, 로컬 API 호출용 세션을 확보합니다.
  * 서버 전용 DEV_LOGIN_* 로 백엔드 로그인을 대행하고 token만 브라우저에 저장합니다.
  * (비밀번호는 NEXT_PUBLIC이 아니라 서버 .env에만 둡니다.)
+ * 액세스 토큰은 백엔드 기준 15분 만료라, 만료·무효면 다시 발급합니다.
  */
 export const ensureAccessToken = async () => {
   const existing = getAccessToken();
-  if (existing) {
+  if (existing && isAccessTokenValid(existing)) {
     return existing;
+  }
+
+  if (existing) {
+    clearAccessToken();
   }
 
   const response = await fetch("/api/fe-auth/dev-login", {

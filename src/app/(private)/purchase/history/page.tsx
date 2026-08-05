@@ -44,11 +44,13 @@ const formatDate = (iso: string) => {
   return `${year}. ${month}. ${day}`;
 };
 
-const formatPrice = (price: number) =>
-  `${price.toLocaleString("ko-KR")}`;
+const formatPrice = (price: number) => `${price.toLocaleString("ko-KR")}`;
 
 const formatProductName = (order: OrderListItem) => {
-  const { firstProductName, itemCount } = order.itemsSummary;
+  const { firstProductName, itemCount } = order;
+  if (!firstProductName) {
+    return "상품 정보 없음";
+  }
   if (itemCount <= 1) {
     return firstProductName;
   }
@@ -205,7 +207,7 @@ export default function PurchaseHistoryPage() {
                           {formatProductName(purchase)}
                         </p>
                         <p className="text-sm leading-6 font-medium text-foreground-muted">
-                          상품 {purchase.itemsSummary.itemCount}종
+                          총 수량: {purchase.itemCount}
                         </p>
                       </div>
                       <span>{formatPrice(purchase.totalPrice)}</span>
@@ -238,7 +240,7 @@ export default function PurchaseHistoryPage() {
                           {formatProductName(purchase)}
                         </p>
                         <p className="text-xs leading-[18px] text-foreground-muted">
-                          상품 {purchase.itemsSummary.itemCount}종
+                          총 수량: {purchase.itemCount}
                         </p>
                       </div>
                     </div>
