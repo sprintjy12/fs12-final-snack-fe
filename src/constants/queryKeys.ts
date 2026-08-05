@@ -16,4 +16,8 @@ export const queryKeys = {
   categories: {
     all: ["categories"] as const,
   },
+  orders: {
+    all: ["orders"] as const,
+    list: (params: object) => ["orders", "list", params] as const,
+  },
 };
