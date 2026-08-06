@@ -1,5 +1,9 @@
 import { apiClient } from "@/api/core/apiClient";
-import type { GetOrdersParams, OrderListResponse } from "@/types/orderTypes";
+import type {
+  GetOrdersParams,
+  OrderDetailResponse,
+  OrderListResponse,
+} from "@/types/orderTypes";
 
 /**
  * 구매 내역(주문) API.
@@ -15,6 +19,17 @@ export const getOrders = async (
       sort: params.sort ?? "latest",
     },
   });
+
+  return response.data;
+};
+
+/** 구매 내역 상세 (DIRECT / REQUEST 공통) */
+export const getOrderDetail = async (
+  orderId: string,
+): Promise<OrderDetailResponse> => {
+  const response = await apiClient.get<OrderDetailResponse>(
+    `/api/orders/${orderId}`,
+  );
 
   return response.data;
 };
