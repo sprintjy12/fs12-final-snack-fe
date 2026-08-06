@@ -4,6 +4,7 @@ import type {
   GetOrdersParams,
   OrderDetailResponse,
   OrderListResponse,
+  OrderRequestDetailResponse,
   OrderRequestListResponse,
 } from "@/types/orderTypes";
 
@@ -49,6 +50,17 @@ export const getOrderRequests = async (
         sort: params.sort ?? "latest",
       },
     },
+  );
+
+  return response.data;
+};
+
+/** 구매 요청 상세 */
+export const getOrderRequestDetail = async (
+  orderId: string,
+): Promise<OrderRequestDetailResponse> => {
+  const response = await apiClient.get<OrderRequestDetailResponse>(
+    `/api/orders/requests/${orderId}`,
   );
 
   return response.data;

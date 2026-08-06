@@ -90,6 +90,7 @@ export type OrderRequestListItem = {
   id: string;
   requestedAt: string;
   totalPrice: number;
+  totalQuantity: number;
   requesterName: string;
   itemsSummary: OrderRequestItemsSummary;
 };
@@ -105,4 +106,39 @@ export type GetOrderRequestsParams = {
   page?: number;
   limit?: number;
   sort?: OrderRequestListSort;
+};
+
+/** GET /api/orders/requests/:id 예산 정보 */
+export type OrderRequestDetailBudget = {
+  yearMonth: string;
+  budget: number;
+  spent: number;
+  remaining: number;
+  isUnlimited: boolean;
+};
+
+/** GET /api/orders/requests/:id data */
+export type OrderRequestDetailData = {
+  orderId: string;
+  type: OrderListType;
+  status: OrderDetailStatus;
+  productAmount: number;
+  shippingFee: number;
+  totalPrice: number;
+  itemCount: number;
+  totalQuantity: number;
+  requestMessage: string | null;
+  responseMessage: string | null;
+  requestedAt: string;
+  approvedAt: string | null;
+  requesterName: string | null;
+  processorName: string | null;
+  items: OrderDetailItem[];
+  budget: OrderRequestDetailBudget;
+};
+
+export type OrderRequestDetailResponse = {
+  success: boolean;
+  message: string;
+  data: OrderRequestDetailData;
 };

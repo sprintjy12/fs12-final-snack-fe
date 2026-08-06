@@ -173,16 +173,26 @@ export function PurchaseRequestDecisionModal({
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex min-w-0 items-start gap-4">
                             <div className="flex size-16 shrink-0 items-center justify-center rounded-lg border border-solid border-border bg-surface-muted shadow-[4px_4px_10px_rgba(250,247,243,0.25)] xl:size-20">
-                              <Image
-                                src={
-                                  item.imageSrc ??
-                                  "/images/purchase-history-product.png"
-                                }
-                                alt=""
-                                width={28}
-                                height={49}
-                                className="h-[49px] w-7 object-contain"
-                              />
+                              {item.imageSrc ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={item.imageSrc}
+                                  alt=""
+                                  className="h-[49px] w-7 object-contain"
+                                  onError={(event) => {
+                                    event.currentTarget.src =
+                                      "/images/purchase-history-product.png";
+                                  }}
+                                />
+                              ) : (
+                                <Image
+                                  src="/images/purchase-history-product.png"
+                                  alt=""
+                                  width={28}
+                                  height={49}
+                                  className="h-[49px] w-7 object-contain"
+                                />
+                              )}
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs leading-6 text-foreground-muted xl:text-sm xl:leading-6">

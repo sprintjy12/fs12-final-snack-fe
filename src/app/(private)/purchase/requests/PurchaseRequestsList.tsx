@@ -8,8 +8,9 @@ import {
   type PurchaseRequestDecisionMode,
   type PurchaseRequestDecisionTarget,
 } from "@/app/(private)/purchase/requests/PurchaseRequestDecisionModal";
-import { createMockDecisionTarget } from "@/app/(private)/purchase/requests/purchaseRequestDecisionMock";
-import { Pagination, type PaginationItem } from "@/components/ui";
+import { mapOrderRequestDetailToDecisionTarget } from "@/app/(private)/purchase/requests/mapOrderRequestDetailToDecisionTarget";
+import { Pagination, type PaginationItem, showToast } from "@/components/ui";
+import { useFetchOrderRequestDetail } from "@/hooks/queries/useOrderRequestDetail";
 import type { OrderRequestListItem } from "@/types/orderTypes";
 
 type PurchaseRequestsListProps = {
@@ -58,22 +59,31 @@ export function PurchaseRequestsList({
   onNext,
   onPageSelect,
 }: PurchaseRequestsListProps) {
+  const fetchOrderRequestDetail = useFetchOrderRequestDetail();
   const [mode, setMode] = useState<PurchaseRequestDecisionMode | null>(null);
   const [target, setTarget] = useState<PurchaseRequestDecisionTarget | null>(
     null,
   );
+  const [isOpening, setIsOpening] = useState(false);
 
-  const openModal = (
+  const openModal = async (
     request: OrderRequestListItem,
     nextMode: PurchaseRequestDecisionMode,
   ) => {
-    setTarget(
-      createMockDecisionTarget({
-        id: request.id,
-        requester: request.requesterName,
-      }),
-    );
-    setMode(nextMode);
+    if (isOpening) {
+      return;
+    }
+
+    setIsOpening(true);
+    try {
+      const response = await fetchOrderRequestDetail(request.id);
+      setTarget(mapOrderRequestDetailToDecisionTarget(response.data));
+      setMode(nextMode);
+    } catch {
+      showToast("구매 요청 상세를 불러오지 못했습니다.");
+    } finally {
+      setIsOpening(false);
+    }
   };
 
   const closeModal = () => {
@@ -105,7 +115,7 @@ export function PurchaseRequestsList({
                     {formatProductName(request)}
                   </p>
                   <p className="text-sm leading-6 font-medium text-foreground-muted">
-                    총 {request.itemsSummary.itemCount}건
+                    총 수량: {request.totalQuantity}
                   </p>
                 </div>
                 <span>{formatPrice(request.totalPrice)}</span>
@@ -113,15 +123,17 @@ export function PurchaseRequestsList({
                 <div className="flex items-center justify-center gap-2">
                   <button
                     type="button"
+                    disabled={isOpening}
                     onClick={() => openModal(request, "reject")}
-                    className="h-11 w-[94px] cursor-pointer rounded-lg bg-snack-background-300 text-lg leading-[26px] font-semibold text-foreground-muted"
+                    className="h-11 w-[94px] cursor-pointer rounded-lg bg-snack-background-300 text-lg leading-[26px] font-semibold text-foreground-muted disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     반려
                   </button>
                   <button
                     type="button"
+                    disabled={isOpening}
                     onClick={() => openModal(request, "approve")}
-                    className="h-11 w-[94px] cursor-pointer rounded-lg bg-accent text-lg leading-[26px] font-semibold text-surface"
+                    className="h-11 w-[94px] cursor-pointer rounded-lg bg-accent text-lg leading-[26px] font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     승인
                   </button>
@@ -153,21 +165,23 @@ export function PurchaseRequestsList({
                       {formatProductName(request)}
                     </p>
                     <p className="text-xs leading-[18px] text-foreground-muted">
-                      총 {request.itemsSummary.itemCount}건
+                      총 수량: {request.totalQuantity}
                     </p>
                   </div>
                   <div className="flex gap-2">
                     <button
                       type="button"
+                      disabled={isOpening}
                       onClick={() => openModal(request, "reject")}
-                      className="h-[34px] flex-1 cursor-pointer rounded-lg bg-snack-background-300 text-[13px] leading-[22px] font-semibold text-foreground-muted"
+                      className="h-[34px] flex-1 cursor-pointer rounded-lg bg-snack-background-300 text-[13px] leading-[22px] font-semibold text-foreground-muted disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       반려
                     </button>
                     <button
                       type="button"
+                      disabled={isOpening}
                       onClick={() => openModal(request, "approve")}
-                      className="h-[34px] flex-1 cursor-pointer rounded-lg bg-accent text-[13px] leading-[22px] font-semibold text-surface"
+                      className="h-[34px] flex-1 cursor-pointer rounded-lg bg-accent text-[13px] leading-[22px] font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       승인
                     </button>
