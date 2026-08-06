@@ -21,22 +21,24 @@ function AccordionSection({
 
   return (
     <div>
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full cursor-pointer items-center justify-between xl:cursor-default xl:pointer-events-none"
-      >
-        <h2 className="text-xl leading-8 font-semibold text-foreground-strong xl:text-2xl xl:font-bold">
-          <span className="xl:hidden">{title}</span>
-          <span className="hidden xl:inline">{desktopTitle ?? title}</span>
-        </h2>
-        <Icon
-          name={open ? "chevron-up" : "chevron-down"}
-          size="sm"
-          className="text-snack-gray-400 xl:hidden"
-        />
-      </button>
+      <h2 className="text-xl leading-8 font-semibold text-foreground-strong xl:text-2xl xl:font-bold">
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((prev) => !prev)}
+          className="flex w-full cursor-pointer items-center justify-between xl:cursor-default xl:pointer-events-none"
+        >
+          <span>
+            <span className="xl:hidden">{title}</span>
+            <span className="hidden xl:inline">{desktopTitle ?? title}</span>
+          </span>
+          <Icon
+            name={open ? "chevron-up" : "chevron-down"}
+            size="sm"
+            className="text-snack-gray-400 xl:hidden"
+          />
+        </button>
+      </h2>
 
       <div className="mt-3 border-t border-solid border-snack-black-100 xl:mt-4">
         <div

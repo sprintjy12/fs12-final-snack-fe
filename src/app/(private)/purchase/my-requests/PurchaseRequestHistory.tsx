@@ -158,12 +158,14 @@ export function PurchaseRequestHistory({ items }: PurchaseRequestHistoryProps) {
                       >
                         {STATUS_LABEL[item.status]}
                       </span>
-                      <div className="relative z-10 flex items-center justify-center">
+                      <div className="relative z-10 pointer-events-none flex items-center justify-center">
                         {isPending ? (
-                          <CancelRequestButton
-                            size="md"
-                            onClick={() => openCancelModal(item)}
-                          />
+                          <div className="pointer-events-auto">
+                            <CancelRequestButton
+                              size="md"
+                              onClick={() => openCancelModal(item)}
+                            />
+                          </div>
                         ) : null}
                       </div>
                     </li>
