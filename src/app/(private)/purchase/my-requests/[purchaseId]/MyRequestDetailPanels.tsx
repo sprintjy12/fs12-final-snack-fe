@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/ui";
 
@@ -17,6 +17,7 @@ function AccordionSection({
   defaultOpen = true,
   children,
 }: AccordionSectionProps) {
+  const panelId = useId();
   const [open, setOpen] = useState(defaultOpen);
 
   return (
@@ -26,6 +27,7 @@ function AccordionSection({
         <button
           type="button"
           aria-expanded={open}
+          aria-controls={panelId}
           onClick={() => setOpen((prev) => !prev)}
           className="flex w-full cursor-pointer items-center justify-between xl:hidden"
         >
@@ -42,6 +44,7 @@ function AccordionSection({
 
       <div className="mt-3 border-t border-solid border-snack-black-100 xl:mt-4">
         <div
+          id={panelId}
           className={[
             "flex-col gap-3 pt-3 xl:gap-4 xl:pt-4",
             open ? "flex" : "hidden",
