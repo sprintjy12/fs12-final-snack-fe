@@ -8,7 +8,10 @@ import { getProductPhotoSrc } from "@/lib/productMedia";
 
 type MyProduct = {
   id: number;
+  /** 화면 표시용 (예: 2024. 07. 04) */
   registeredAt: string;
+  /** 정렬용 ISO 날짜 (YYYY-MM-DD) */
+  registeredAtIso: string;
   name: string;
   categoryLabel: string;
   price: number;
@@ -29,6 +32,7 @@ const MY_PRODUCTS: MyProduct[] = [
   {
     id: 1,
     registeredAt: "2024. 07. 04",
+    registeredAtIso: "2024-07-04",
     name: "코카콜라 제로",
     categoryLabel: "청량・탄산음료",
     price: 1900,
@@ -38,6 +42,7 @@ const MY_PRODUCTS: MyProduct[] = [
   {
     id: 2,
     registeredAt: "2024. 07. 02",
+    registeredAtIso: "2024-07-02",
     name: "스프라이트",
     categoryLabel: "청량・탄산음료",
     price: 2000,
@@ -47,6 +52,7 @@ const MY_PRODUCTS: MyProduct[] = [
   {
     id: 3,
     registeredAt: "2024. 07. 01",
+    registeredAtIso: "2024-07-01",
     name: "환타 오렌지",
     categoryLabel: "청량・탄산음료",
     price: 2000,
@@ -56,6 +62,7 @@ const MY_PRODUCTS: MyProduct[] = [
   {
     id: 4,
     registeredAt: "2024. 06. 30",
+    registeredAtIso: "2024-06-30",
     name: "코카콜라",
     categoryLabel: "청량・탄산음료",
     price: 2000,
@@ -97,7 +104,9 @@ export default function MyProductsPage() {
         return items.sort((a, b) => a.price - b.price);
       case "latest":
       default:
-        return items.sort((a, b) => b.id - a.id);
+        return items.sort((a, b) =>
+          b.registeredAtIso.localeCompare(a.registeredAtIso),
+        );
     }
   }, [sort]);
 
