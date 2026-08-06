@@ -251,7 +251,7 @@ export default function PurchaseHistoryPage() {
                           {formatProductName(purchase)}
                         </p>
                         <p className="text-sm leading-6 font-medium text-foreground-muted">
-                          총 수량: {purchase.itemCount}
+                          총 수량: {purchase.totalQuantity}
                         </p>
                       </div>
                       <span>{formatPrice(purchase.totalPrice)}</span>
@@ -284,7 +284,7 @@ export default function PurchaseHistoryPage() {
                           {formatProductName(purchase)}
                         </p>
                         <p className="text-xs leading-[18px] text-foreground-muted">
-                          총 수량: {purchase.itemCount}
+                          총 수량: {purchase.totalQuantity}
                         </p>
                       </div>
                     </div>
