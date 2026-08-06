@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 
 import {
@@ -121,14 +122,22 @@ export function PurchaseRequestHistory({ items }: PurchaseRequestHistoryProps) {
               <ul className="mt-4">
                 {items.map((item) => {
                   const isPending = item.status === "pending";
+                  const detailHref = `/purchase/my-requests/${item.id}`;
 
                   return (
                     <li
                       key={item.id}
-                      className="grid h-[104px] grid-cols-[207px_1fr_219px_219px_219px] items-center border-b border-solid border-border px-20 text-center text-xl leading-8 text-snack-black-100"
+                      className="relative grid h-[104px] grid-cols-[207px_1fr_219px_219px_219px] items-center border-b border-solid border-border px-20 text-center text-xl leading-8 text-snack-black-100"
                     >
-                      <span>{item.requestedAt}</span>
-                      <div className="text-left">
+                      <Link
+                        href={detailHref}
+                        className="absolute inset-0 z-0"
+                        aria-label={`${item.productName} 상세 보기`}
+                      />
+                      <span className="relative z-10 pointer-events-none">
+                        {item.requestedAt}
+                      </span>
+                      <div className="relative z-10 pointer-events-none text-left">
                         <p className="font-semibold text-snack-black-200">
                           {item.productName}
                         </p>
@@ -136,17 +145,20 @@ export function PurchaseRequestHistory({ items }: PurchaseRequestHistoryProps) {
                           총 수량: {item.quantity}개
                         </p>
                       </div>
-                      <span>{item.amount}</span>
+                      <span className="relative z-10 pointer-events-none">
+                        {item.amount}
+                      </span>
                       <span
-                        className={
+                        className={[
+                          "relative z-10 pointer-events-none",
                           isPending
                             ? "text-snack-black-100"
-                            : "text-snack-gray-300"
-                        }
+                            : "text-snack-gray-300",
+                        ].join(" ")}
                       >
                         {STATUS_LABEL[item.status]}
                       </span>
-                      <div className="flex items-center justify-center">
+                      <div className="relative z-10 flex items-center justify-center">
                         {isPending ? (
                           <CancelRequestButton
                             size="md"
@@ -163,13 +175,19 @@ export function PurchaseRequestHistory({ items }: PurchaseRequestHistoryProps) {
             <ul className="xl:hidden">
               {mobileItems.map((item) => {
                 const isPending = item.status === "pending";
+                const detailHref = `/purchase/my-requests/${item.id}`;
 
                 return (
                   <li
                     key={item.id}
-                    className="border-b-2 border-solid border-border px-6 pt-8 pb-8"
+                    className="relative border-b-2 border-solid border-border px-6 pt-8 pb-8"
                   >
-                    <div className="flex gap-4">
+                    <Link
+                      href={detailHref}
+                      className="absolute inset-0 z-0"
+                      aria-label={`${item.productName} 상세 보기`}
+                    />
+                    <div className="relative z-10 pointer-events-none flex gap-4">
                       <div className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-solid border-border bg-surface shadow-[4px_4px_10px_rgba(250,247,243,0.25)]">
                         <Image
                           src="/images/purchase-history-product.png"
@@ -189,7 +207,7 @@ export function PurchaseRequestHistory({ items }: PurchaseRequestHistoryProps) {
                           </p>
                         </div>
                         {isPending ? (
-                          <div className="flex justify-end">
+                          <div className="pointer-events-auto flex justify-end">
                             <CancelRequestButton
                               size="sm"
                               onClick={() => openCancelModal(item)}
@@ -199,12 +217,12 @@ export function PurchaseRequestHistory({ items }: PurchaseRequestHistoryProps) {
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between border-b border-solid border-snack-gray-200 py-3 text-base leading-[26px] font-semibold text-foreground-strong">
+                    <div className="relative z-10 pointer-events-none mt-4 flex items-center justify-between border-b border-solid border-snack-gray-200 py-3 text-base leading-[26px] font-semibold text-foreground-strong">
                       <span>주문금액</span>
                       <span>{item.amount}원</span>
                     </div>
 
-                    <dl className="mt-3 space-y-2 text-sm leading-6">
+                    <dl className="relative z-10 pointer-events-none mt-3 space-y-2 text-sm leading-6">
                       <div className="flex items-center justify-between text-foreground-muted">
                         <dt>구매요청일</dt>
                         <dd className="font-medium">{item.requestedAt}</dd>
