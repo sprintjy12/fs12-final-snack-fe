@@ -96,7 +96,7 @@ export function Header({
   return (
     <>
       <header className="border-b border-solid border-border bg-surface-muted">
-        <div className="mx-auto flex h-[54px] max-w-[1680px] items-center justify-between px-6 md:h-16 xl:h-[88px] xl:px-0">
+        <div className="mx-auto flex h-[54px] w-full max-w-[1920px] items-center justify-between px-6 md:h-16 xl:h-[88px] xl:px-[120px]">
           <div className="flex items-center gap-6 xl:gap-16">
             <button
               type="button"
