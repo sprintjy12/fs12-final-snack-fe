@@ -49,6 +49,7 @@ export type OrderDetailItem = {
   quantity: number;
   unitPrice: number;
   subtotal: number;
+  discounted?: boolean;
 };
 
 /** GET /api/orders/:id data */

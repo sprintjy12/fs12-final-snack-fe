@@ -181,6 +181,14 @@ export default function PurchaseHistoryDetailPage() {
                         </div>
                       </div>
                       <div className="flex h-[78px] flex-col items-end justify-center">
+                        {product.discounted ? (
+                          <p className="flex gap-1 text-sm leading-5">
+                            <span className="text-danger">5%</span>
+                            <span className="text-foreground-muted line-through">
+                              1,900원
+                            </span>
+                          </p>
+                        ) : null}
                         <p className="text-sm leading-6 font-semibold text-foreground-strong xl:text-lg xl:leading-[26px]">
                           {formatPrice(product.unitPrice)}
                         </p>
