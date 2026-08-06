@@ -24,7 +24,7 @@ export type PurchaseRequestDecisionItem = {
 };
 
 export type PurchaseRequestDecisionTarget = {
-  id: number;
+  id: string;
   requester: string;
   itemCount: number;
   totalAmount: string;
@@ -38,7 +38,7 @@ export type PurchaseRequestDecisionModalProps = {
   request: PurchaseRequestDecisionTarget | null;
   onClose: () => void;
   onSubmit?: (values: {
-    id: number;
+    id: string;
     mode: PurchaseRequestDecisionMode;
     message: string;
   }) => void;

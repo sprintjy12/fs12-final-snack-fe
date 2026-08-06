@@ -9,34 +9,70 @@ import {
   type PurchaseRequestDecisionTarget,
 } from "@/app/(private)/purchase/requests/PurchaseRequestDecisionModal";
 import { createMockDecisionTarget } from "@/app/(private)/purchase/requests/purchaseRequestDecisionMock";
-import { Pagination } from "@/components/ui";
-
-export type PurchaseRequestSummary = {
-  id: number;
-  requestedAt: string;
-  productName: string;
-  quantity: number;
-  amount: string;
-  requester: string;
-};
+import { Pagination, type PaginationItem } from "@/components/ui";
+import type { OrderRequestListItem } from "@/types/orderTypes";
 
 type PurchaseRequestsListProps = {
-  requests: readonly PurchaseRequestSummary[];
+  requests: readonly OrderRequestListItem[];
+  paginationItems: PaginationItem[];
+  currentPage: string;
+  previousDisabled?: boolean;
+  nextDisabled?: boolean;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  onPageSelect?: (page: string) => void;
 };
 
-const paginationItems = ["1", "2", "3", "4", "5", "more", "9"] as const;
+const formatDate = (iso: string) => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
 
-export function PurchaseRequestsList({ requests }: PurchaseRequestsListProps) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}. ${month}. ${day}`;
+};
+
+const formatPrice = (price: number) => `${price.toLocaleString("ko-KR")}`;
+
+const formatProductName = (request: OrderRequestListItem) => {
+  const { firstProductName, itemCount } = request.itemsSummary;
+  if (!firstProductName) {
+    return "상품 정보 없음";
+  }
+  if (itemCount <= 1) {
+    return firstProductName;
+  }
+  return `${firstProductName} 외 ${itemCount - 1}건`;
+};
+
+export function PurchaseRequestsList({
+  requests,
+  paginationItems,
+  currentPage,
+  previousDisabled,
+  nextDisabled,
+  onPrevious,
+  onNext,
+  onPageSelect,
+}: PurchaseRequestsListProps) {
   const [mode, setMode] = useState<PurchaseRequestDecisionMode | null>(null);
   const [target, setTarget] = useState<PurchaseRequestDecisionTarget | null>(
     null,
   );
 
   const openModal = (
-    request: PurchaseRequestSummary,
+    request: OrderRequestListItem,
     nextMode: PurchaseRequestDecisionMode,
   ) => {
-    setTarget(createMockDecisionTarget(request));
+    setTarget(
+      createMockDecisionTarget({
+        id: request.id,
+        requester: request.requesterName,
+      }),
+    );
     setMode(nextMode);
   };
 
@@ -44,9 +80,6 @@ export function PurchaseRequestsList({ requests }: PurchaseRequestsListProps) {
     setMode(null);
     setTarget(null);
   };
-
-  // TODO: 뷰포트별 pageSize(모바일·태블릿 3 / 데스크톱 6) + 페이지네이션 연동
-  const mobileRequests = requests.slice(0, 3);
 
   return (
     <>
@@ -66,17 +99,17 @@ export function PurchaseRequestsList({ requests }: PurchaseRequestsListProps) {
                 key={request.id}
                 className="grid h-[104px] grid-cols-[207px_1fr_219px_219px_219px] items-center border-b border-solid border-border px-20 text-center text-xl leading-8 text-snack-black-100"
               >
-                <span>{request.requestedAt}</span>
+                <span>{formatDate(request.requestedAt)}</span>
                 <div className="text-left">
                   <p className="font-semibold text-snack-black-200">
-                    {request.productName}
+                    {formatProductName(request)}
                   </p>
                   <p className="text-sm leading-6 font-medium text-foreground-muted">
-                    총 수량: {request.quantity}개
+                    총 {request.itemsSummary.itemCount}건
                   </p>
                 </div>
-                <span>{request.amount}</span>
-                <span>{request.requester}</span>
+                <span>{formatPrice(request.totalPrice)}</span>
+                <span>{request.requesterName}</span>
                 <div className="flex items-center justify-center gap-2">
                   <button
                     type="button"
@@ -99,7 +132,7 @@ export function PurchaseRequestsList({ requests }: PurchaseRequestsListProps) {
         </div>
 
         <ul className="xl:hidden">
-          {mobileRequests.map((request) => (
+          {requests.map((request) => (
             <li
               key={request.id}
               className="h-[280px] border-b-2 border-solid border-border px-6 pt-6 pb-6"
@@ -117,10 +150,10 @@ export function PurchaseRequestsList({ requests }: PurchaseRequestsListProps) {
                 <div className="flex w-[211px] min-w-0 flex-none flex-col justify-between">
                   <div>
                     <p className="text-sm leading-6 text-foreground-strong">
-                      {request.productName}
+                      {formatProductName(request)}
                     </p>
                     <p className="text-xs leading-[18px] text-foreground-muted">
-                      총 수량: {request.quantity}개
+                      총 {request.itemsSummary.itemCount}건
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -144,17 +177,19 @@ export function PurchaseRequestsList({ requests }: PurchaseRequestsListProps) {
 
               <div className="mt-4 flex items-center justify-between border-b border-solid border-snack-gray-200 py-3 text-sm leading-6 font-semibold text-foreground-strong">
                 <span>주문금액</span>
-                <span>{request.amount}원</span>
+                <span>{formatPrice(request.totalPrice)}원</span>
               </div>
 
               <dl className="mt-3 space-y-2 text-sm leading-6 text-foreground-muted">
                 <div className="flex items-center justify-between">
                   <dt>구매요청일</dt>
-                  <dd className="font-medium">{request.requestedAt}</dd>
+                  <dd className="font-medium">
+                    {formatDate(request.requestedAt)}
+                  </dd>
                 </div>
                 <div className="flex items-center justify-between">
                   <dt>요청인</dt>
-                  <dd className="font-medium">{request.requester}</dd>
+                  <dd className="font-medium">{request.requesterName}</dd>
                 </div>
               </dl>
             </li>
@@ -165,9 +200,17 @@ export function PurchaseRequestsList({ requests }: PurchaseRequestsListProps) {
       <Pagination
         aria-label="구매 요청 페이지"
         items={paginationItems}
-        previousDisabled
+        currentPage={currentPage}
+        previousDisabled={previousDisabled}
+        nextDisabled={nextDisabled}
         collapseMiddlePages
-        className="mt-4 flex py-2 md:mt-8 md:py-0 xl:mt-[298px]"
+        onPrevious={onPrevious}
+        onNext={onNext}
+        onPageSelect={onPageSelect}
+        className={[
+          "mt-4 py-2 md:mt-8 md:py-0 xl:mt-[298px]",
+          requests.length > 0 ? "flex" : "hidden",
+        ].join(" ")}
       />
 
       <PurchaseRequestDecisionModal

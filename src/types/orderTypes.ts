@@ -76,3 +76,33 @@ export type OrderDetailResponse = {
   message: string;
   data: OrderDetailData;
 };
+
+export type OrderRequestListSort = "latest" | "highPrice" | "lowPrice";
+
+/** GET /api/orders/requests 목록 품목 요약 */
+export type OrderRequestItemsSummary = {
+  firstProductName: string;
+  itemCount: number;
+};
+
+/** GET /api/orders/requests 목록 한 줄 */
+export type OrderRequestListItem = {
+  id: string;
+  requestedAt: string;
+  totalPrice: number;
+  requesterName: string;
+  itemsSummary: OrderRequestItemsSummary;
+};
+
+export type OrderRequestListResponse = {
+  success: boolean;
+  message: string;
+  data: OrderRequestListItem[];
+  pagination: OrderListPagination;
+};
+
+export type GetOrderRequestsParams = {
+  page?: number;
+  limit?: number;
+  sort?: OrderRequestListSort;
+};

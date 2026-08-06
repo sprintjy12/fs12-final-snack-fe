@@ -11,7 +11,7 @@ const MOCK_DECISION_ITEMS = Array.from({ length: 4 }, (_, index) => ({
 }));
 
 export function createMockDecisionTarget(input: {
-  id: number;
+  id: string;
   requester: string;
 }): PurchaseRequestDecisionTarget {
   return {

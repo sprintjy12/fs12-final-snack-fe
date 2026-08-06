@@ -26,11 +26,9 @@ export function PurchaseRequestDecisionActions({
   );
 
   const openModal = (nextMode: PurchaseRequestDecisionMode) => {
-    const numericId = Number(requestId);
-
     setTarget(
       createMockDecisionTarget({
-        id: Number.isFinite(numericId) ? numericId : 0,
+        id: requestId,
         requester,
       }),
     );
