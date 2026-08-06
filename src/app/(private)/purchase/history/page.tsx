@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useMemo, useState, type ChangeEvent } from "react";
 
 import {
@@ -241,23 +242,25 @@ export default function PurchaseHistoryPage() {
 
                 <ul className="mt-4">
                   {orders.map((purchase) => (
-                    <li
-                      key={purchase.id}
-                      className="grid h-[104px] grid-cols-[207px_1fr_219px_219px_219px_219px] items-center border-b border-border px-20 text-center text-xl leading-8 text-snack-black-100"
-                    >
-                      <span>{formatDate(purchase.approvedAt)}</span>
-                      <div className="text-left">
-                        <p className="font-semibold text-snack-black-200">
-                          {formatProductName(purchase)}
-                        </p>
-                        <p className="text-sm leading-6 font-medium text-foreground-muted">
-                          총 수량: {purchase.totalQuantity}
-                        </p>
-                      </div>
-                      <span>{formatPrice(purchase.totalPrice)}</span>
-                      <span>{purchase.requesterName}</span>
-                      <span>{purchase.processorName}</span>
-                      <span>{formatDate(purchase.createdAt)}</span>
+                    <li key={purchase.id}>
+                      <Link
+                        href={`/purchase/history/${purchase.id}`}
+                        className="grid h-[104px] grid-cols-[207px_1fr_219px_219px_219px_219px] items-center border-b border-border px-20 text-center text-xl leading-8 text-snack-black-100 transition-colors hover:bg-surface"
+                      >
+                        <span>{formatDate(purchase.approvedAt)}</span>
+                        <div className="text-left">
+                          <p className="font-semibold text-snack-black-200">
+                            {formatProductName(purchase)}
+                          </p>
+                          <p className="text-sm leading-6 font-medium text-foreground-muted">
+                            총 수량: {purchase.totalQuantity}
+                          </p>
+                        </div>
+                        <span>{formatPrice(purchase.totalPrice)}</span>
+                        <span>{purchase.requesterName}</span>
+                        <span>{purchase.processorName}</span>
+                        <span>{formatDate(purchase.createdAt)}</span>
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -265,61 +268,63 @@ export default function PurchaseHistoryPage() {
 
               <ul className="xl:hidden">
                 {orders.map((purchase) => (
-                  <li
-                    key={purchase.id}
-                    className="border-b-2 border-border px-6 pt-6 pb-6"
-                  >
-                    <div className="flex items-end gap-4">
-                      <div className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-border bg-surface shadow-[4px_4px_10px_rgba(250,247,243,0.25)]">
-                        <Image
-                          src="/images/purchase-history-product.png"
-                          alt=""
-                          width={28}
-                          height={49}
-                          className="h-[49px] w-7 object-contain"
-                        />
+                  <li key={purchase.id}>
+                    <Link
+                      href={`/purchase/history/${purchase.id}`}
+                      className="block border-b-2 border-border px-6 pt-6 pb-6 transition-colors hover:bg-surface"
+                    >
+                      <div className="flex items-end gap-4">
+                        <div className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-border bg-surface shadow-[4px_4px_10px_rgba(250,247,243,0.25)]">
+                          <Image
+                            src="/images/purchase-history-product.png"
+                            alt=""
+                            width={28}
+                            height={49}
+                            className="h-[49px] w-7 object-contain"
+                          />
+                        </div>
+                        <div className="self-stretch pt-1">
+                          <p className="text-sm leading-6 text-foreground-strong">
+                            {formatProductName(purchase)}
+                          </p>
+                          <p className="text-xs leading-[18px] text-foreground-muted">
+                            총 수량: {purchase.totalQuantity}
+                          </p>
+                        </div>
                       </div>
-                      <div className="self-stretch pt-1">
-                        <p className="text-sm leading-6 text-foreground-strong">
-                          {formatProductName(purchase)}
-                        </p>
-                        <p className="text-xs leading-[18px] text-foreground-muted">
-                          총 수량: {purchase.totalQuantity}
-                        </p>
-                      </div>
-                    </div>
 
-                    <div className="mt-4 flex items-center justify-between border-b border-snack-gray-200 py-3 text-sm leading-6 font-semibold text-foreground-strong">
-                      <span>주문금액</span>
-                      <span>{formatPrice(purchase.totalPrice)}원</span>
-                    </div>
+                      <div className="mt-4 flex items-center justify-between border-b border-snack-gray-200 py-3 text-sm leading-6 font-semibold text-foreground-strong">
+                        <span>주문금액</span>
+                        <span>{formatPrice(purchase.totalPrice)}원</span>
+                      </div>
 
-                    <dl className="mt-4 space-y-2 text-sm leading-6 text-foreground-muted">
-                      <div className="flex items-center justify-between">
-                        <dt>구매승인일</dt>
-                        <dd className="font-medium">
-                          {formatDate(purchase.approvedAt)}
-                        </dd>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <dt>구매요청일</dt>
-                        <dd className="font-medium">
-                          {formatDate(purchase.createdAt)}
-                        </dd>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <dt>요청인</dt>
-                        <dd className="font-medium">
-                          {purchase.requesterName}
-                        </dd>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <dt>담당자</dt>
-                        <dd className="font-medium">
-                          {purchase.processorName}
-                        </dd>
-                      </div>
-                    </dl>
+                      <dl className="mt-4 space-y-2 text-sm leading-6 text-foreground-muted">
+                        <div className="flex items-center justify-between">
+                          <dt>구매승인일</dt>
+                          <dd className="font-medium">
+                            {formatDate(purchase.approvedAt)}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <dt>구매요청일</dt>
+                          <dd className="font-medium">
+                            {formatDate(purchase.createdAt)}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <dt>요청인</dt>
+                          <dd className="font-medium">
+                            {purchase.requesterName}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <dt>담당자</dt>
+                          <dd className="font-medium">
+                            {purchase.processorName}
+                          </dd>
+                        </div>
+                      </dl>
+                    </Link>
                   </li>
                 ))}
               </ul>
