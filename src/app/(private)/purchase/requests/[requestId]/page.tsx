@@ -1,6 +1,7 @@
 import Image from "next/image";
 
-import { Button, Icon } from "@/components/ui";
+import { PurchaseRequestDecisionActions } from "@/app/(private)/purchase/requests/PurchaseRequestDecisionActions";
+import { Icon } from "@/components/ui";
 
 const requestedItems = Array.from({ length: 6 }, (_, index) => ({
   id: index + 1,
@@ -180,21 +181,7 @@ const PurchaseRequestDetailPage = async ({
             </strong>
           </div>
 
-          <div className="mt-8 flex w-full gap-3 md:mt-16 md:w-[696px] md:gap-5 xl:mt-6 xl:w-full xl:gap-[23px]">
-            <Button
-              variant="muted"
-              width="full"
-              className="flex-1 text-sm leading-6 xl:text-xl xl:leading-8"
-            >
-              요청 반려
-            </Button>
-            <Button
-              width="full"
-              className="flex-1 text-sm leading-6 xl:text-xl xl:leading-8"
-            >
-              요청 승인
-            </Button>
-          </div>
+          <PurchaseRequestDecisionActions requestId={requestId} />
         </section>
       </div>
     </main>

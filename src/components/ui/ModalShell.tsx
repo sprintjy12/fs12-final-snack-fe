@@ -59,7 +59,7 @@ export type ModalShellProps = {
 };
 
 const DEFAULT_PANEL_CLASS_NAME = [
-  "w-full bg-surface-muted",
+  "w-full min-h-0 bg-surface-muted",
   "shadow-[4px_4px_5px_rgba(169,169,169,0.2)]",
   "rounded-t-[32px] md:rounded-[32px]",
 ].join(" ");
@@ -108,8 +108,15 @@ export function ModalShell({
         return;
       }
 
-      const focusable = getFocusableElements(panel);
-      (focusable[0] ?? panel).focus();
+      // 첫 입력 필드로 포커스하면 긴 폼 모달이 하단으로 스크롤됩니다.
+      // dialog 패널 자체에 포커스해 상단이 보이도록 유지합니다.
+      panel.scrollTop = 0;
+      for (const child of panel.children) {
+        if (child instanceof HTMLElement) {
+          child.scrollTop = 0;
+        }
+      }
+      panel.focus({ preventScroll: true });
     });
 
     const handleKeyDown = (event: KeyboardEvent) => {
