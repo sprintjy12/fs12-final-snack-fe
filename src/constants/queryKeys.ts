@@ -20,4 +20,8 @@ export const queryKeys = {
     all: ["orders"] as const,
     list: (params: object) => ["orders", "list", params] as const,
   },
+  budgets: {
+    all: ["budgets"] as const,
+    summary: () => ["budgets", "summary"] as const,
+  },
 };

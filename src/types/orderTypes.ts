@@ -1,19 +1,21 @@
 export type OrderListSort = "latest" | "highPrice" | "lowPrice";
 
-export type OrderItemsSummary = {
-  firstProductName: string;
-  itemCount: number;
-};
+export type OrderListType = "DIRECT" | "REQUEST";
 
 /** GET /api/orders 목록 한 줄 */
 export type OrderListItem = {
   id: string;
+  type: OrderListType;
   approvedAt: string;
   totalPrice: number;
+  totalQuantity: number;
   requesterName: string;
   processorName: string;
   createdAt: string;
-  itemsSummary: OrderItemsSummary;
+  /** 대표 상품명 */
+  firstProductName: string;
+  /** 품종 수 (외 N건 표시용) */
+  itemCount: number;
 };
 
 export type OrderListPagination = {
