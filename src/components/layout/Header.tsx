@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { MobileSidebar } from "@/components/layout/MobileSidebar";
@@ -21,18 +21,14 @@ export type HeaderProps = {
 
 const DEFAULT_NAV_ITEMS = [
   { href: "/products", label: "상품 리스트" },
-  { href: "/purchase/requests?view=history", label: "구매 요청 내역" },
+  { href: "/purchase/my-requests", label: "구매 요청 내역" },
   { href: "/purchase/requests", label: "구매 요청 관리" },
   { href: "/purchase/history", label: "구매 내역 확인" },
   { href: "/products/mine", label: "상품 등록 내역" },
   { href: "/admin", label: "관리" },
 ] as const satisfies readonly HeaderNavItem[];
 
-function isNavItemActive(
-  href: string,
-  pathname: string,
-  view: string | null,
-) {
+function isNavItemActive(href: string, pathname: string) {
   if (href === "/purchase/history") {
     return (
       pathname === "/purchase/history" ||
@@ -40,16 +36,18 @@ function isNavItemActive(
     );
   }
 
-  if (href === "/purchase/requests?view=history") {
-    return pathname === "/purchase/requests" && view === "history";
+  if (href === "/purchase/my-requests") {
+    return (
+      pathname === "/purchase/my-requests" ||
+      pathname.startsWith("/purchase/my-requests/")
+    );
   }
 
   if (href === "/purchase/requests") {
-    if (pathname.startsWith("/purchase/requests/")) {
-      return true;
-    }
-
-    return pathname === "/purchase/requests" && view !== "history";
+    return (
+      pathname === "/purchase/requests" ||
+      pathname.startsWith("/purchase/requests/")
+    );
   }
 
   if (href === "/admin") {
@@ -68,10 +66,9 @@ function isNavItemActive(
 function getActiveNavHref(
   navItems: readonly HeaderNavItem[],
   pathname: string,
-  view: string | null,
 ) {
   const matchedItems = navItems.filter((navItem) =>
-    isNavItemActive(navItem.href, pathname, view),
+    isNavItemActive(navItem.href, pathname),
   );
 
   if (matchedItems.length === 0) {
@@ -92,10 +89,8 @@ export function Header({
   onLogout,
 }: HeaderProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const view = searchParams.get("view");
   const showCartBadge = cartCount > 0;
-  const activeHref = getActiveNavHref(navItems, pathname, view);
+  const activeHref = getActiveNavHref(navItems, pathname);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
