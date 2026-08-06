@@ -142,3 +142,32 @@ export type OrderRequestDetailResponse = {
   message: string;
   data: OrderRequestDetailData;
 };
+
+/** PATCH /api/orders/:id/approve|reject body */
+export type ProcessOrderRequestBody = {
+  responseMessage: string;
+};
+
+/** PATCH /api/orders/:id/approve|reject data */
+export type ProcessOrderResult = {
+  id: string;
+  companyId: string;
+  requesterId: string;
+  processorId: string;
+  type: OrderListType;
+  status: OrderDetailStatus;
+  productAmount: number;
+  shippingFee: number;
+  totalPrice: number;
+  requestMessage: string | null;
+  responseMessage: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ProcessOrderResponse = {
+  success: boolean;
+  message: string;
+  data: ProcessOrderResult;
+};

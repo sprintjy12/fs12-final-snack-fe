@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useId, useState, type FormEvent } from "react";
+import axios from "axios";
 import { z } from "zod";
 
 import {
@@ -10,6 +11,7 @@ import {
   TextField,
   showToast,
 } from "@/components/ui";
+import { useProcessOrderRequest } from "@/hooks/mutations/useProcessOrderRequest";
 
 export type PurchaseRequestDecisionMode = "approve" | "reject";
 
@@ -63,10 +65,29 @@ const COPY = {
   },
 } as const;
 
+/** 백엔드 processOrderSchema(10~100자)와 맞춤 */
 const createMessageSchema = (emptyMessage: string) =>
   z.object({
-    message: z.string().trim().min(1, emptyMessage),
+    message: z
+      .string()
+      .trim()
+      .min(1, emptyMessage)
+      .min(10, "메시지는 10자 이상 입력해 주세요.")
+      .max(100, "메시지는 100자 이하여야 합니다."),
   });
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (axios.isAxiosError(error)) {
+    const message = error.response?.data?.message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+};
 
 /**
  * 구매 요청 승인/반려 폼 모달.
@@ -82,6 +103,7 @@ export function PurchaseRequestDecisionModal({
   const titleId = useId();
   const messageId = useId();
   const [message, setMessage] = useState("");
+  const { mutateAsync, isPending } = useProcessOrderRequest();
 
   const isOpen = open && Boolean(mode) && Boolean(request);
   const copy = mode ? COPY[mode] : null;
@@ -92,10 +114,10 @@ export function PurchaseRequestDecisionModal({
     }
   }, [isOpen]);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!mode || !request || !copy) {
+    if (!mode || !request || !copy || isPending) {
       return;
     }
 
@@ -109,20 +131,35 @@ export function PurchaseRequestDecisionModal({
       return;
     }
 
-    // TODO: 구매 요청 승인/반려 API 연동
-    onSubmit?.({
-      id: request.id,
-      mode,
-      message: result.data.message,
-    });
-    showToast(copy.successToast);
-    onClose();
+    try {
+      await mutateAsync({
+        orderId: request.id,
+        mode,
+        responseMessage: result.data.message,
+      });
+      onSubmit?.({
+        id: request.id,
+        mode,
+        message: result.data.message,
+      });
+      showToast(copy.successToast);
+      onClose();
+    } catch (error) {
+      showToast(
+        getErrorMessage(
+          error,
+          mode === "approve"
+            ? "구매 요청 승인에 실패했습니다."
+            : "구매 요청 반려에 실패했습니다.",
+        ),
+      );
+    }
   };
 
   return (
     <ModalShell
       open={isOpen}
-      onClose={onClose}
+      onClose={isPending ? () => undefined : onClose}
       aria-labelledby={titleId}
       className={[
         "flex max-h-[min(1018px,calc(100dvh-24px))] max-w-[375px] flex-col overflow-hidden p-0",
@@ -251,10 +288,12 @@ export function PurchaseRequestDecisionModal({
                   onChange={(event) => setMessage(event.target.value)}
                   placeholder={copy.placeholder}
                   rows={5}
+                  disabled={isPending}
                   className={[
                     "h-[120px] w-full resize-none rounded-2xl border border-solid border-snack-orange-300 bg-surface px-4 py-3.5",
                     "text-sm leading-6 text-foreground outline-none placeholder:text-snack-gray-400",
                     "xl:h-40 xl:px-6 xl:text-lg xl:leading-[26px]",
+                    "disabled:cursor-not-allowed disabled:opacity-60",
                   ].join(" ")}
                 />
               </label>
@@ -266,11 +305,17 @@ export function PurchaseRequestDecisionModal({
                 variant="secondary"
                 width="modal"
                 className="flex-1"
+                disabled={isPending}
                 onClick={onClose}
               >
                 취소
               </Button>
-              <Button type="submit" width="modal" className="flex-1">
+              <Button
+                type="submit"
+                width="modal"
+                className="flex-1"
+                disabled={isPending}
+              >
                 {copy.submitLabel}
               </Button>
             </div>

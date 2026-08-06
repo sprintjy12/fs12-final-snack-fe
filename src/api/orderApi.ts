@@ -6,6 +6,8 @@ import type {
   OrderListResponse,
   OrderRequestDetailResponse,
   OrderRequestListResponse,
+  ProcessOrderRequestBody,
+  ProcessOrderResponse,
 } from "@/types/orderTypes";
 
 /**
@@ -61,6 +63,32 @@ export const getOrderRequestDetail = async (
 ): Promise<OrderRequestDetailResponse> => {
   const response = await apiClient.get<OrderRequestDetailResponse>(
     `/api/orders/requests/${orderId}`,
+  );
+
+  return response.data;
+};
+
+/** 구매 요청 승인 */
+export const approveOrder = async (
+  orderId: string,
+  body: ProcessOrderRequestBody,
+): Promise<ProcessOrderResponse> => {
+  const response = await apiClient.patch<ProcessOrderResponse>(
+    `/api/orders/${orderId}/approve`,
+    body,
+  );
+
+  return response.data;
+};
+
+/** 구매 요청 반려 */
+export const rejectOrder = async (
+  orderId: string,
+  body: ProcessOrderRequestBody,
+): Promise<ProcessOrderResponse> => {
+  const response = await apiClient.patch<ProcessOrderResponse>(
+    `/api/orders/${orderId}/reject`,
+    body,
   );
 
   return response.data;
