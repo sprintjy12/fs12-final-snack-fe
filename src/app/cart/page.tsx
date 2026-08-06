@@ -1,29 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { CommonImage, Icon } from "@/components/ui";
-import { DUMMY_PRODUCTS } from "@/features/products/dummyProducts";
+import { useCart } from "@/hooks/queries/useCart";
 import {
-  clearCart,
-  getCartItems,
-  removeFromCart,
-  removeFromCartMany,
-  setCartQuantity,
-  type CartItem,
-} from "@/lib/cartStorage";
+  useDeleteCart,
+  useDeleteCartItem,
+  useDeleteSelectedCartItems,
+  useUpdateCartItem,
+} from "@/hooks/mutations/useCart";
 import { getProductPhotoSrc } from "@/lib/productMedia";
-import type { Product } from "@/types/productTypes";
+import type { CartItemWithProduct } from "@/types/cartTypes";
 
 const SHIPPING_FEE = 3000;
 const MAX_QUANTITY = 999;
 
-type CartProduct = CartItem & {
-  product: Product;
-};
+type CartItemId = string;
 
-type ProductId = CartItem["productId"];
 function formatPrice(price: number) {
   return `${price.toLocaleString("ko-KR")}원`;
 }
@@ -33,36 +28,30 @@ function cx(...parts: Array<string | false | null | undefined>) {
 }
 
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [selectedIds, setSelectedIds] = useState<ProductId[]>([]);
-  const [hydrated, setHydrated] = useState(false);
-  const [failedImageIds, setFailedImageIds] = useState<Set<ProductId>>(
+  const { data: cart, isLoading } = useCart();
+  const updateCartItem = useUpdateCartItem();
+  const deleteCartItemMutation = useDeleteCartItem();
+  const deleteSelectedCartItemsMutation = useDeleteSelectedCartItems();
+  const deleteCartMutation = useDeleteCart();
+
+  const cartItems = cart?.items ?? [];
+
+  const [selectedIds, setSelectedIds] = useState<CartItemId[]>([]);
+  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(
     () => new Set(),
   );
 
-  useEffect(() => {
-    const items = getCartItems();
-    setCartItems(items);
-    setSelectedIds(items.map((item) => item.productId));
-    setHydrated(true);
-  }, []);
+  // 데이터가 로드되면 전체 선택 상태로 초기화
+  const effectiveSelectedIds = useMemo(() => {
+    if (selectedIds.length > 0) return selectedIds;
+    return cartItems.map((item) => item.id);
+  }, [selectedIds, cartItems]);
 
-  const cartProducts = useMemo<CartProduct[]>(
-    () =>
-      cartItems.flatMap((item) => {
-        const product = DUMMY_PRODUCTS.find(
-          (candidate) => candidate.id === item.productId,
-        );
-        return product ? [{ ...item, product }] : [];
-      }),
-    [cartItems],
-  );
-
-  const selectedProducts = cartProducts.filter((item) =>
-    selectedIds.includes(item.product.id),
+  const selectedProducts = cartItems.filter((item) =>
+    effectiveSelectedIds.includes(item.id),
   );
   const allSelected =
-    cartProducts.length > 0 && selectedProducts.length === cartProducts.length;
+    cartItems.length > 0 && selectedProducts.length === cartItems.length;
   const someSelected = selectedProducts.length > 0;
 
   const productTotal = selectedProducts.reduce(
@@ -72,44 +61,43 @@ export default function CartPage() {
   const shippingFee = someSelected ? SHIPPING_FEE : 0;
   const orderTotal = productTotal + shippingFee;
 
-  const syncCart = (next: CartItem[]) => {
-    setCartItems(next);
-    setSelectedIds((prev) =>
-      prev.filter((id) => next.some((item) => item.productId === id)),
-    );
-  };
-
   const toggleSelectAll = () => {
     if (allSelected) {
       setSelectedIds([]);
       return;
     }
-    setSelectedIds(cartProducts.map((item) => item.product.id));
+    setSelectedIds(cartItems.map((item) => item.id));
   };
 
-  const toggleSelect = (productId: ProductId) => {
-    setSelectedIds((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId],
-    );
+  const toggleSelect = (cartItemId: CartItemId) => {
+    setSelectedIds((prev) => {
+      const current = prev.length > 0 ? prev : cartItems.map((i) => i.id);
+      return current.includes(cartItemId)
+        ? current.filter((id) => id !== cartItemId)
+        : [...current, cartItemId];
+    });
   };
 
-  const changeQuantity = (productId: ProductId, nextQuantity: number) => {
-    syncCart(setCartQuantity(productId, nextQuantity));
+  const changeQuantity = (cartItemId: CartItemId, currentQuantity: number, delta: 1 | -1) => {
+    const nextQuantity = currentQuantity + delta;
+    if (nextQuantity < 1 || nextQuantity > MAX_QUANTITY) return;
+    updateCartItem.mutate({ cartId: cartItemId, request: { delta } });
   };
 
-  const handleRemoveOne = (productId: ProductId) => {
-    syncCart(removeFromCart(productId));
+  const handleRemoveOne = (cartItemId: CartItemId) => {
+    deleteCartItemMutation.mutate(cartItemId);
+    setSelectedIds((prev) => prev.filter((id) => id !== cartItemId));
   };
 
   const handleRemoveSelected = () => {
     if (!someSelected) return;
-    syncCart(removeFromCartMany(selectedIds));
+    deleteSelectedCartItemsMutation.mutate({ cartItemIds: effectiveSelectedIds });
+    setSelectedIds([]);
   };
 
   const handleClearAll = () => {
-    syncCart(clearCart());
+    deleteCartMutation.mutate();
+    setSelectedIds([]);
   };
 
   const rowGrid =
@@ -124,14 +112,14 @@ export default function CartPage() {
           </h1>
         </div>
 
-        {!hydrated ? (
+        {isLoading ? (
           <div
             className="flex min-h-[420px] items-center justify-center"
             role="status"
           >
             장바구니를 불러오는 중…
           </div>
-        ) : cartProducts.length === 0 ? (
+        ) : cartItems.length === 0 ? (
           <section className="flex min-h-[420px] flex-col items-center justify-center gap-3 border-y border-snack-gray-300">
             <CommonImage
               name="empty-purchase"
@@ -187,17 +175,18 @@ export default function CartPage() {
               </div>
 
               <div className="flex flex-col">
-                {cartProducts.map(({ product, quantity }) => {
-                  const photoSrc = getProductPhotoSrc(product.photo);
+                {cartItems.map((item: CartItemWithProduct) => {
+                  const { product, quantity } = item;
+                  const photoSrc = product.imageUrl;
                   const showImage =
-                    Boolean(photoSrc) && !failedImageIds.has(product.id);
+                    Boolean(photoSrc) && !failedImageIds.has(item.id);
                   const lineTotal = product.price * quantity;
-                  const isSelected = selectedIds.includes(product.id);
+                  const isSelected = effectiveSelectedIds.includes(item.id);
 
                   return (
                     <article
                       className={cx(rowGrid, "min-h-[208px] bg-surface-muted")}
-                      key={product.id}
+                      key={item.id}
                     >
                       <div className="relative flex min-w-0 items-start gap-8 border-b border-snack-gray-300 p-6">
                         <button
@@ -208,14 +197,14 @@ export default function CartPage() {
                           )}
                           aria-label={`${product.name} 선택`}
                           aria-pressed={isSelected}
-                          onClick={() => toggleSelect(product.id)}
+                          onClick={() => toggleSelect(item.id)}
                         >
                           {isSelected ? (
                             <span aria-hidden="true">✓</span>
                           ) : null}
                         </button>
                         <Link
-                          href={`/products/${product.id}?categoryId=${product.categoryId}&subCategoryId=${product.subCategoryId}`}
+                          href={`/products/${product.id}`}
                           className="flex min-w-0 gap-6"
                         >
                           <span className="relative grid size-40 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border bg-surface shadow-[4px_4px_10px_rgb(250_247_243_/_25%)] max-[1400px]:size-[140px]">
@@ -227,9 +216,9 @@ export default function CartPage() {
                                 className="relative h-auto max-h-[98px] w-14 object-contain"
                                 onError={() => {
                                   setFailedImageIds((prev) => {
-                                    if (prev.has(product.id)) return prev;
+                                    if (prev.has(item.id)) return prev;
                                     const next = new Set(prev);
-                                    next.add(product.id);
+                                    next.add(item.id);
                                     return next;
                                   });
                                 }}
@@ -249,7 +238,7 @@ export default function CartPage() {
                           type="button"
                           className="absolute top-[18px] right-2.5 grid size-9 place-items-center border-0 bg-transparent p-0 text-snack-black-100 hover:text-foreground-strong"
                           aria-label={`${product.name} 삭제`}
-                          onClick={() => handleRemoveOne(product.id)}
+                          onClick={() => handleRemoveOne(item.id)}
                         >
                           <Icon name="close" size="sm" />
                         </button>
@@ -269,7 +258,7 @@ export default function CartPage() {
                               aria-label="수량 증가"
                               disabled={quantity >= MAX_QUANTITY}
                               onClick={() =>
-                                changeQuantity(product.id, quantity + 1)
+                                changeQuantity(item.id, quantity, 1)
                               }
                             >
                               <Icon
@@ -284,7 +273,7 @@ export default function CartPage() {
                               aria-label="수량 감소"
                               disabled={quantity <= 1}
                               onClick={() =>
-                                changeQuantity(product.id, quantity - 1)
+                                changeQuantity(item.id, quantity, -1)
                               }
                             >
                               <Icon

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 import { Icon } from "@/components/ui";
 import { useProduct } from "@/hooks/queries/useProducts";
-import { addToCart } from "@/lib/cartStorage";
+import { useAddToCart } from "@/hooks/mutations/useCart";
 import { getProductPhotoSrc } from "@/lib/productMedia";
 
 import styles from "./productDetail.module.css";
@@ -54,6 +54,7 @@ export default function ProductDetailPage() {
   const id = Number(Array.isArray(rawId) ? rawId[0] : rawId);
 
   const { data: product, isLoading, isError } = useProduct(id);
+  const addToCartMutation = useAddToCart();
   const [quantity, setQuantity] = useState(1);
   const [imageFailed, setImageFailed] = useState(false);
   const [feedback, setFeedback] = useState<{
@@ -83,19 +84,23 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (!product) return;
-    const saved = addToCart(product.id, quantity);
-    if (saved) {
-      setFeedback({
-        type: "success",
-        message: `${product.name} ${quantity}개를 장바구니에 담았습니다.`,
-      });
-      return;
-    }
-    setFeedback({
-      type: "error",
-      message:
-        "장바구니에 담지 못했습니다. 브라우저 저장소 설정을 확인해 주세요.",
-    });
+    addToCartMutation.mutate(
+      { productId: String(product.id), quantity },
+      {
+        onSuccess: () => {
+          setFeedback({
+            type: "success",
+            message: `${product.name} ${quantity}개를 장바구니에 담았습니다.`,
+          });
+        },
+        onError: () => {
+          setFeedback({
+            type: "error",
+            message: "장바구니에 담지 못했습니다. 다시 시도해 주세요.",
+          });
+        },
+      },
+    );
   };
 
   if (!Number.isFinite(id) || id <= 0) {

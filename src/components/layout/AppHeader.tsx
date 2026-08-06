@@ -1,35 +1,14 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense } from "react";
 
 import { Header } from "@/components/layout";
-import {
-  CART_CHANGE_EVENT,
-  CART_STORAGE_KEY,
-  getCartItemCount,
-} from "@/lib/cartStorage";
+import { useCart } from "@/hooks/queries/useCart";
 
 function HeaderWithCartCount() {
-  const [cartCount, setCartCount] = useState(0);
-
-  useEffect(() => {
-    const syncCount = () => setCartCount(getCartItemCount());
-    syncCount();
-
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === CART_STORAGE_KEY || event.key === null) {
-        syncCount();
-      }
-    };
-
-    window.addEventListener(CART_CHANGE_EVENT, syncCount);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(CART_CHANGE_EVENT, syncCount);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
+  const { data: cart } = useCart();
+  const cartCount = cart?.summary?.totalQuantity ?? 0;
 
   return <Header cartCount={cartCount} />;
 }

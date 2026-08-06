@@ -1,7 +1,11 @@
 import { TEMP_CATEGORIES } from "@/constants/categoryConstants";
 import { DUMMY_PRODUCTS } from "@/features/products/dummyProducts";
 import { apiFetch } from "@/services/api";
-import type { Category, Product, ProductListParams } from "@/types/productTypes";
+import type {
+  Category,
+  Product,
+  ProductListParams,
+} from "@/types/productTypes";
 
 /** 기본 true. 백엔드 준비되면 .env에 NEXT_PUBLIC_USE_MOCK=false */
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";

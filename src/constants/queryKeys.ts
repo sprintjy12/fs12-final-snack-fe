@@ -24,4 +24,7 @@ export const queryKeys = {
     all: ["budgets"] as const,
     summary: () => ["budgets", "summary"] as const,
   },
+  cart: {
+    all: ["cart"] as const,
+  },
 };
