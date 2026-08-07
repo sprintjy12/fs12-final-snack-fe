@@ -44,6 +44,8 @@ export type PurchaseRequestDecisionModalProps = {
   mode: PurchaseRequestDecisionMode | null;
   request: PurchaseRequestDecisionTarget | null;
   onClose: () => void;
+  /** true면 성공 후 완료 모달 표시 (상세). false면 토스트 후 목록 유지 */
+  showResultModal?: boolean;
   onSubmit?: (values: {
     id: string;
     mode: PurchaseRequestDecisionMode;
@@ -58,6 +60,7 @@ const COPY = {
     placeholder: "승인 메시지를 입력해주세요.",
     submitLabel: "승인하기",
     emptyMessage: "승인 메시지를 입력해 주세요.",
+    successToast: "구매 요청을 승인했어요.",
   },
   reject: {
     title: "구매 요청 반려",
@@ -65,6 +68,7 @@ const COPY = {
     placeholder: "반려 메시지를 입력해주세요.",
     submitLabel: "반려하기",
     emptyMessage: "반려 메시지를 입력해 주세요.",
+    successToast: "구매 요청을 반려했어요.",
   },
 } as const;
 
@@ -122,13 +126,14 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 /**
  * 구매 요청 승인/반려 폼 모달.
  * 시안상 양식은 동일하고 제목·메시지 라벨·CTA 카피만 다릅니다.
- * 성공 시 승인/반려 완료 안내 Modal을 띄웁니다.
+ * 상세에서는 성공 후 완료 모달, 목록에서는 토스트 후 목록에 남습니다.
  */
 export function PurchaseRequestDecisionModal({
   open,
   mode,
   request,
   onClose,
+  showResultModal = false,
   onSubmit,
 }: PurchaseRequestDecisionModalProps) {
   const titleId = useId();
@@ -186,7 +191,11 @@ export function PurchaseRequestDecisionModal({
         message: result.data.message,
       });
       onClose();
-      setCompletedMode(mode);
+      if (showResultModal) {
+        setCompletedMode(mode);
+      } else {
+        showToast(copy.successToast);
+      }
     } catch (error) {
       showToast(
         getErrorMessage(

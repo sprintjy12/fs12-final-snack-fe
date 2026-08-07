@@ -260,6 +260,7 @@ export function PurchaseRequestsList({
         open={Boolean(mode && target)}
         mode={mode}
         request={target}
+        showResultModal={false}
         onClose={closeModal}
       />
     </>

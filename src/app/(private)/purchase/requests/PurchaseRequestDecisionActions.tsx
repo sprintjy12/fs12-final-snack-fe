@@ -90,6 +90,7 @@ export function PurchaseRequestDecisionActions({
         open={Boolean(mode && target)}
         mode={mode}
         request={target}
+        showResultModal
         onClose={closeModal}
       />
     </>
