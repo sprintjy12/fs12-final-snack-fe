@@ -54,7 +54,7 @@ export default function PurchaseRequestDetailPage() {
         {
           label: "이번 달 남은 예산",
           value: detail.budget.isUnlimited
-            ? "무제한"
+            ? "미설정"
             : formatPrice(detail.budget.remaining),
           emphasize: false,
           danger: isBudgetExceeded,
@@ -62,7 +62,7 @@ export default function PurchaseRequestDetailPage() {
         {
           label: "구매 후 예산",
           value: detail.budget.isUnlimited
-            ? "무제한"
+            ? "미설정"
             : formatPrice(detail.budget.remaining - detail.totalPrice),
           emphasize: true,
           danger: false,
