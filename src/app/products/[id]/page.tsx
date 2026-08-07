@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { Icon } from "@/components/ui";
 import { useProduct } from "@/hooks/queries/useProducts";
-import { addToCart } from "@/lib/cartStorage";
 import { getProductPhotoSrc } from "@/lib/productMedia";
+import { useAddToCart } from "@/hooks/mutations/useCart";
 
 import styles from "./productDetail.module.css";
 
@@ -52,7 +51,7 @@ function DetailSkeleton() {
 export default function ProductDetailPage() {
   const params = useParams();
   const rawId = params?.id;
-  const id = Number(Array.isArray(rawId) ? rawId[0] : rawId);
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
 
   const { data: product, isLoading, isError } = useProduct(id);
   const [quantity, setQuantity] = useState(1);
@@ -79,54 +78,40 @@ export default function ProductDetailPage() {
   const categoryLabel =
     product?.subCategory?.name ?? product?.category?.name ?? null;
 
+  const addToCartMutation = useAddToCart();
+
   const decrease = () => setQuantity((value) => Math.max(1, value - 1));
   const increase = () => setQuantity((value) => Math.min(999, value + 1));
 
-  const addToCartMutation = useMutation({
-    mutationFn: async (payload: {
-      productId: number;
-      quantity: number;
-      productName: string;
-    }) => {
-      const saved = addToCart(payload.productId, payload.quantity);
-      if (!saved) {
-        throw new Error("CART_SAVE_FAILED");
-      }
-      return payload;
-    },
-    onSuccess: (payload) => {
-      setFeedback({
-        type: "success",
-        message: `장바구니에 ${payload.productName} 상품을 담았습니다.`,
-      });
-    },
-    onError: () => {
-      setFeedback({
-        type: "error",
-        message:
-          "장바구니에 담지 못했습니다. 브라우저 저장소 설정을 확인해 주세요.",
-      });
-    },
-  });
-
   const handleAddToCart = () => {
     if (!product || addToCartMutation.isPending) return;
-    const productId = Number(product.id);
-    if (!Number.isInteger(productId) || productId <= 0) {
+    if (!product.id) {
       setFeedback({
         type: "error",
         message: "유효하지 않은 상품입니다. 다시 시도해 주세요.",
       });
       return;
     }
-    addToCartMutation.mutate({
-      productId,
-      quantity,
-      productName: product.name,
-    });
+    addToCartMutation.mutate(
+      { productId: String(product.id), quantity },
+      {
+        onSuccess: () => {
+          setFeedback({
+            type: "success",
+            message: `장바구니에 ${product.name} 상품을 담았습니다.`,
+          });
+        },
+        onError: () => {
+          setFeedback({
+            type: "error",
+            message: "장바구니에 담지 못했습니다. 다시 시도해 주세요.",
+          });
+        },
+      },
+    );
   };
 
-  if (!Number.isFinite(id) || id <= 0) {
+  if (!id) {
     return (
       <div className={styles.page}>
         <div className={styles.inner}>
