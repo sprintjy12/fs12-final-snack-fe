@@ -97,7 +97,7 @@ export default function ProductDetailPage() {
     onSuccess: (payload) => {
       setFeedback({
         type: "success",
-        message: `${payload.productName} ${payload.quantity}개를 장바구니에 담았습니다.`,
+        message: `장바구니에 ${payload.productName} 상품을 담았습니다.`,
       });
     },
     onError: () => {
