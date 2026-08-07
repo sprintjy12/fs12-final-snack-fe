@@ -125,3 +125,14 @@ export const rejectOrder = async (
 
   return response.data;
 };
+
+/** 내 구매 요청 취소 */
+export const cancelOrderRequest = async (
+  orderId: string,
+): Promise<ProcessOrderResponse> => {
+  const response = await apiClient.patch<ProcessOrderResponse>(
+    `/api/orders/requests/${orderId}/cancel`,
+  );
+
+  return response.data;
+};

@@ -1,5 +1,8 @@
 "use client";
 
+import { isAxiosError } from "axios";
+
+import { useCancelOrderRequest } from "@/hooks/mutations/useCancelOrderRequest";
 import { CommonImage, Modal, showToast } from "@/components/ui";
 
 export type CancelPurchaseRequestTarget = {
@@ -24,21 +27,43 @@ export function CancelPurchaseRequestModal({
   onClose,
   onConfirm,
 }: CancelPurchaseRequestModalProps) {
+  const cancelMutation = useCancelOrderRequest();
+
+  const handleClose = () => {
+    if (cancelMutation.isPending) {
+      return;
+    }
+    onClose();
+  };
+
   const handleConfirm = () => {
-    if (!request) {
+    if (!request || cancelMutation.isPending) {
       return;
     }
 
-    // TODO: 구매 요청 취소 API 연동
-    onConfirm?.(request);
-    showToast("구매 요청을 취소했어요.");
-    onClose();
+    cancelMutation.mutate(request.id, {
+      onSuccess: () => {
+        onConfirm?.(request);
+        showToast("구매 요청을 취소했어요.");
+        onClose();
+      },
+      onError: (error) => {
+        const message = isAxiosError(error)
+          ? ((error.response?.data as { message?: string } | undefined)
+              ?.message ?? error.message)
+          : error instanceof Error
+            ? error.message
+            : "구매 요청 취소에 실패했습니다.";
+        showToast(message);
+      },
+    });
   };
 
   return (
     <Modal
       open={open && Boolean(request)}
-      onClose={onClose}
+      onClose={handleClose}
+      closeOnOverlayClick={!cancelMutation.isPending}
       title="구매 요청 취소"
       description={
         <>
@@ -59,10 +84,10 @@ export function CancelPurchaseRequestModal({
       secondaryAction={{
         label: "더 생각해볼게요",
         variant: "secondary",
-        onClick: onClose,
+        onClick: handleClose,
       }}
       primaryAction={{
-        label: "취소할래요",
+        label: cancelMutation.isPending ? "취소 중…" : "취소할래요",
         variant: "primary",
         onClick: handleConfirm,
       }}
