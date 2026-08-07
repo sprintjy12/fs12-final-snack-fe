@@ -15,7 +15,7 @@ type ProcessOrderRequestParams = {
 
 /**
  * 구매 요청 승인/반려.
- * 성공 후 주문·요청 관련 캐시를 무효화합니다.
+ * 성공 후 주문·요청·예산 관련 캐시를 무효화합니다.
  */
 export const useProcessOrderRequest = () => {
   const queryClient = useQueryClient();
@@ -29,9 +29,13 @@ export const useProcessOrderRequest = () => {
       mode === "approve"
         ? approveOrder(orderId, { responseMessage })
         : rejectOrder(orderId, { responseMessage }),
-    onSuccess: () =>
-      queryClient.invalidateQueries({
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
         queryKey: queryKeys.orders.all,
-      }),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.budgets.all,
+      });
+    },
   });
 };
