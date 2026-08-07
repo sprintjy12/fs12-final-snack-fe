@@ -84,18 +84,18 @@ function getActiveNavHref(
 }
 
 export function Header({
-  cartCount = 2,
+  cartCount = 0,
   navItems = DEFAULT_NAV_ITEMS,
   onLogout,
 }: HeaderProps) {
   const pathname = usePathname();
   const showCartBadge = cartCount > 0;
-  const activeHref = getActiveNavHref(navItems, pathname);
+const activeHref = getActiveNavHref(navItems, pathname);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <>
-      <header className="border-b border-solid border-border bg-surface-muted">
+<header className="sticky top-0 z-[100] border-b border-border bg-surface-muted">
         <div className="mx-auto flex h-[54px] w-full max-w-[1920px] items-center justify-between px-6 md:h-16 xl:h-[88px] xl:px-[120px]">
           <div className="flex items-center gap-6 xl:gap-16">
             <button
@@ -183,13 +183,15 @@ export function Header({
               </span>
             </Link>
 
-            <button
-              type="button"
-              onClick={onLogout}
-              className="hidden cursor-pointer bg-transparent text-xl leading-8 font-bold text-snack-gray-300 xl:block xl:px-4"
-            >
-              Logout
-            </button>
+            {onLogout ? (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="hidden cursor-pointer bg-transparent text-xl leading-8 font-bold text-snack-gray-300 xl:block xl:px-4"
+              >
+                Logout
+              </button>
+            ) : null}
           </div>
         </div>
       </header>

@@ -146,3 +146,32 @@
   font-weight: 700;
   line-height: 42px;
 }
+
+@media (max-width: 768px) {
+  .link {
+    gap: 16px;
+  }
+
+  .likeButton {
+    top: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .name {
+    font-size: 1rem;
+    line-height: 26px;
+  }
+
+  .price {
+    font-size: 1.5rem;
+    line-height: 36px;
+  }
+
+  .category,
+  .purchaseBadge {
+    font-size: 0.875rem;
+    line-height: 22px;
+  }
+}

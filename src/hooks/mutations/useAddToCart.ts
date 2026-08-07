@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ensureAccessToken } from "@/api/authApi";
 import { addToCart } from "@/api/cartApi";
 import { queryKeys } from "@/constants/queryKeys";
-import type { AddToCartBody } from "@/types/cartTypes";
+import type { AddToCartRequest } from "@/types/cartTypes";
 
 /**
  * 장바구니 담기 (단건).
@@ -14,7 +14,7 @@ export const useAddToCart = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (body: AddToCartBody) => {
+    mutationFn: async (body: AddToCartRequest) => {
       await ensureAccessToken();
       return addToCart(body);
     },
