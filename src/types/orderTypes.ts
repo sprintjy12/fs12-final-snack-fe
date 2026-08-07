@@ -84,6 +84,31 @@ export type OrderDetailItem = {
   discounted?: boolean;
 };
 
+/** GET /api/orders/my-requests/:id data */
+export type MyOrderRequestDetailData = {
+  orderId: string;
+  type: OrderListType;
+  status: OrderDetailStatus;
+  productAmount: number;
+  shippingFee: number;
+  totalPrice: number;
+  itemCount: number;
+  totalQuantity: number;
+  requestMessage: string | null;
+  responseMessage: string | null;
+  requestedAt: string;
+  approvedAt: string | null;
+  requesterName: string | null;
+  processorName: string | null;
+  items: OrderDetailItem[];
+};
+
+export type MyOrderRequestDetailResponse = {
+  success: boolean;
+  message: string;
+  data: MyOrderRequestDetailData;
+};
+
 /** GET /api/orders/:id data */
 export type OrderDetailData = {
   orderId: string;

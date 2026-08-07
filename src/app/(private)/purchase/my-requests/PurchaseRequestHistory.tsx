@@ -213,49 +213,45 @@ export function PurchaseRequestHistory() {
                     const detailHref = `/purchase/my-requests/${item.id}`;
 
                     return (
-                      <li
-                        key={item.id}
-                        className="relative grid h-[104px] grid-cols-[207px_1fr_219px_219px_219px] items-center border-b border-solid border-border px-20 text-center text-xl leading-8 text-snack-black-100"
-                      >
+                      <li key={item.id} className="relative">
                         <Link
                           href={detailHref}
-                          className="absolute inset-0 z-0"
                           aria-label={`${productName} 상세 보기`}
-                        />
-                        <span className="relative z-10 pointer-events-none">
-                          {formatDate(item.createdAt)}
-                        </span>
-                        <div className="relative z-10 pointer-events-none text-left">
-                          <p className="font-semibold text-snack-black-200">
-                            {productName}
-                          </p>
-                          <p className="text-sm leading-6 font-medium text-foreground-muted">
-                            총 수량: {item.totalQuantity}개
-                          </p>
-                        </div>
-                        <span className="relative z-10 pointer-events-none">
-                          {formatPrice(item.totalPrice)}
-                        </span>
-                        <span
-                          className={[
-                            "relative z-10 pointer-events-none",
-                            isPendingStatus
-                              ? "text-snack-black-100"
-                              : "text-snack-gray-300",
-                          ].join(" ")}
+                          className="grid h-[104px] grid-cols-[207px_1fr_219px_219px_219px] items-center border-b border-solid border-border px-20 text-center text-xl leading-8 text-snack-black-100 transition-colors hover:bg-surface"
                         >
-                          {STATUS_LABEL[status]}
-                        </span>
-                        <div className="relative z-10 pointer-events-none flex items-center justify-center">
-                          {isPendingStatus ? (
+                          <span>{formatDate(item.createdAt)}</span>
+                          <div className="text-left">
+                            <p className="font-semibold text-snack-black-200">
+                              {productName}
+                            </p>
+                            <p className="text-sm leading-6 font-medium text-foreground-muted">
+                              총 수량: {item.totalQuantity}개
+                            </p>
+                          </div>
+                          <span>{formatPrice(item.totalPrice)}</span>
+                          <span
+                            className={
+                              isPendingStatus
+                                ? "text-snack-black-100"
+                                : "text-snack-gray-300"
+                            }
+                          >
+                            {STATUS_LABEL[status]}
+                          </span>
+                          <span aria-hidden className="invisible">
+                            요청 취소
+                          </span>
+                        </Link>
+                        {isPendingStatus ? (
+                          <div className="pointer-events-none absolute inset-y-0 right-20 flex w-[219px] items-center justify-center">
                             <div className="pointer-events-auto">
                               <CancelRequestButton
                                 size="md"
                                 onClick={() => openCancelModal(item)}
                               />
                             </div>
-                          ) : null}
-                        </div>
+                          </div>
+                        ) : null}
                       </li>
                     );
                   })}
@@ -270,71 +266,74 @@ export function PurchaseRequestHistory() {
                   const detailHref = `/purchase/my-requests/${item.id}`;
 
                   return (
-                    <li
-                      key={item.id}
-                      className="relative border-b-2 border-solid border-border px-6 pt-8 pb-8"
-                    >
+                    <li key={item.id} className="relative">
                       <Link
                         href={detailHref}
-                        className="absolute inset-0 z-0"
                         aria-label={`${productName} 상세 보기`}
-                      />
-                      <div className="relative z-10 pointer-events-none flex gap-4">
-                        <div className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-solid border-border bg-surface shadow-[4px_4px_10px_rgba(250,247,243,0.25)]">
-                          <Image
-                            src="/images/purchase-history-product.png"
-                            alt=""
-                            width={28}
-                            height={49}
-                            className="h-[49px] w-7 object-contain"
-                          />
-                        </div>
-                        <div className="flex min-w-0 flex-1 flex-col justify-between">
-                          <div>
-                            <p className="text-sm leading-6 text-foreground-strong">
-                              {productName}
-                            </p>
-                            <p className="text-xs leading-[18px] text-foreground-muted">
-                              총 수량: {item.totalQuantity}개
-                            </p>
+                        className="block border-b-2 border-solid border-border px-6 pt-8 pb-8 transition-colors hover:bg-surface"
+                      >
+                        <div className="flex gap-4">
+                          <div className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-solid border-border bg-surface shadow-[4px_4px_10px_rgba(250,247,243,0.25)]">
+                            <Image
+                              src="/images/purchase-history-product.png"
+                              alt=""
+                              width={28}
+                              height={49}
+                              className="h-[49px] w-7 object-contain"
+                            />
                           </div>
-                          {isPendingStatus ? (
-                            <div className="pointer-events-auto flex justify-end">
-                              <CancelRequestButton
-                                size="sm"
-                                onClick={() => openCancelModal(item)}
-                              />
+                          <div className="flex min-w-0 flex-1 flex-col justify-between">
+                            <div>
+                              <p className="text-sm leading-6 text-foreground-strong">
+                                {productName}
+                              </p>
+                              <p className="text-xs leading-[18px] text-foreground-muted">
+                                총 수량: {item.totalQuantity}개
+                              </p>
                             </div>
-                          ) : null}
+                            {isPendingStatus ? (
+                              <div className="h-8" aria-hidden />
+                            ) : null}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="relative z-10 pointer-events-none mt-4 flex items-center justify-between border-b border-solid border-snack-gray-200 py-3 text-base leading-[26px] font-semibold text-foreground-strong">
-                        <span>주문금액</span>
-                        <span>{formatPrice(item.totalPrice)}원</span>
-                      </div>
+                        <div className="mt-4 flex items-center justify-between border-b border-solid border-snack-gray-200 py-3 text-base leading-[26px] font-semibold text-foreground-strong">
+                          <span>주문금액</span>
+                          <span>{formatPrice(item.totalPrice)}원</span>
+                        </div>
 
-                      <dl className="relative z-10 pointer-events-none mt-3 space-y-2 text-sm leading-6">
-                        <div className="flex items-center justify-between text-foreground-muted">
-                          <dt>구매요청일</dt>
-                          <dd className="font-medium">
-                            {formatDate(item.createdAt)}
-                          </dd>
+                        <dl className="mt-3 space-y-2 text-sm leading-6">
+                          <div className="flex items-center justify-between text-foreground-muted">
+                            <dt>구매요청일</dt>
+                            <dd className="font-medium">
+                              {formatDate(item.createdAt)}
+                            </dd>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <dt className="text-foreground-muted">상태</dt>
+                            <dd
+                              className={[
+                                "font-semibold",
+                                isPendingStatus
+                                  ? "text-snack-black-200"
+                                  : "text-snack-gray-300",
+                              ].join(" ")}
+                            >
+                              {STATUS_LABEL[status]}
+                            </dd>
+                          </div>
+                        </dl>
+                      </Link>
+                      {isPendingStatus ? (
+                        <div className="pointer-events-none absolute top-8 right-6 left-[120px] flex justify-end">
+                          <div className="pointer-events-auto">
+                            <CancelRequestButton
+                              size="sm"
+                              onClick={() => openCancelModal(item)}
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <dt className="text-foreground-muted">상태</dt>
-                          <dd
-                            className={[
-                              "font-semibold",
-                              isPendingStatus
-                                ? "text-snack-black-200"
-                                : "text-snack-gray-300",
-                            ].join(" ")}
-                          >
-                            {STATUS_LABEL[status]}
-                          </dd>
-                        </div>
-                      </dl>
+                      ) : null}
                     </li>
                   );
                 })}
