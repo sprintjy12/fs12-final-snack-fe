@@ -174,9 +174,11 @@ export function findSubCategoryMenuItem(
   const pools = parent
     ? parent.subCategories
     : CATEGORY_MENU.flatMap((c) => c.subCategories);
-  return pools.find(
+  const matches = pools.filter(
     (sub) => sameId(sub.id, subCategoryId) || sub.apiId === subCategoryId,
   );
+  // parent 없이 숫자 id만 오면 대분류마다 1,2…가 겹침 → 유일한 경우만 채택
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 /**
