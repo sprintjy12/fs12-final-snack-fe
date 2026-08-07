@@ -37,7 +37,7 @@ function QuantityControl({
 }) {
   return (
     <div
-      className="flex h-[54px] w-[140px] items-center justify-end gap-1 rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-lg leading-[26px] text-accent xl:w-40"
+      className="flex h-[54px] w-[140px] items-center justify-end gap-1 rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-lg leading-[26px] text-accent min-[1401px]:w-40"
       role="group"
       aria-label={`${productName} 수량`}
     >
@@ -227,8 +227,9 @@ export default function CartPage() {
     });
   };
 
+  // xl+ shows the table; cols stay ≤ product column width until 1401px (~920px row).
   const desktopRowGrid =
-    "hidden min-[1101px]:grid min-w-0 grid-cols-[minmax(380px,1fr)_repeat(3,180px)] xl:grid-cols-[minmax(454px,1fr)_repeat(3,220px)] max-[1400px]:min-[1101px]:grid-cols-[minmax(380px,1fr)_repeat(3,180px)]";
+    "hidden xl:grid min-w-0 grid-cols-[minmax(240px,1fr)_repeat(3,140px)] min-[1401px]:grid-cols-[minmax(380px,1fr)_repeat(3,180px)] 2xl:grid-cols-[minmax(454px,1fr)_repeat(3,220px)]";
 
   return (
     <main className="min-h-[calc(100vh-88px)] w-full bg-surface-muted">
@@ -260,7 +261,7 @@ export default function CartPage() {
             </Link>
           </section>
         ) : (
-          <div className="grid grid-cols-1 items-start gap-10 min-[1101px]:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1254px)_386px] max-[1400px]:min-[1101px]:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="grid grid-cols-1 items-start gap-10 xl:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1254px)_386px] max-[1400px]:xl:grid-cols-[minmax(0,1fr)_340px]">
             <section className="min-w-0" aria-label="장바구니 상품">
               {/* Desktop table header */}
               <div
@@ -289,7 +290,7 @@ export default function CartPage() {
               </div>
 
               {/* Mobile select-all bar */}
-              <div className="flex h-14 items-center justify-between border-y border-snack-gray-300 px-1 min-[1101px]:hidden">
+              <div className="flex h-14 items-center justify-between border-y border-snack-gray-300 px-1 xl:hidden">
                 <div className="flex items-center gap-3">
                   <SelectCheckbox
                     checked={allSelected}
@@ -395,7 +396,7 @@ export default function CartPage() {
                       </div>
 
                       {/* Mobile card */}
-                      <div className="relative flex flex-col gap-4 border-b border-snack-gray-300 py-5 min-[1101px]:hidden">
+                      <div className="relative flex flex-col gap-4 border-b border-snack-gray-300 py-5 xl:hidden">
                         <div className="flex items-start gap-3 pr-8">
                           <SelectCheckbox
                             checked={isSelected}
@@ -482,7 +483,7 @@ export default function CartPage() {
               </div>
             </section>
 
-            <aside className="sticky top-6 flex w-full max-w-none flex-col gap-8 max-[1100px]:static max-[1100px]:ml-auto max-[1100px]:max-w-[480px] max-[768px]:ml-0 max-[768px]:max-w-none">
+            <aside className="sticky top-6 flex w-full max-w-none flex-col gap-8 max-xl:static max-xl:ml-auto max-xl:max-w-[480px] max-[768px]:ml-0 max-[768px]:max-w-none">
               <div className="flex flex-col gap-6 rounded-2xl border border-border-subtle bg-surface px-5 py-10 shadow-[4px_4px_10px_rgb(250_247_243_/_25%)] md:px-6 md:py-[60px]">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between gap-4">
