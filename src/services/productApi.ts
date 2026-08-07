@@ -123,8 +123,8 @@ function paginateProducts(
   page = 1,
   pageSize?: number,
 ): Product[] {
-  if (pageSize === undefined || pageSize <= 0) return items;
-  const start = (Math.max(1, page) - 1) * pageSize;
+  if (pageSize === undefined) return items;
+  const start = (page - 1) * pageSize;
   return items.slice(start, start + pageSize);
 }
 
@@ -136,6 +136,27 @@ function dedupeProducts(items: Product[]): Product[] {
     seen.add(key);
     return true;
   });
+}
+
+/** mock/API 공통: page·pageSize 정규화 (BE limit 상한 포함) */
+function normalizePagination(params: ProductListParams = {}): {
+  page: number;
+  pageSize: number;
+} {
+  const rawPage = params.page;
+  const rawSize = params.pageSize;
+
+  const page =
+    typeof rawPage === "number" && Number.isFinite(rawPage)
+      ? Math.max(1, Math.floor(rawPage))
+      : 1;
+
+  const pageSize =
+    typeof rawSize === "number" && Number.isFinite(rawSize) && rawSize > 0
+      ? Math.min(Math.floor(rawSize), BE_MAX_LIMIT)
+      : BE_MAX_LIMIT;
+
+  return { page, pageSize };
 }
 
 function filterMockProducts(params: ProductListParams = {}): Product[] {
@@ -159,24 +180,22 @@ function filterMockProducts(params: ProductListParams = {}): Product[] {
     });
   }
 
+  const { page, pageSize } = normalizePagination(params);
   items = sortProducts(items, params.sort);
-  return paginateProducts(items, params.page, params.pageSize);
+  return paginateProducts(items, page, pageSize);
 }
 
 async function fetchBeProductPage(options: {
   categoryId?: string;
   sort?: ProductListParams["sort"];
-  page?: number;
-  pageSize?: number;
+  page: number;
+  pageSize: number;
 }): Promise<Product[]> {
   const search = new URLSearchParams();
   if (options.categoryId) search.set("categoryId", options.categoryId);
   if (options.sort) search.set("sort", options.sort);
-  search.set("page", String(options.page ?? 1));
-  search.set(
-    "limit",
-    String(Math.min(options.pageSize ?? BE_MAX_LIMIT, BE_MAX_LIMIT)),
-  );
+  search.set("page", String(options.page));
+  search.set("limit", String(options.pageSize));
 
   const query = search.toString();
   const response = await apiFetch<BeListResponse>(
@@ -211,15 +230,15 @@ async function fetchAllProductsForLeaf(
 export async function getProducts(
   params: ProductListParams = {},
 ): Promise<Product[]> {
+  const { page, pageSize } = normalizePagination(params);
+
   if (USE_MOCK) {
-    return filterMockProducts(params);
+    return filterMockProducts({ ...params, page, pageSize });
   }
 
   const leafApiId = resolveApiLeafCategoryId(params);
   const parentApiId = resolveApiParentCategoryId(params.categoryId);
   const subSelected = params.subCategoryId !== undefined;
-  const page = params.page ?? 1;
-  const pageSize = params.pageSize ?? BE_MAX_LIMIT;
 
   // 소분류를 골랐는데 leaf uuid가 없으면 대분류 전체로 떨어지지 않게 빈 목록
   if (subSelected && !leafApiId) {
