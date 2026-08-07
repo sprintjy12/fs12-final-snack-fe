@@ -62,8 +62,8 @@ export default function CartPage() {
   );
 
   const allProductIds = useMemo(
-    () => cartProducts.map((item) => item.product.id),
-    [cartProducts],
+    () => cartItems.map((item) => item.productId),
+    [cartItems],
   );
 
   const effectiveSelectedIds = selectedIds ?? allProductIds;
