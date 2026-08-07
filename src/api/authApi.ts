@@ -58,7 +58,11 @@ const getMessageFromBody = (body: unknown): string | undefined => {
   }
 
   const { message } = body as { message: unknown };
-  return typeof message === "string" ? message : undefined;
+  if (typeof message !== "string" || message.trim() === "") {
+    return undefined;
+  }
+
+  return message;
 };
 
 /**
