@@ -84,7 +84,7 @@ export default function ProductDetailPage() {
 
   const addToCartMutation = useMutation({
     mutationFn: async (payload: {
-      productId: number | string;
+      productId: number;
       quantity: number;
       productName: string;
     }) => {
@@ -111,8 +111,16 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (!product || addToCartMutation.isPending) return;
+    const productId = Number(product.id);
+    if (!Number.isInteger(productId) || productId <= 0) {
+      setFeedback({
+        type: "error",
+        message: "유효하지 않은 상품입니다. 다시 시도해 주세요.",
+      });
+      return;
+    }
     addToCartMutation.mutate({
-      productId: product.id,
+      productId,
       quantity,
       productName: product.name,
     });
