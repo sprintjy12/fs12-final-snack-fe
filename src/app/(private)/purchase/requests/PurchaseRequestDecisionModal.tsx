@@ -5,6 +5,7 @@ import { useEffect, useId, useState, type FormEvent } from "react";
 import axios from "axios";
 import { z } from "zod";
 
+import { BUDGET_EXCEEDED_MESSAGE } from "@/app/(private)/purchase/requests/orderRequestBudget";
 import {
   Button,
   CommonImage,
@@ -33,6 +34,8 @@ export type PurchaseRequestDecisionTarget = {
   itemCount: number;
   totalAmount: string;
   remainingBudget: string;
+  /** 주문 금액이 남은 예산을 초과하면 true */
+  isBudgetExceeded: boolean;
   items: readonly PurchaseRequestDecisionItem[];
 };
 
@@ -153,6 +156,11 @@ export function PurchaseRequestDecisionModal({
     event.preventDefault();
 
     if (!mode || !request || !copy || isPending) {
+      return;
+    }
+
+    if (mode === "approve" && request.isBudgetExceeded) {
+      showToast(BUDGET_EXCEEDED_MESSAGE);
       return;
     }
 
@@ -303,13 +311,27 @@ export function PurchaseRequestDecisionModal({
                   </p>
                 </div>
 
-                <div className="flex w-full items-center justify-between">
-                  <p className="text-xl leading-8 font-bold text-foreground-strong xl:text-2xl">
-                    남은 예산 금액
-                  </p>
-                  <p className="text-2xl leading-8 font-bold text-foreground-strong xl:text-[32px] xl:leading-[42px]">
-                    {request.remainingBudget}
-                  </p>
+                <div className="flex w-full flex-col gap-2">
+                  <div className="flex w-full items-center justify-between">
+                    <p className="text-xl leading-8 font-bold text-foreground-strong xl:text-2xl">
+                      남은 예산 금액
+                    </p>
+                    <p
+                      className={[
+                        "text-2xl leading-8 font-bold xl:text-[32px] xl:leading-[42px]",
+                        request.isBudgetExceeded
+                          ? "text-danger"
+                          : "text-foreground-strong",
+                      ].join(" ")}
+                    >
+                      {request.remainingBudget}
+                    </p>
+                  </div>
+                  {request.isBudgetExceeded ? (
+                    <p className="text-right text-base leading-[26px] font-medium text-danger">
+                      {BUDGET_EXCEEDED_MESSAGE}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="h-px w-full shrink-0 bg-border" />
@@ -352,8 +374,16 @@ export function PurchaseRequestDecisionModal({
                 <Button
                   type="submit"
                   width="modal"
-                  className="flex-1"
-                  disabled={isPending}
+                  className={[
+                    "flex-1 text-center",
+                    mode === "approve" && request.isBudgetExceeded
+                      ? "border border-solid border-snack-gray-200 !bg-snack-background-400 !text-snack-gray-400 disabled:!opacity-100"
+                      : "",
+                  ].join(" ")}
+                  disabled={
+                    isPending ||
+                    (mode === "approve" && request.isBudgetExceeded)
+                  }
                 >
                   {copy.submitLabel}
                 </Button>

@@ -8,16 +8,20 @@ import {
   type PurchaseRequestDecisionTarget,
 } from "@/app/(private)/purchase/requests/PurchaseRequestDecisionModal";
 import { mapOrderRequestDetailToDecisionTarget } from "@/app/(private)/purchase/requests/mapOrderRequestDetailToDecisionTarget";
+import { BUDGET_EXCEEDED_MESSAGE } from "@/app/(private)/purchase/requests/orderRequestBudget";
 import { Button, showToast } from "@/components/ui";
 import { useFetchOrderRequestDetail } from "@/hooks/queries/useOrderRequestDetail";
 
 type PurchaseRequestDecisionActionsProps = {
   requestId: string;
+  /** 예산 초과 시 승인 버튼 비활성화 */
+  approveDisabled?: boolean;
 };
 
 /** 상세 페이지 하단 요청 반려/승인 버튼 + 폼 모달 */
 export function PurchaseRequestDecisionActions({
   requestId,
+  approveDisabled = false,
 }: PurchaseRequestDecisionActionsProps) {
   const fetchOrderRequestDetail = useFetchOrderRequestDetail();
   const [mode, setMode] = useState<PurchaseRequestDecisionMode | null>(null);
@@ -28,6 +32,11 @@ export function PurchaseRequestDecisionActions({
 
   const openModal = async (nextMode: PurchaseRequestDecisionMode) => {
     if (isOpening) {
+      return;
+    }
+
+    if (nextMode === "approve" && approveDisabled) {
+      showToast(BUDGET_EXCEEDED_MESSAGE);
       return;
     }
 
@@ -64,8 +73,13 @@ export function PurchaseRequestDecisionActions({
         <Button
           type="button"
           width="full"
-          disabled={isOpening}
-          className="flex-1 text-sm leading-6 xl:text-xl xl:leading-8"
+          disabled={isOpening || approveDisabled}
+          className={[
+            "flex-1 text-center text-sm leading-6 xl:text-xl xl:leading-8",
+            approveDisabled
+              ? "border border-solid border-snack-gray-200 !bg-snack-background-400 !text-snack-gray-400 disabled:!opacity-100"
+              : "",
+          ].join(" ")}
           onClick={() => openModal("approve")}
         >
           요청 승인

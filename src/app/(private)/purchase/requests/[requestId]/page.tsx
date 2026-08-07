@@ -4,6 +4,10 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 
 import { PurchaseRequestDecisionActions } from "@/app/(private)/purchase/requests/PurchaseRequestDecisionActions";
+import {
+  BUDGET_EXCEEDED_MESSAGE,
+  isOrderRequestBudgetExceeded,
+} from "@/app/(private)/purchase/requests/orderRequestBudget";
 import { Icon } from "@/components/ui";
 import { useOrderRequestDetail } from "@/hooks/queries/useOrderRequestDetail";
 
@@ -35,6 +39,9 @@ export default function PurchaseRequestDetailPage() {
 
   const { data, isPending, isError, error } = useOrderRequestDetail(requestId);
   const detail = data?.data;
+  const isBudgetExceeded = detail
+    ? isOrderRequestBudgetExceeded(detail)
+    : false;
 
   const budgetRows = detail
     ? [
@@ -42,6 +49,7 @@ export default function PurchaseRequestDetailPage() {
           label: "이번 달 지출액",
           value: formatPrice(detail.budget.spent),
           emphasize: false,
+          danger: false,
         },
         {
           label: "이번 달 남은 예산",
@@ -49,15 +57,15 @@ export default function PurchaseRequestDetailPage() {
             ? "무제한"
             : formatPrice(detail.budget.remaining),
           emphasize: false,
+          danger: isBudgetExceeded,
         },
         {
           label: "구매 후 예산",
           value: detail.budget.isUnlimited
             ? "무제한"
-            : formatPrice(
-                Math.max(0, detail.budget.remaining - detail.totalPrice),
-              ),
+            : formatPrice(detail.budget.remaining - detail.totalPrice),
           emphasize: true,
+          danger: false,
         },
       ]
     : [];
@@ -126,7 +134,7 @@ export default function PurchaseRequestDetailPage() {
               </div>
             </div>
 
-            <div className="flex h-[440px] flex-col px-6 py-6 md:h-[416px] md:pb-0 xl:mt-4 xl:h-[448px] xl:px-0 xl:py-0">
+            <div className="flex min-h-[440px] flex-col px-6 py-6 md:min-h-[416px] md:pb-0 xl:mt-4 xl:min-h-[448px] xl:px-0 xl:py-0">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl leading-8 font-semibold text-foreground-strong xl:text-2xl xl:font-bold">
                   예산 정보
@@ -145,14 +153,24 @@ export default function PurchaseRequestDetailPage() {
                     </h3>
                     <div
                       className={[
-                        "mt-4 flex h-[54px] items-center rounded-2xl border border-border bg-surface-muted px-4 text-sm leading-6 xl:h-16 xl:px-6 xl:text-xl xl:leading-8",
-                        row.emphasize
-                          ? "font-medium text-snack-black-300"
-                          : "text-foreground-muted",
+                        "mt-4 flex h-[54px] items-center rounded-2xl border bg-surface-muted px-4 text-sm leading-6 xl:h-16 xl:px-6 xl:text-xl xl:leading-8",
+                        row.danger
+                          ? "border-danger font-medium text-danger"
+                          : [
+                              "border-border",
+                              row.emphasize
+                                ? "font-medium text-snack-black-300"
+                                : "text-foreground-muted",
+                            ].join(" "),
                       ].join(" ")}
                     >
                       {row.value}
                     </div>
+                    {row.label === "이번 달 남은 예산" && row.danger ? (
+                      <p className="mt-2 text-base leading-[26px] font-medium text-danger">
+                        {BUDGET_EXCEEDED_MESSAGE}
+                      </p>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -241,7 +259,10 @@ export default function PurchaseRequestDetailPage() {
               </strong>
             </div>
 
-            <PurchaseRequestDecisionActions requestId={requestId} />
+            <PurchaseRequestDecisionActions
+              requestId={requestId}
+              approveDisabled={isBudgetExceeded}
+            />
           </section>
         </div>
       ) : null}
