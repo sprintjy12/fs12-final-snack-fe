@@ -166,7 +166,7 @@ export function MobileSidebar({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 xl:hidden" role="presentation">
+    <div className="fixed inset-0 z-[101] xl:hidden" role="presentation">
       {/* 딤 오버레이 — 클릭 닫기용. AT에는 숨기고, 닫기는 X 버튼/Escape만 안내 */}
       <button
         type="button"
