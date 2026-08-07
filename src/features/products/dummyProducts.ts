@@ -24,7 +24,7 @@ const SODA_PHOTOS = {
   스프라이트: "스프라이트.png",
 } as const;
 
-/** 시안 1·2행: 코카콜라 제로 → 코카콜라 → 환타 오렌지 → 스프라이트 */
+/** 시안 1·2행: 청량・탄산음료 (subCategoryId: 1) */
 const SODA_ROW: Omit<
   Product,
   "id" | "category" | "subCategory" | "url" | "photo"
@@ -59,18 +59,65 @@ const SODA_ROW: Omit<
   },
 ];
 
-function buildSodaRows(rowCount: number): Product[] {
-  const items: Product[] = [];
-  let id = 1;
+/** 과즙음료 (subCategoryId: 2) — 탄산과 구분되는 mock */
+const JUICE_ROW: Omit<
+  Product,
+  "id" | "category" | "subCategory" | "url" | "photo"
+>[] = [
+  {
+    name: "오렌지 주스",
+    price: 2500,
+    categoryId: 2,
+    subCategoryId: 2,
+    purchaseCount: 14,
+  },
+  {
+    name: "사과 주스",
+    price: 2500,
+    categoryId: 2,
+    subCategoryId: 2,
+    purchaseCount: 11,
+  },
+  {
+    name: "포도 주스",
+    price: 2700,
+    categoryId: 2,
+    subCategoryId: 2,
+    purchaseCount: 9,
+  },
+  {
+    name: "토마토 주스",
+    price: 2300,
+    categoryId: 2,
+    subCategoryId: 2,
+    purchaseCount: 7,
+  },
+];
 
-  for (let row = 0; row < rowCount; row += 1) {
-    for (const soda of SODA_ROW) {
+const JUICE_PHOTOS: Record<(typeof JUICE_ROW)[number]["name"], string> = {
+  "오렌지 주스": "juice_orange.svg",
+  "사과 주스": "juice_apple.svg",
+  "포도 주스": "juice_grape.svg",
+  "토마토 주스": "juice_tomato.svg",
+};
+
+function buildDrinkRows(
+  row: Omit<Product, "id" | "category" | "subCategory" | "url" | "photo">[],
+  photos: Record<string, string>,
+  startId: number,
+  rowCount: number,
+): Product[] {
+  const items: Product[] = [];
+  let id = startId;
+
+  for (let r = 0; r < rowCount; r += 1) {
+    for (const item of row) {
       items.push(
         withRelations({
           id,
           url: `https://example.com/products/${1000 + id}`,
-          photo: SODA_PHOTOS[soda.name as keyof typeof SODA_PHOTOS],
-          ...soda,
+          photo: photos[item.name] ?? SODA_PHOTOS["코카콜라"],
+          ...item,
         }),
       );
       id += 1;
@@ -85,7 +132,8 @@ function buildSodaRows(rowCount: number): Product[] {
  * API 필드: id, name, price, url, photo, categoryId, subCategoryId
  */
 export const DUMMY_PRODUCTS: Product[] = [
-  ...buildSodaRows(3),
+  ...buildDrinkRows(SODA_ROW, SODA_PHOTOS, 1, 2),
+  ...buildDrinkRows(JUICE_ROW, JUICE_PHOTOS, 9, 1),
   withRelations({
     id: 13,
     name: "오리온 초코파이",
