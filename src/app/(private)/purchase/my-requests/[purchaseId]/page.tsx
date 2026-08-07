@@ -139,7 +139,10 @@ export default function MyRequestDetailPage() {
                 </strong>
               </div>
 
-              <MyRequestDetailActions purchaseId={purchaseId} />
+              <MyRequestDetailActions
+                purchaseId={purchaseId}
+                items={detail.items}
+              />
             </section>
           </div>
         </div>

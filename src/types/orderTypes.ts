@@ -75,6 +75,8 @@ export type OrderDetailStatus =
 
 /** GET /api/orders/:id 품목 한 줄 */
 export type OrderDetailItem = {
+  /** 장바구니 다시 담기 등에 사용. 일부 응답에는 없을 수 있음 */
+  productId?: string;
   productName: string;
   imageUrl: string;
   categoryName: string;
