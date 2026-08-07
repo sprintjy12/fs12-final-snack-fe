@@ -1,4 +1,4 @@
-/* Figma: 프로젝트 표지 1877:39917 (1920×1080) */
+/* Figma: ?????? ??? 1877:39917 (1920?1080) */
 
 .cover {
   min-height: 100vh;
@@ -11,7 +11,7 @@
   width: min(100%, 1920px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: 52px 58px 40px;
+  padding: 52px 58px 116px;
   box-sizing: border-box;
 }
 
@@ -75,9 +75,9 @@
   position: relative;
   width: min(100%, 1674px);
   margin: 0 auto;
-  /* Figma: art y=519 vs logo block ends ~408 → tight gap under tagline */
+  /* Figma: art y=519 vs logo block ends ~408 ??tight gap under tagline */
   margin-top: clamp(24px, 5vw, 80px);
-  /* 말풍선이 art 밖으로 나와도 잘리지 않게 */
+  /* ?????? art ??????????????? ??? */
   overflow: visible;
 }
 
@@ -120,7 +120,7 @@
 /* Figma img-text vs img/landing (x=123,y=519,w=1674,h=564)
  * top% = (bubbleY - 519) / 564, left% = (bubbleX - 123) / 1674
  * right% = (artRight - bubbleRight) / 1674  (artRight = 123+1674 = 1797)
- * TL(220,467) BL(58,639) TR(1301,465) BR(1463,639) 각 w=399 h=102
+ * TL(220,467) BL(58,639) TR(1301,465) BR(1463,639) ??w=399 h=102
  */
 .topLeft {
   top: -9.2%;
