@@ -207,6 +207,18 @@ export function resolveApiParentCategoryId(
   return findCategoryMenuItem(categoryId)?.apiId;
 }
 
+/**
+ * 대분류에 속한 leaf uuid 목록.
+ * BE는 leaf categoryId만 필터하므로 대분류 조회 시 이 목록으로 조회합니다.
+ */
+export function resolveApiLeafCategoryIdsForParent(
+  categoryId: number | string | undefined,
+): string[] {
+  const parent = findCategoryMenuItem(categoryId);
+  if (!parent) return [];
+  return parent.subCategories.map((sub) => sub.apiId);
+}
+
 /** API 모드에서 leaf 매핑이 있는 소분류만 선택 가능 */
 export function isApiSelectableSubCategory(
   categoryId: number | string | undefined,

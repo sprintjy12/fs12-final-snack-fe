@@ -2,6 +2,7 @@ import {
   TEMP_CATEGORIES,
   findCategoryMenuItem,
   resolveApiLeafCategoryId,
+  resolveApiLeafCategoryIdsForParent,
   resolveApiParentCategoryId,
 } from "@/constants/categoryConstants";
 import { DUMMY_PRODUCTS } from "@/features/products/dummyProducts";
@@ -11,6 +12,9 @@ import type { Category, Product, ProductListParams } from "@/types/productTypes"
 
 /** 기본 true. 실 API: .env에 NEXT_PUBLIC_USE_MOCK=false */
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
+
+/** BE limit 상한 */
+const BE_MAX_LIMIT = 30;
 
 type BeCategory = {
   id: string;
@@ -77,6 +81,54 @@ function mapBeProduct(product: BeProduct): Product {
   };
 }
 
+function sortProducts(
+  items: Product[],
+  sort: ProductListParams["sort"],
+): Product[] {
+  const next = [...items];
+  next.sort((a, b) => {
+    switch (sort) {
+      case "popular":
+        return (b.purchaseCount ?? 0) - (a.purchaseCount ?? 0);
+      case "priceAsc":
+        return a.price - b.price;
+      case "priceDesc":
+        return b.price - a.price;
+      case "latest":
+      default: {
+        const aKey = String(a.id);
+        const bKey = String(b.id);
+        // uuid는 문자열 비교, mock number id는 숫자 비교
+        if (/^\d+$/.test(aKey) && /^\d+$/.test(bKey)) {
+          return Number(bKey) - Number(aKey);
+        }
+        return bKey.localeCompare(aKey);
+      }
+    }
+  });
+  return next;
+}
+
+function paginateProducts(
+  items: Product[],
+  page = 1,
+  pageSize?: number,
+): Product[] {
+  if (pageSize === undefined || pageSize <= 0) return items;
+  const start = (Math.max(1, page) - 1) * pageSize;
+  return items.slice(start, start + pageSize);
+}
+
+function dedupeProducts(items: Product[]): Product[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = String(item.id);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function filterMockProducts(params: ProductListParams = {}): Product[] {
   let items = [...DUMMY_PRODUCTS];
 
@@ -98,40 +150,53 @@ function filterMockProducts(params: ProductListParams = {}): Product[] {
     });
   }
 
-  items.sort((a, b) => {
-    switch (params.sort) {
-      case "popular":
-        return (b.purchaseCount ?? 0) - (a.purchaseCount ?? 0);
-      case "priceAsc":
-        return a.price - b.price;
-      case "priceDesc":
-        return b.price - a.price;
-      case "latest":
-      default:
-        return Number(b.id) - Number(a.id);
-    }
-  });
-
-  const page = params.page ?? 1;
-  const pageSize = params.pageSize;
-
-  if (pageSize !== undefined && pageSize > 0) {
-    const start = (page - 1) * pageSize;
-    return items.slice(start, start + pageSize);
-  }
-
-  return items;
+  items = sortProducts(items, params.sort);
+  return paginateProducts(items, params.page, params.pageSize);
 }
 
-function filterApiProductsByParent(
-  items: Product[],
-  parentApiId: string,
-): Product[] {
-  return items.filter(
-    (product) =>
-      String(product.categoryId) === parentApiId ||
-      String(product.subCategory?.categoryId) === parentApiId,
+async function fetchBeProductPage(options: {
+  categoryId?: string;
+  sort?: ProductListParams["sort"];
+  page?: number;
+  pageSize?: number;
+}): Promise<Product[]> {
+  const search = new URLSearchParams();
+  if (options.categoryId) search.set("categoryId", options.categoryId);
+  if (options.sort) search.set("sort", options.sort);
+  search.set("page", String(options.page ?? 1));
+  search.set(
+    "limit",
+    String(Math.min(options.pageSize ?? BE_MAX_LIMIT, BE_MAX_LIMIT)),
   );
+
+  const query = search.toString();
+  const response = await apiFetch<BeListResponse>(
+    `/api/products${query ? `?${query}` : ""}`,
+  );
+  return (response.data ?? []).map(mapBeProduct);
+}
+
+/** leaf 한 개의 상품을 BE limit 단위로 모두 수집 */
+async function fetchAllProductsForLeaf(
+  leafId: string,
+  sort?: ProductListParams["sort"],
+): Promise<Product[]> {
+  const collected: Product[] = [];
+  let page = 1;
+
+  while (page <= 50) {
+    const chunk = await fetchBeProductPage({
+      categoryId: leafId,
+      sort,
+      page,
+      pageSize: BE_MAX_LIMIT,
+    });
+    collected.push(...chunk);
+    if (chunk.length < BE_MAX_LIMIT) break;
+    page += 1;
+  }
+
+  return collected;
 }
 
 export async function getProducts(
@@ -144,36 +209,42 @@ export async function getProducts(
   const leafApiId = resolveApiLeafCategoryId(params);
   const parentApiId = resolveApiParentCategoryId(params.categoryId);
   const subSelected = params.subCategoryId !== undefined;
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize ?? BE_MAX_LIMIT;
 
   // 소분류를 골랐는데 leaf uuid가 없으면 대분류 전체로 떨어지지 않게 빈 목록
   if (subSelected && !leafApiId) {
     return [];
   }
 
-  const search = new URLSearchParams();
-  // BE는 leaf categoryId만 필터. 소분류 선택 시 leaf uuid 전달
+  // 소분류(leaf) 선택: 서버 페이지네이션 그대로 사용
   if (leafApiId) {
-    search.set("categoryId", leafApiId);
-  }
-  if (params.sort) search.set("sort", params.sort);
-  if (params.page !== undefined) search.set("page", String(params.page));
-  if (params.pageSize !== undefined) {
-    search.set("limit", String(params.pageSize));
-  } else {
-    search.set("limit", "30");
+    return fetchBeProductPage({
+      categoryId: leafApiId,
+      sort: params.sort,
+      page,
+      pageSize,
+    });
   }
 
-  const query = search.toString();
-  const path = `/api/products${query ? `?${query}` : ""}`;
-  const response = await apiFetch<BeListResponse>(path);
-  let mapped = (response.data ?? []).map(mapBeProduct);
+  // 대분류만 선택: 하위 leaf들을 조회·병합한 뒤 정렬/페이지네이션
+  if (parentApiId) {
+    const leafIds = resolveApiLeafCategoryIdsForParent(params.categoryId);
+    if (leafIds.length === 0) return [];
 
-  // 대분류만 선택: leaf 미지정 → parent 기준 보강 필터
-  if (!leafApiId && parentApiId) {
-    mapped = filterApiProductsByParent(mapped, parentApiId);
+    const batches = await Promise.all(
+      leafIds.map((id) => fetchAllProductsForLeaf(id, params.sort)),
+    );
+    const merged = sortProducts(dedupeProducts(batches.flat()), params.sort);
+    return paginateProducts(merged, page, pageSize);
   }
 
-  return mapped;
+  // 필터 없음: 서버 페이지네이션
+  return fetchBeProductPage({
+    sort: params.sort,
+    page,
+    pageSize,
+  });
 }
 
 export async function getProduct(id: number | string): Promise<Product> {
