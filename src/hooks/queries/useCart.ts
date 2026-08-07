@@ -7,7 +7,7 @@ import { queryKeys } from "@/constants/queryKeys";
 
 export const useCart = () =>
   useQuery({
-    queryKey: queryKeys.cart.all,
+    queryKey: queryKeys.cart.all(userId),
     queryFn: async () => {
       await ensureAccessToken();
       return getCart();

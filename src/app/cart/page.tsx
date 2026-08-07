@@ -11,7 +11,6 @@ import {
   useDeleteSelectedCartItems,
   useUpdateCartItem,
 } from "@/hooks/mutations/useCart";
-import { getProductPhotoSrc } from "@/lib/productMedia";
 import type { CartItemWithProduct } from "@/types/cartTypes";
 
 const SHIPPING_FEE = 3000;
@@ -28,24 +27,67 @@ function cx(...parts: Array<string | false | null | undefined>) {
 }
 
 export default function CartPage() {
-  const { data: cart, isLoading } = useCart();
+  const { data: cart, isLoading, isError, refetch } = useCart();
   const updateCartItem = useUpdateCartItem();
   const deleteCartItemMutation = useDeleteCartItem();
   const deleteSelectedCartItemsMutation = useDeleteSelectedCartItems();
   const deleteCartMutation = useDeleteCart();
 
   const cartItems = cart?.items ?? [];
+  
 
-  const [selectedIds, setSelectedIds] = useState<CartItemId[]>([]);
+  const [selectedIds, setSelectedIds] = useState<CartItemId[] | undefined>();
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(
     () => new Set(),
   );
 
   // 데이터가 로드되면 전체 선택 상태로 초기화
   const effectiveSelectedIds = useMemo(() => {
-    if (selectedIds.length > 0) return selectedIds;
-    return cartItems.map((item) => item.id);
+    return selectedIds ?? cartItems.map((cartItem) => cartItem.id);
   }, [selectedIds, cartItems]);
+
+  if (isLoading) {
+    return (
+      <main className="min-h-[calc(100vh-88px)] w-full bg-surface-muted">
+        <div className="mx-auto min-h-0 w-full max-w-[1920px] px-4 pb-12 md:min-h-[1182px] md:px-10 md:pb-20 xl:px-[120px]">
+          <div className="flex h-[104px] items-center px-0 py-6 md:h-[144px] md:px-2.5 md:py-10">
+            <h1 className="m-0 text-2xl leading-9 font-semibold text-foreground-strong md:text-[32px] md:leading-[42px]">
+              장바구니
+            </h1>
+          </div>
+          <div
+            className="flex min-h-[420px] items-center justify-center"
+            role="status"
+          >
+            장바구니를 불러오는 중…
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (isError) {
+    return (
+      <main className="min-h-[calc(100vh-88px)] w-full bg-surface-muted">
+        <div className="mx-auto min-h-0 w-full max-w-[1920px] px-4 pb-12 md:min-h-[1182px] md:px-10 md:pb-20 xl:px-[120px]">
+          <div className="flex h-[104px] items-center px-0 py-6 md:h-[144px] md:px-2.5 md:py-10">
+            <h1 className="m-0 text-2xl leading-9 font-semibold text-foreground-strong md:text-[32px] md:leading-[42px]">
+              장바구니
+            </h1>
+          </div>
+          <div className="flex min-h-[420px] flex-col items-center justify-center gap-3">
+            <p className="text-base text-snack-black-100">장바구니를 불러오지 못했습니다.</p>
+            <button
+              onClick={() => refetch()}
+              className="rounded-2xl border border-border px-4 py-2 text-base"
+            >
+              다시 시도
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   const selectedProducts = cartItems.filter((item) =>
     effectiveSelectedIds.includes(item.id),
@@ -71,7 +113,7 @@ export default function CartPage() {
 
   const toggleSelect = (cartItemId: CartItemId) => {
     setSelectedIds((prev) => {
-      const current = prev.length > 0 ? prev : cartItems.map((i) => i.id);
+      const current = prev ?? cartItems.map((cartItem) => cartItem.id);
       return current.includes(cartItemId)
         ? current.filter((id) => id !== cartItemId)
         : [...current, cartItemId];
@@ -86,7 +128,9 @@ export default function CartPage() {
 
   const handleRemoveOne = (cartItemId: CartItemId) => {
     deleteCartItemMutation.mutate(cartItemId);
-    setSelectedIds((prev) => prev.filter((id) => id !== cartItemId));
+    setSelectedIds((prev) =>
+      (prev ?? cartItems.map((item) => item.id)).filter((id) => id !== cartItemId),
+    );
   };
 
   const handleRemoveSelected = () => {
@@ -112,14 +156,7 @@ export default function CartPage() {
           </h1>
         </div>
 
-        {isLoading ? (
-          <div
-            className="flex min-h-[420px] items-center justify-center"
-            role="status"
-          >
-            장바구니를 불러오는 중…
-          </div>
-        ) : cartItems.length === 0 ? (
+        {cartItems.length === 0 ? (
           <section className="flex min-h-[420px] flex-col items-center justify-center gap-3 border-y border-snack-gray-300">
             <CommonImage
               name="empty-purchase"
