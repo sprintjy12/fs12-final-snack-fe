@@ -41,12 +41,23 @@ export const ensureAccessToken = async () => {
     method: "POST",
   });
 
+  const body = (await response.json().catch(() => null)) as
+    | (LoginResponse & { message?: string })
+    | { message?: string; data?: { accessToken?: string } }
+    | null;
+
   if (!response.ok) {
-    throw new Error("로그인이 필요합니다. .env의 DEV_LOGIN_EMAIL/PASSWORD를 확인하세요.");
+    throw new Error(
+      body?.message ??
+        "로그인이 필요합니다. .env의 DEV_LOGIN_EMAIL/PASSWORD와 백엔드 서버를 확인하세요.",
+    );
   }
 
-  const body = (await response.json()) as LoginResponse;
-  const token = body.data.accessToken;
+  const token = body && "data" in body ? body.data?.accessToken : undefined;
+  if (!token) {
+    throw new Error("로그인 응답에 accessToken이 없습니다.");
+  }
+
   setAccessToken(token);
   return token;
 };

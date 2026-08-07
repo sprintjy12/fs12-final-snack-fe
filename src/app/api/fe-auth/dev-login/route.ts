@@ -28,13 +28,30 @@ export async function POST() {
       body: JSON.stringify({ email, password }),
     });
 
-    const data = await response.json();
+    const data = (await response.json().catch(() => null)) as {
+      message?: string;
+      code?: string;
+    } | null;
+
+    if (!response.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: data?.code,
+          message:
+            data?.message ??
+            `백엔드 로그인 실패 (HTTP ${response.status}). API 서버(.env · DB)를 확인하세요.`,
+        },
+        { status: response.status },
+      );
+    }
+
     return NextResponse.json(data, { status: response.status });
   } catch {
     return NextResponse.json(
       {
         success: false,
-        message: "백엔드 로그인 요청에 실패했습니다.",
+        message: `백엔드 로그인 요청에 실패했습니다. ${apiUrl} 서버가 켜져 있는지 확인하세요.`,
       },
       { status: 502 },
     );
