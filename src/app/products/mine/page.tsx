@@ -1,10 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { EmptyState, Icon } from "@/components/ui";
 import { getProductPhotoSrc } from "@/lib/productMedia";
+
+import {
+  DeleteProductModal,
+  type DeleteProductTarget,
+} from "./DeleteProductModal";
+import { ProductMineMenu } from "./ProductMineMenu";
 
 type MyProduct = {
   id: number;
@@ -28,7 +35,7 @@ const SORT_OPTIONS: { value: SortValue; label: string }[] = [
 ];
 
 /** Figma Card/상품등록 내역 lg (`1:10458`) 더미 */
-const MY_PRODUCTS: MyProduct[] = [
+const INITIAL_MY_PRODUCTS: MyProduct[] = [
   {
     id: 1,
     registeredAt: "2024. 07. 04",
@@ -71,6 +78,9 @@ const MY_PRODUCTS: MyProduct[] = [
   },
 ];
 
+const DESKTOP_GRID =
+  "grid w-full grid-cols-[minmax(0,167px)_minmax(0,390px)_minmax(0,195px)_minmax(0,195px)_minmax(0,235px)_40px] items-center gap-x-6 px-10 min-[1520px]:gap-x-10 min-[1520px]:px-20";
+
 const formatPrice = (price: number) => price.toLocaleString("ko-KR");
 
 /** Figma: `www.codeit...` */
@@ -82,7 +92,12 @@ const formatUrlLabel = (url: string) => {
 };
 
 export default function MyProductsPage() {
+  const router = useRouter();
   const [sort, setSort] = useState<SortValue>("latest");
+  const [products, setProducts] = useState<MyProduct[]>(INITIAL_MY_PRODUCTS);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteProductTarget | null>(
+    null,
+  );
   const [failedImageIds, setFailedImageIds] = useState<Set<number>>(
     () => new Set(),
   );
@@ -96,7 +111,7 @@ export default function MyProductsPage() {
   };
 
   const sortedProducts = useMemo(() => {
-    const items = [...MY_PRODUCTS];
+    const items = [...products];
     switch (sort) {
       case "priceDesc":
         return items.sort((a, b) => b.price - a.price);
@@ -108,9 +123,20 @@ export default function MyProductsPage() {
           b.registeredAtIso.localeCompare(a.registeredAtIso),
         );
     }
-  }, [sort]);
+  }, [products, sort]);
 
   const hasProducts = sortedProducts.length > 0;
+
+  const handleEdit = (productId: number) => {
+    // Figma 수정 모달은 상세 플로우. 등록 내역에서는 상세로 이동.
+    router.push(`/products/${productId}`);
+  };
+
+  const handleDeleteConfirm = (product: DeleteProductTarget) => {
+    setProducts((current) =>
+      current.filter((item) => item.id !== product.id),
+    );
+  };
 
   return (
     <main className="min-h-screen bg-surface-muted pb-20 text-foreground">
@@ -149,15 +175,17 @@ export default function MyProductsPage() {
           aria-label="상품 등록 목록"
           className={hasProducts ? undefined : "hidden"}
         >
-          {/* Desktop — Figma Card/상품등록 내역 lg (`1:10458`)
-              고정폭 합(≈1262)이 xl(1280−px-20)보다 커서, minmax 그리드로 축소 허용 */}
+          {/* Desktop — Figma Card/상품등록 내역 lg (`1:10458`) + kebab (`1:3669`) */}
           <div className="hidden xl:block">
-            <div className="grid h-20 w-full grid-cols-[minmax(0,167px)_minmax(0,390px)_minmax(0,195px)_minmax(0,195px)_minmax(0,235px)] items-center gap-x-6 rounded-full border border-snack-gray-200 bg-surface px-10 text-xl leading-8 font-medium text-snack-black-100 min-[1520px]:gap-x-10 min-[1520px]:px-20">
+            <div
+              className={`${DESKTOP_GRID} h-20 rounded-full border border-snack-gray-200 bg-surface text-xl leading-8 font-medium text-snack-black-100`}
+            >
               <span className="pl-6 text-left">등록일</span>
               <span className="pl-6 text-left">상품정보</span>
               <span className="text-center">카테고리</span>
               <span className="text-center">가격</span>
               <span className="text-center">상품 링크</span>
+              <span className="sr-only">메뉴</span>
             </div>
 
             <ul className="mt-4">
@@ -169,7 +197,7 @@ export default function MyProductsPage() {
                 return (
                   <li
                     key={product.id}
-                    className="grid w-full grid-cols-[minmax(0,167px)_minmax(0,390px)_minmax(0,195px)_minmax(0,195px)_minmax(0,235px)] items-center gap-x-6 border-b border-border bg-surface-muted px-10 py-3 text-xl leading-8 min-[1520px]:gap-x-10 min-[1520px]:px-20"
+                    className={`${DESKTOP_GRID} border-b border-border bg-surface-muted py-3 text-xl leading-8`}
                   >
                     <span className="pl-6 text-left text-snack-black-100">
                       {product.registeredAt}
@@ -214,13 +242,26 @@ export default function MyProductsPage() {
                       </span>
                       <Icon name="link" size="md" label="상품 링크 열기" />
                     </a>
+                    <div className="flex justify-end">
+                      <ProductMineMenu
+                        productName={product.name}
+                        size="md"
+                        onEdit={() => handleEdit(product.id)}
+                        onDelete={() =>
+                          setDeleteTarget({
+                            id: product.id,
+                            name: product.name,
+                          })
+                        }
+                      />
+                    </div>
                   </li>
                 );
               })}
             </ul>
           </div>
 
-          {/* Mobile / tablet — 구매요청 내역 카드 패턴 준용 (xl 미만) */}
+          {/* Mobile / tablet — 카드 + kebab sm */}
           <ul className="xl:hidden">
             {sortedProducts.map((product) => {
               const photoSrc = getProductPhotoSrc(product.photo);
@@ -250,13 +291,26 @@ export default function MyProductsPage() {
                       )}
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col justify-between">
-                      <div>
-                        <p className="text-sm leading-6 font-semibold text-foreground-strong md:text-base md:leading-7">
-                          {product.name}
-                        </p>
-                        <p className="text-xs leading-[18px] text-foreground-muted md:text-sm md:leading-6">
-                          {product.categoryLabel}
-                        </p>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm leading-6 font-semibold text-foreground-strong md:text-base md:leading-7">
+                            {product.name}
+                          </p>
+                          <p className="text-xs leading-[18px] text-foreground-muted md:text-sm md:leading-6">
+                            {product.categoryLabel}
+                          </p>
+                        </div>
+                        <ProductMineMenu
+                          productName={product.name}
+                          size="sm"
+                          onEdit={() => handleEdit(product.id)}
+                          onDelete={() =>
+                            setDeleteTarget({
+                              id: product.id,
+                              name: product.name,
+                            })
+                          }
+                        />
                       </div>
                       <a
                         href={product.productUrl}
@@ -309,6 +363,13 @@ export default function MyProductsPage() {
           </div>
         ) : null}
       </div>
+
+      <DeleteProductModal
+        open={Boolean(deleteTarget)}
+        product={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDeleteConfirm}
+      />
     </main>
   );
 }
