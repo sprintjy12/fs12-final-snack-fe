@@ -171,13 +171,16 @@ export function findSubCategoryMenuItem(
 ): CategoryMenuSubItem | undefined {
   if (subCategoryId === undefined) return undefined;
   const parent = findCategoryMenuItem(categoryId);
+  // 부모 없이 숫자 로컬 id만 오면 대분류마다 1,2…가 겹쳐 첫 매칭이 잘못될 수 있음
+  if (!parent && !(typeof subCategoryId === "string" && isUuid(subCategoryId))) {
+    return undefined;
+  }
   const pools = parent
     ? parent.subCategories
     : CATEGORY_MENU.flatMap((c) => c.subCategories);
   const matches = pools.filter(
     (sub) => sameId(sub.id, subCategoryId) || sub.apiId === subCategoryId,
   );
-  // parent 없이 숫자 id만 오면 대분류마다 1,2…가 겹침 → 유일한 경우만 채택
   return matches.length === 1 ? matches[0] : undefined;
 }
 
