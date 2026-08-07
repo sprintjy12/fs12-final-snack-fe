@@ -218,18 +218,20 @@ export function MobileSidebar({
               </li>
             );
           })}
-          <li>
-            <button
-              type="button"
-              onClick={() => {
-                onLogout?.();
-                onClose();
-              }}
-              className="flex w-full cursor-pointer items-center bg-transparent px-5 py-6 text-left text-base leading-[26px] font-medium text-foreground-strong"
-            >
-              로그아웃
-            </button>
-          </li>
+          {onLogout ? (
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  onLogout();
+                  onClose();
+                }}
+                className="flex w-full cursor-pointer items-center bg-transparent px-5 py-6 text-left text-base leading-[26px] font-medium text-foreground-strong"
+              >
+                로그아웃
+              </button>
+            </li>
+          ) : null}
         </ul>
       </nav>
     </div>,

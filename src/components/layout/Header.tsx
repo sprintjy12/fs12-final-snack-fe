@@ -183,13 +183,15 @@ const activeHref = getActiveNavHref(navItems, pathname);
               </span>
             </Link>
 
-            <button
-              type="button"
-              onClick={onLogout}
-              className="hidden cursor-pointer bg-transparent text-xl leading-8 font-bold text-snack-gray-300 xl:block xl:px-4"
-            >
-              Logout
-            </button>
+            {onLogout ? (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="hidden cursor-pointer bg-transparent text-xl leading-8 font-bold text-snack-gray-300 xl:block xl:px-4"
+              >
+                Logout
+              </button>
+            ) : null}
           </div>
         </div>
       </header>
