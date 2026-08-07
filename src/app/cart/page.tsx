@@ -451,7 +451,7 @@ export default function CartPage() {
               </div>
             </section>
 
-            <aside className="sticky top-6 flex w-full max-w-none flex-col gap-8 max-[1100px]:static max-[1100px]:ml-auto max-[1100px]:max-w-[480px] md:max-[1100px]:max-w-[480px]">
+            <aside className="sticky top-6 flex w-full max-w-none flex-col gap-8 max-[1100px]:static max-[1100px]:ml-auto max-[1100px]:max-w-[480px] max-[768px]:ml-0 max-[768px]:max-w-none">
               <div className="flex flex-col gap-6 rounded-2xl border border-border-subtle bg-surface px-5 py-10 shadow-[4px_4px_10px_rgb(250_247_243_/_25%)] md:px-6 md:py-[60px]">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between gap-4">
