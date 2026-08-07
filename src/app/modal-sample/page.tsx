@@ -1,32 +1,43 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 
-import { CommonImage, Modal } from "@/components/ui";
+import {
+  Button,
+  CommonImage,
+  Modal,
+  ModalShell,
+  Select,
+  TextField,
+} from "@/components/ui";
 
 /**
  * 모달 샘플 페이지
  *
- * 이 프로젝트의 일러스트 모달은 크게 2가지입니다.
- * 1) 일반 강아지 (`modal-approve` / `modal-reject`) — 결과 안내
- * 2) 느낌표 강아지 (`modal-warning`) — 한 번 더 확인이 필요한 경고
+ * =====================================================
+ * 모달 구조 (리팩터 이후)
  *
- * 공통 호출 패턴:
- * - open / onClose 로 열기·닫기
- * - title / description / illustration 로 내용 구성
- * - secondaryAction / primaryAction 으로 버튼 2개 구성
- *
- * 버튼 동작은 페이지마다 다르게 넘기면 됩니다.
- * - onClick만: API 호출, 상태 변경, 모달 닫기 등
- * - href만: 해당 경로로 이동 (Link)
- * - href + onClick: 이동 전에 로컬 정리(모달 닫기 등) 실행 후 이동
+ * 1) ModalShell  — 공통 껍데기
+ * 2) Modal       — 확인/결과 안내 (일러스트형)
+ * 3) 폼 모달     — ModalShell + TextField / Select / Button
+ * =====================================================
  */
-type ModalType = "result" | "warning" | null;
+type ModalType = "result" | "warning" | "form" | null;
+
+type Role = "admin" | "member";
+
+const ROLE_OPTIONS: { value: Role; label: string }[] = [
+  { value: "admin", label: "관리자" },
+  { value: "member", label: "일반" },
+];
 
 export default function ModalSamplePage() {
   const router = useRouter();
   const [openModal, setOpenModal] = useState<ModalType>(null);
+  const [role, setRole] = useState<Role>("admin");
+  const formTitleId = useId();
+  const roleLabelId = useId();
 
   const closeModal = () => setOpenModal(null);
 
@@ -37,38 +48,53 @@ export default function ModalSamplePage() {
           모달 샘플
         </h1>
         <p className="text-base leading-[26px] text-foreground-muted">
-          일반 강아지 / warning 강아지 모달 호출 예시입니다. 버튼 동작은
-          `onClick` 또는 `href`로 페이지마다 다르게 연결하면 됩니다.
+          확인 모달(`Modal`)과 폼 모달(`ModalShell`) 호출 예시입니다. 버튼
+          동작은 `onClick` / `href`로 페이지마다 다르게 연결하면 됩니다.
         </p>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          {/* 1) 일반 강아지 모달 열기 */}
-          <button
-            type="button"
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <Button
+            size="compact"
             onClick={() => setOpenModal("result")}
-            className="flex h-14 cursor-pointer items-center justify-center rounded-2xl bg-accent px-6 text-base font-semibold text-surface"
           >
             일반 강아지 모달 열기
-          </button>
+          </Button>
 
-          {/* 2) warning 강아지 모달 열기 */}
-          <button
-            type="button"
+          <Button
+            size="compact"
+            variant="secondary"
             onClick={() => setOpenModal("warning")}
-            className="flex h-14 cursor-pointer items-center justify-center rounded-2xl bg-snack-background-500 px-6 text-base font-semibold text-accent"
           >
             warning 강아지 모달 열기
-          </button>
+          </Button>
+
+          <Button
+            size="compact"
+            variant="outline"
+            onClick={() => setOpenModal("form")}
+          >
+            폼 모달(Shell) 열기
+          </Button>
         </div>
+
+        <section className="rounded-2xl border border-border bg-surface p-5 text-sm leading-6 text-foreground-muted">
+          <p className="mb-2 font-semibold text-foreground-strong">선택 가이드</p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>
+              결과/경고처럼 일러스트 + 문구 + 버튼만 있으면 →{" "}
+              <code className="text-foreground">Modal</code>
+            </li>
+            <li>
+              회원 초대처럼 입력·드롭다운이 있으면 →{" "}
+              <code className="text-foreground">ModalShell</code> +{" "}
+              <code className="text-foreground">TextField</code> /{" "}
+              <code className="text-foreground">Select</code> /{" "}
+              <code className="text-foreground">Button</code>
+            </li>
+          </ul>
+        </section>
       </div>
 
-      {/*
-        [예시 1] 결과 안내 모달 (일반 강아지)
-        - illustration: CommonImage name="modal-approve" (또는 modal-reject)
-        - secondaryAction.href: 홈으로 이동
-        - primaryAction.href: 구매 내역 페이지로 이동
-        - onClick에서 closeModal()을 같이 호출해 이동 전 모달을 닫습니다.
-      */}
       <Modal
         open={openModal === "result"}
         onClose={closeModal}
@@ -100,13 +126,6 @@ export default function ModalSamplePage() {
         }}
       />
 
-      {/*
-        [예시 2] 경고 확인 모달 (느낌표 강아지)
-        - illustration: CommonImage name="modal-warning"
-        - secondaryAction.onClick: 모달만 닫기
-        - primaryAction.onClick: 실제 작업(예: 탈퇴 API) 후 원하는 페이지로 이동
-          → href 대신 router.push를 쓰면 API 성공 후에만 이동시킬 수 있습니다.
-      */}
       <Modal
         open={openModal === "warning"}
         onClose={closeModal}
@@ -135,13 +154,92 @@ export default function ModalSamplePage() {
           label: "탈퇴시키기",
           variant: "primary",
           onClick: () => {
-            // TODO: 실제 페이지에서는 탈퇴 API 호출 후 성공 시 이동
-            // await deleteMember(memberId);
             closeModal();
             router.push("/admin");
           },
         }}
       />
+
+      <ModalShell
+        open={openModal === "form"}
+        onClose={closeModal}
+        aria-labelledby={formTitleId}
+        className="flex max-w-[375px] flex-col gap-6 px-6 pt-8 pb-10 md:max-w-[688px] md:gap-8 md:px-6 md:pt-8 md:pb-10"
+      >
+        <h2
+          id={formTitleId}
+          className="w-full text-left text-xl leading-8 font-bold text-foreground-strong md:text-2xl"
+        >
+          회원 초대 (예시)
+        </h2>
+
+        <div className="h-px w-full bg-border" />
+
+        <form
+          className="flex w-full flex-col gap-6 md:gap-8"
+          onSubmit={(event) => {
+            event.preventDefault();
+            closeModal();
+          }}
+        >
+          <label className="flex flex-col gap-2 md:gap-4">
+            <span className="text-sm leading-6 font-semibold text-foreground-strong md:text-xl md:leading-8">
+              이름
+            </span>
+            <TextField
+              type="text"
+              placeholder="이름을 입력해주세요"
+              className="md:h-16 md:text-xl md:leading-8 xl:h-16"
+            />
+          </label>
+
+          <label className="flex flex-col gap-2 md:gap-4">
+            <span className="text-sm leading-6 font-semibold text-foreground-strong md:text-xl md:leading-8">
+              이메일
+            </span>
+            <TextField
+              type="email"
+              placeholder="이메일을 입력해주세요"
+              className="md:h-16 md:text-xl md:leading-8 xl:h-16"
+            />
+          </label>
+
+          <div className="flex flex-col gap-2 md:gap-4">
+            <span
+              id={roleLabelId}
+              className="text-sm leading-6 font-semibold text-foreground-strong md:text-xl md:leading-8"
+            >
+              권한
+            </span>
+            <Select
+              options={ROLE_OPTIONS}
+              value={role}
+              onChange={setRole}
+              labelId={roleLabelId}
+              flipChevron={false}
+            />
+          </div>
+
+          <div className="flex flex-col-reverse gap-4 md:flex-row md:justify-between md:gap-5">
+            <Button
+              type="button"
+              variant="secondary"
+              width="modal"
+              className="md:h-16 md:w-[310px] md:text-xl md:leading-8"
+              onClick={closeModal}
+            >
+              취소
+            </Button>
+            <Button
+              type="submit"
+              width="modal"
+              className="md:h-16 md:w-[310px] md:text-xl md:leading-8"
+            >
+              등록하기
+            </Button>
+          </div>
+        </form>
+      </ModalShell>
     </main>
   );
 }

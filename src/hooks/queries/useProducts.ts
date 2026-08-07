@@ -6,6 +6,12 @@ import { queryKeys } from "@/constants/queryKeys";
 import { getCategories, getProduct, getProducts } from "@/services/productApi";
 import type { ProductListParams } from "@/types/productTypes";
 
+function parseRouteId(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(raw) ? raw : undefined;
+}
+
 export function useProducts(params: ProductListParams = {}) {
   return useQuery({
     queryKey: queryKeys.products.list(params),
@@ -13,11 +19,13 @@ export function useProducts(params: ProductListParams = {}) {
   });
 }
 
-export function useProduct(id: number) {
+export function useProduct(id: string | undefined) {
+  const productId = parseRouteId(id);   // ← 함수 안으로 이동
+
   return useQuery({
-    queryKey: queryKeys.products.detail(id),
-    queryFn: () => getProduct(id),
-    enabled: Number.isFinite(id) && id > 0,
+    queryKey: queryKeys.products.detail(productId),
+    queryFn: () => getProduct(productId as string),
+    enabled: productId !== undefined,
   });
 }
 

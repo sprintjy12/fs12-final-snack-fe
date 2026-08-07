@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
-import { showToast } from "@/components/ui";
+import { Button, TextField, showToast } from "@/components/ui";
 
 const MAX_SAFE_BUDGET = BigInt(Number.MAX_SAFE_INTEGER);
 
@@ -46,12 +46,17 @@ const budgetFormSchema = z.object({
 function getBudgetToastMessage(
   error: z.ZodError<z.infer<typeof budgetFormSchema>>,
 ) {
-  const fieldErrors = error.flatten().fieldErrors;
+  const { fieldErrors } = z.flattenError(error);
   const monthlyMessage = fieldErrors.monthlyBudget?.[0];
   const startingMessage = fieldErrors.startingBudget?.[0];
 
-  const isMonthlyMissing = monthlyMessage?.includes("입력해 주세요");
-  const isStartingMissing = startingMessage?.includes("입력해 주세요");
+  // 문구 매칭 대신 too_small(빈 값) 코드로 구분합니다.
+  const isMonthlyMissing = error.issues.some(
+    (issue) => issue.path[0] === "monthlyBudget" && issue.code === "too_small",
+  );
+  const isStartingMissing = error.issues.some(
+    (issue) => issue.path[0] === "startingBudget" && issue.code === "too_small",
+  );
 
   if (isMonthlyMissing && isStartingMissing) {
     return "이번 달 예산, 매달 시작 예산을 입력해 주세요.";
@@ -125,7 +130,7 @@ export default function BudgetPage() {
               <span className="text-sm leading-6 font-medium text-foreground-strong md:text-xl md:leading-8">
                 이번 달 예산
               </span>
-              <input
+              <TextField
                 type="text"
                 inputMode="numeric"
                 autoComplete="off"
@@ -133,7 +138,7 @@ export default function BudgetPage() {
                 onChange={(event) =>
                   setMonthlyBudget(formatBudgetValue(event.target.value))
                 }
-                className="h-[54px] w-full rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-sm leading-6 text-snack-gray-400 outline-none md:h-16 md:text-xl md:leading-8"
+                className="text-snack-gray-400 md:h-16 md:text-xl md:leading-8 xl:h-16"
               />
             </label>
 
@@ -141,7 +146,7 @@ export default function BudgetPage() {
               <span className="text-sm leading-6 font-medium text-foreground-strong md:text-xl md:leading-8">
                 매달 시작 예산
               </span>
-              <input
+              <TextField
                 type="text"
                 inputMode="numeric"
                 autoComplete="off"
@@ -149,17 +154,14 @@ export default function BudgetPage() {
                 onChange={(event) =>
                   setStartingBudget(formatBudgetValue(event.target.value))
                 }
-                className="h-[54px] w-full rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-sm leading-6 text-snack-gray-400 outline-none md:h-16 md:text-xl md:leading-8"
+                className="text-snack-gray-400 md:h-16 md:text-xl md:leading-8 xl:h-16"
               />
             </label>
           </div>
 
-          <button
-            type="submit"
-            className="mt-8 flex h-[54px] w-full cursor-pointer items-center justify-center rounded-2xl bg-accent p-4 text-base leading-[26px] font-semibold text-surface md:mt-14 md:h-16 md:text-xl md:leading-8"
-          >
+          <Button type="submit" width="full" className="mt-8 md:mt-14">
             수정하기
-          </button>
+          </Button>
         </form>
       </div>
     </main>

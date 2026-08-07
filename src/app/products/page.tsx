@@ -9,7 +9,8 @@ import {
   ProductsEmpty,
   ProductsSkeleton,
 } from "@/features/products";
-import { useProducts } from "@/hooks/useProducts";
+import { useProducts } from "@/hooks/queries/useProducts";
+import { parseRouteId } from "@/lib/parseOptionalId";
 import type { ProductListParams } from "@/types/productTypes";
 
 import styles from "./products.module.css";
@@ -26,12 +27,8 @@ export default function ProductListPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
 
-  const categoryIdParam = searchParams.get("categoryId");
-  const subCategoryIdParam = searchParams.get("subCategoryId");
-  const categoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
-  const subCategoryId = subCategoryIdParam
-    ? Number(subCategoryIdParam)
-    : undefined;
+  const categoryId = parseRouteId(searchParams.get("categoryId"));
+  const subCategoryId = parseRouteId(searchParams.get("subCategoryId"));
 
   const listParams: ProductListParams = useMemo(
     () => ({ sort, categoryId, subCategoryId }),

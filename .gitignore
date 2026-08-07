@@ -3,6 +3,7 @@ node_modules
 .vercel
 out
 *.tsbuildinfo
+next-env.d.ts
 npm-debug.log*
 .env
 .env.local
