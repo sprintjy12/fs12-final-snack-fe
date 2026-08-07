@@ -59,7 +59,7 @@ const SODA_ROW: Omit<
   },
 ];
 
-/** 과채음료 (subCategoryId: 2) — 탄산과 구분되는 mock */
+/** 과즙음료 (subCategoryId: 2) — 탄산과 구분되는 mock */
 const JUICE_ROW: Omit<
   Product,
   "id" | "category" | "subCategory" | "url" | "photo"

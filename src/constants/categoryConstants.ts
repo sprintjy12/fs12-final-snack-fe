@@ -28,7 +28,7 @@ export type CategoryMenuItem = Category & {
  *
  * 규칙:
  * - 대분류: ...000001 ~ ...000007
- * - 소분류(leaf): ...0001XY (X=대분류, Y=소분류 순번) — 음료 탄산/과채는 기존 011/012 유지
+ * - 소분류(leaf): ...0001XY (X=대분류, Y=소분류 순번) — 음료 탄산/과즙은 기존 011/012 유지
  */
 const API = {
   snack: "00000000-0000-4000-8000-000000000001",
@@ -87,7 +87,7 @@ export const CATEGORY_MENU: CategoryMenuItem[] = [
     name: "음료",
     subCategories: [
       { id: 1, apiId: API.soda, name: "청량・탄산음료", categoryId: 2 },
-      { id: 2, apiId: API.juice, name: "과채음료", categoryId: 2 },
+      { id: 2, apiId: API.juice, name: "과즙음료", categoryId: 2 },
       { id: 3, apiId: API.energy, name: "에너지음료", categoryId: 2 },
       { id: 4, apiId: API.drinkCoffee, name: "원두커피", categoryId: 2 },
       { id: 5, apiId: API.healthDrink, name: "건강음료", categoryId: 2 },
