@@ -13,11 +13,11 @@ export function useProducts(params: ProductListParams = {}) {
   });
 }
 
-export function useProduct(id: number) {
+export function useProduct(id: number | string) {
   return useQuery({
     queryKey: queryKeys.products.detail(id),
     queryFn: () => getProduct(id),
-    enabled: Number.isFinite(id) && id > 0,
+    enabled: id !== undefined && id !== null && id !== "",
   });
 }
 
