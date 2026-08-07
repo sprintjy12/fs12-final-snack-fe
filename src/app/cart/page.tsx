@@ -26,6 +26,71 @@ function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
+function QuantityControl({
+  productName,
+  quantity,
+  onChange,
+}: {
+  productName: string;
+  quantity: number;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <div
+      className="flex h-[54px] w-[140px] items-center justify-end gap-1 rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-lg leading-[26px] text-accent min-[1401px]:w-40"
+      role="group"
+      aria-label={`${productName} 수량`}
+    >
+      <span aria-live="polite">{quantity} 개</span>
+      <div className="ml-1 flex flex-col gap-0.5">
+        <button
+          type="button"
+          className="grid h-3.5 w-[18px] place-items-center border-0 bg-transparent p-0 text-snack-orange-300 disabled:cursor-not-allowed disabled:opacity-35"
+          aria-label="수량 증가"
+          disabled={quantity >= MAX_QUANTITY}
+          onClick={() => onChange(quantity + 1)}
+        >
+          <Icon name="chevron-up" size="xs" className="!h-3 !w-3" />
+        </button>
+        <button
+          type="button"
+          className="grid h-3.5 w-[18px] place-items-center border-0 bg-transparent p-0 text-snack-orange-300 disabled:cursor-not-allowed disabled:opacity-35"
+          aria-label="수량 감소"
+          disabled={quantity <= 1}
+          onClick={() => onChange(quantity - 1)}
+        >
+          <Icon name="chevron-down" size="xs" className="!h-3 !w-3" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SelectCheckbox({
+  checked,
+  label,
+  onToggle,
+}: {
+  checked: boolean;
+  label: string;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={cx(
+        "grid size-[26px] shrink-0 place-items-center rounded border border-snack-gray-300 bg-transparent p-0 text-[17px] leading-none text-surface",
+        checked && "border-accent bg-accent",
+      )}
+      aria-label={label}
+      aria-pressed={checked}
+      onClick={onToggle}
+    >
+      {checked ? <span aria-hidden="true">✓</span> : null}
+    </button>
+  );
+}
+
 export default function CartPage() {
   const { data: cart, isLoading, isError, refetch } = useCart();
   const updateCartItem = useUpdateCartItem();
@@ -34,7 +99,6 @@ export default function CartPage() {
   const deleteCartMutation = useDeleteCart();
 
   const cartItems = cart?.items ?? [];
-  
 
   const [selectedIds, setSelectedIds] = useState<CartItemId[] | undefined>();
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(
@@ -76,7 +140,9 @@ export default function CartPage() {
             </h1>
           </div>
           <div className="flex min-h-[420px] flex-col items-center justify-center gap-3">
-            <p className="text-base text-snack-black-100">장바구니를 불러오지 못했습니다.</p>
+            <p className="text-base text-snack-black-100">
+              장바구니를 불러오지 못했습니다.
+            </p>
             <button
               onClick={() => refetch()}
               className="rounded-2xl border border-border px-4 py-2 text-base"
@@ -120,7 +186,11 @@ export default function CartPage() {
     });
   };
 
-  const changeQuantity = (cartItemId: CartItemId, currentQuantity: number, delta: 1 | -1) => {
+  const changeQuantity = (
+    cartItemId: CartItemId,
+    currentQuantity: number,
+    delta: 1 | -1,
+  ) => {
     const nextQuantity = currentQuantity + delta;
     if (nextQuantity < 1 || nextQuantity > MAX_QUANTITY) return;
     updateCartItem.mutate({ cartId: cartItemId, request: { delta } });
@@ -129,13 +199,17 @@ export default function CartPage() {
   const handleRemoveOne = (cartItemId: CartItemId) => {
     deleteCartItemMutation.mutate(cartItemId);
     setSelectedIds((prev) =>
-      (prev ?? cartItems.map((item) => item.id)).filter((id) => id !== cartItemId),
+      (prev ?? cartItems.map((item) => item.id)).filter(
+        (id) => id !== cartItemId,
+      ),
     );
   };
 
   const handleRemoveSelected = () => {
     if (!someSelected) return;
-    deleteSelectedCartItemsMutation.mutate({ cartItemIds: effectiveSelectedIds });
+    deleteSelectedCartItemsMutation.mutate({
+      cartItemIds: effectiveSelectedIds,
+    });
     setSelectedIds([]);
   };
 
@@ -144,8 +218,18 @@ export default function CartPage() {
     setSelectedIds([]);
   };
 
-  const rowGrid =
-    "grid min-w-[1000px] grid-cols-[minmax(380px,1fr)_repeat(3,180px)] xl:min-w-0 xl:grid-cols-[minmax(454px,1fr)_repeat(3,220px)] max-[1400px]:grid-cols-[minmax(380px,1fr)_repeat(3,180px)]";
+  const markImageFailed = (cartItemId: CartItemId) => {
+    setFailedImageIds((prev) => {
+      if (prev.has(cartItemId)) return prev;
+      const next = new Set(prev);
+      next.add(cartItemId);
+      return next;
+    });
+  };
+
+  // xl+ shows the table; cols stay ≤ product column width until 1401px (~920px row).
+  const desktopRowGrid =
+    "hidden xl:grid min-w-0 grid-cols-[minmax(240px,1fr)_repeat(3,140px)] min-[1401px]:grid-cols-[minmax(380px,1fr)_repeat(3,180px)] 2xl:grid-cols-[minmax(454px,1fr)_repeat(3,220px)]";
 
   return (
     <main className="min-h-[calc(100vh-88px)] w-full bg-surface-muted">
@@ -177,27 +261,21 @@ export default function CartPage() {
             </Link>
           </section>
         ) : (
-          <div className="grid grid-cols-1 items-start gap-10 max-[1100px]:grid-cols-1 min-[1101px]:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1254px)_386px] max-[1400px]:min-[1101px]:grid-cols-[minmax(0,1fr)_340px]">
-            <section className="min-w-0 max-[1100px]:overflow-x-auto" aria-label="장바구니 상품">
+          <div className="grid grid-cols-1 items-start gap-10 xl:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1254px)_386px] max-[1400px]:xl:grid-cols-[minmax(0,1fr)_340px]">
+            <section className="min-w-0" aria-label="장바구니 상품">
+              {/* Desktop table header */}
               <div
                 className={cx(
-                  rowGrid,
+                  desktopRowGrid,
                   "h-20 border-y border-snack-gray-300 text-xl leading-8 text-snack-black-100",
                 )}
               >
                 <div className="flex items-center gap-8 pl-6">
-                  <button
-                    type="button"
-                    className={cx(
-                      "grid size-[26px] shrink-0 place-items-center rounded border border-snack-gray-300 bg-transparent p-0 text-[17px] leading-none text-surface",
-                      allSelected && "border-accent bg-accent",
-                    )}
-                    aria-label={allSelected ? "전체 선택 해제" : "전체 선택"}
-                    aria-pressed={allSelected}
-                    onClick={toggleSelectAll}
-                  >
-                    {allSelected ? <span aria-hidden="true">✓</span> : null}
-                  </button>
+                  <SelectCheckbox
+                    checked={allSelected}
+                    label={allSelected ? "전체 선택 해제" : "전체 선택"}
+                    onToggle={toggleSelectAll}
+                  />
                   <span>상품정보</span>
                 </div>
                 <div className="grid place-items-center border-l border-snack-gray-300">
@@ -211,6 +289,23 @@ export default function CartPage() {
                 </div>
               </div>
 
+              {/* Mobile select-all bar */}
+              <div className="flex h-14 items-center justify-between border-y border-snack-gray-300 px-1 xl:hidden">
+                <div className="flex items-center gap-3">
+                  <SelectCheckbox
+                    checked={allSelected}
+                    label={allSelected ? "전체 선택 해제" : "전체 선택"}
+                    onToggle={toggleSelectAll}
+                  />
+                  <span className="text-base leading-[26px] text-snack-black-100">
+                    전체 선택
+                  </span>
+                </div>
+                <span className="text-sm text-snack-gray-400">
+                  {selectedProducts.length}/{cartItems.length}
+                </span>
+              </div>
+
               <div className="flex flex-col">
                 {cartItems.map((item: CartItemWithProduct) => {
                   const { product, quantity } = item;
@@ -219,130 +314,157 @@ export default function CartPage() {
                     Boolean(photoSrc) && !failedImageIds.has(item.id);
                   const lineTotal = product.price * quantity;
                   const isSelected = effectiveSelectedIds.includes(item.id);
+                  const productHref = `/products/${product.id}`;
 
                   return (
-                    <article
-                      className={cx(rowGrid, "min-h-[208px] bg-surface-muted")}
-                      key={item.id}
-                    >
-                      <div className="relative flex min-w-0 items-start gap-8 border-b border-snack-gray-300 p-6">
-                        <button
-                          type="button"
-                          className={cx(
-                            "grid size-[26px] shrink-0 place-items-center rounded border border-snack-gray-300 bg-transparent p-0 text-[17px] leading-none text-surface",
-                            isSelected && "border-accent bg-accent",
-                          )}
-                          aria-label={`${product.name} 선택`}
-                          aria-pressed={isSelected}
-                          onClick={() => toggleSelect(item.id)}
-                        >
-                          {isSelected ? (
-                            <span aria-hidden="true">✓</span>
-                          ) : null}
-                        </button>
-                        <Link
-                          href={`/products/${product.id}`}
-                          className="flex min-w-0 gap-6"
-                        >
-                          <span className="relative grid size-40 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border bg-surface shadow-[4px_4px_10px_rgb(250_247_243_/_25%)] max-[1400px]:size-[140px]">
-                            {showImage ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={photoSrc!}
-                                alt=""
-                                className="relative h-auto max-h-[98px] w-14 object-contain"
-                                onError={() => {
-                                  setFailedImageIds((prev) => {
-                                    if (prev.has(item.id)) return prev;
-                                    const next = new Set(prev);
-                                    next.add(item.id);
-                                    return next;
-                                  });
-                                }}
-                              />
-                            ) : null}
-                          </span>
-                          <span className="flex min-w-0 flex-col justify-center gap-2 self-stretch">
-                            <span className="overflow-hidden text-xl leading-8 text-ellipsis whitespace-nowrap text-foreground-strong">
-                              {product.name}
+                    <article key={item.id}>
+                      {/* Desktop row */}
+                      <div
+                        className={cx(
+                          desktopRowGrid,
+                          "min-h-[208px] bg-surface-muted",
+                        )}
+                      >
+                        <div className="relative flex min-w-0 items-start gap-8 border-b border-snack-gray-300 p-6">
+                          <SelectCheckbox
+                            checked={isSelected}
+                            label={`${product.name} 선택`}
+                            onToggle={() => toggleSelect(item.id)}
+                          />
+                          <Link
+                            href={productHref}
+                            className="flex min-w-0 gap-6"
+                          >
+                            <span className="relative grid size-40 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border bg-surface shadow-[4px_4px_10px_rgb(250_247_243_/_25%)] max-[1400px]:size-[140px]">
+                              {showImage ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={photoSrc!}
+                                  alt=""
+                                  className="relative h-auto max-h-[98px] w-14 object-contain"
+                                  onError={() => markImageFailed(item.id)}
+                                />
+                              ) : null}
                             </span>
-                            <strong className="text-2xl leading-8 font-bold text-foreground-strong">
-                              {formatPrice(product.price)}
-                            </strong>
-                          </span>
-                        </Link>
-                        <button
-                          type="button"
-                          className="absolute top-[18px] right-2.5 grid size-9 place-items-center border-0 bg-transparent p-0 text-snack-black-100 hover:text-foreground-strong"
-                          aria-label={`${product.name} 삭제`}
-                          onClick={() => handleRemoveOne(item.id)}
-                        >
-                          <Icon name="close" size="sm" />
-                        </button>
-                      </div>
+                            <span className="flex min-w-0 flex-col justify-center gap-2 self-stretch">
+                              <span className="overflow-hidden text-xl leading-8 text-ellipsis whitespace-nowrap text-foreground-strong">
+                                {product.name}
+                              </span>
+                              <strong className="text-2xl leading-8 font-bold text-foreground-strong">
+                                {formatPrice(product.price)}
+                              </strong>
+                            </span>
+                          </Link>
+                          <button
+                            type="button"
+                            className="absolute top-[18px] right-2.5 grid size-9 place-items-center border-0 bg-transparent p-0 text-snack-black-100 hover:text-foreground-strong"
+                            aria-label={`${product.name} 삭제`}
+                            onClick={() => handleRemoveOne(item.id)}
+                          >
+                            <Icon name="close" size="sm" />
+                          </button>
+                        </div>
 
-                      <div className="flex min-w-0 flex-col items-center justify-center gap-5 border-r border-b border-l border-snack-gray-300 px-2.5 py-6">
-                        <div
-                          className="flex h-[54px] w-[140px] items-center justify-end gap-1 rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-lg leading-[26px] text-accent xl:w-40"
-                          role="group"
-                          aria-label={`${product.name} 수량`}
-                        >
-                          <span aria-live="polite">{quantity} 개</span>
-                          <div className="ml-1 flex flex-col gap-0.5">
-                            <button
-                              type="button"
-                              className="grid h-3.5 w-[18px] place-items-center border-0 bg-transparent p-0 text-snack-orange-300 disabled:cursor-not-allowed disabled:opacity-35"
-                              aria-label="수량 증가"
-                              disabled={quantity >= MAX_QUANTITY}
-                              onClick={() =>
-                                changeQuantity(item.id, quantity, 1)
-                              }
-                            >
-                              <Icon
-                                name="chevron-up"
-                                size="xs"
-                                className="!h-3 !w-3"
-                              />
-                            </button>
-                            <button
-                              type="button"
-                              className="grid h-3.5 w-[18px] place-items-center border-0 bg-transparent p-0 text-snack-orange-300 disabled:cursor-not-allowed disabled:opacity-35"
-                              aria-label="수량 감소"
-                              disabled={quantity <= 1}
-                              onClick={() =>
-                                changeQuantity(item.id, quantity, -1)
-                              }
-                            >
-                              <Icon
-                                name="chevron-down"
-                                size="xs"
-                                className="!h-3 !w-3"
-                              />
-                            </button>
-                          </div>
+                        <div className="flex min-w-0 flex-col items-center justify-center gap-5 border-r border-b border-l border-snack-gray-300 px-2.5 py-6">
+                          <QuantityControl
+                            productName={product.name}
+                            quantity={quantity}
+                            onChange={(next) =>
+                              changeQuantity(
+                                item.id,
+                                quantity,
+                                next > quantity ? 1 : -1,
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div className="flex min-w-0 flex-col items-center justify-center gap-5 border-r border-b border-snack-gray-300 px-2.5 py-6">
+                          <strong className="text-center text-2xl leading-8 font-bold text-foreground-strong">
+                            {formatPrice(lineTotal)}
+                          </strong>
+                        </div>
+
+                        <div className="flex min-w-0 flex-col items-center justify-center gap-2 border-b border-snack-gray-300 px-2.5 py-6">
+                          <strong className="text-center text-2xl leading-8 font-bold text-foreground-strong">
+                            {formatPrice(SHIPPING_FEE)}
+                          </strong>
+                          <span className="text-xl leading-8 text-snack-black-100">
+                            택배 배송
+                          </span>
                         </div>
                       </div>
 
-                      <div className="flex min-w-0 flex-col items-center justify-center gap-5 border-r border-b border-snack-gray-300 px-2.5 py-6">
-                        <strong className="text-center text-2xl leading-8 font-bold text-foreground-strong">
-                          {formatPrice(lineTotal)}
-                        </strong>
-                      </div>
+                      {/* Mobile card */}
+                      <div className="relative flex flex-col gap-4 border-b border-snack-gray-300 py-5 xl:hidden">
+                        <div className="flex items-start gap-3 pr-8">
+                          <SelectCheckbox
+                            checked={isSelected}
+                            label={`${product.name} 선택`}
+                            onToggle={() => toggleSelect(item.id)}
+                          />
+                          <Link
+                            href={productHref}
+                            className="flex min-w-0 flex-1 gap-3"
+                          >
+                            <span className="relative grid size-20 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface">
+                              {showImage ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={photoSrc!}
+                                  alt=""
+                                  className="h-auto max-h-12 w-8 object-contain"
+                                  onError={() => markImageFailed(item.id)}
+                                />
+                              ) : null}
+                            </span>
+                            <span className="flex min-w-0 flex-col justify-center gap-1">
+                              <span className="line-clamp-2 text-base leading-[26px] text-foreground-strong">
+                                {product.name}
+                              </span>
+                              <strong className="text-lg leading-[26px] font-bold text-foreground-strong">
+                                {formatPrice(product.price)}
+                              </strong>
+                            </span>
+                          </Link>
+                          <button
+                            type="button"
+                            className="absolute top-4 right-0 grid size-9 place-items-center border-0 bg-transparent p-0 text-snack-black-100"
+                            aria-label={`${product.name} 삭제`}
+                            onClick={() => handleRemoveOne(item.id)}
+                          >
+                            <Icon name="close" size="sm" />
+                          </button>
+                        </div>
 
-                      <div className="flex min-w-0 flex-col items-center justify-center gap-2 border-b border-snack-gray-300 px-2.5 py-6">
-                        <strong className="text-center text-2xl leading-8 font-bold text-foreground-strong">
-                          {formatPrice(SHIPPING_FEE)}
-                        </strong>
-                        <span className="text-xl leading-8 text-snack-black-100">
-                          택배 배송
-                        </span>
+                        <div className="flex flex-wrap items-center justify-between gap-3 pl-9">
+                          <QuantityControl
+                            productName={product.name}
+                            quantity={quantity}
+                            onChange={(next) =>
+                              changeQuantity(
+                                item.id,
+                                quantity,
+                                next > quantity ? 1 : -1,
+                              )
+                            }
+                          />
+                          <div className="flex flex-col items-end gap-0.5">
+                            <strong className="text-lg leading-[26px] font-bold text-foreground-strong">
+                              {formatPrice(lineTotal)}
+                            </strong>
+                            <span className="text-sm leading-5 text-snack-black-100">
+                              배송 {formatPrice(SHIPPING_FEE)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </article>
                   );
                 })}
               </div>
 
-              <div className="mt-4 flex gap-4">
+              <div className="mt-4 flex flex-wrap gap-3 sm:gap-4">
                 <button
                   type="button"
                   className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-[20px] border border-border bg-transparent px-4 py-2 text-base leading-[26px] text-foreground-strong hover:border-snack-gray-400 hover:text-snack-black-100 disabled:cursor-not-allowed disabled:opacity-45"
@@ -361,7 +483,7 @@ export default function CartPage() {
               </div>
             </section>
 
-            <aside className="sticky top-6 flex w-full max-w-none flex-col gap-8 max-[1100px]:static max-[1100px]:ml-auto max-[1100px]:max-w-[480px] md:max-[1100px]:max-w-[480px]">
+            <aside className="sticky top-6 flex w-full max-w-none flex-col gap-8 max-xl:static max-xl:ml-auto max-xl:max-w-[480px] max-[768px]:ml-0 max-[768px]:max-w-none">
               <div className="flex flex-col gap-6 rounded-2xl border border-border-subtle bg-surface px-5 py-10 shadow-[4px_4px_10px_rgb(250_247_243_/_25%)] md:px-6 md:py-[60px]">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between gap-4">
