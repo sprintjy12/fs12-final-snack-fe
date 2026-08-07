@@ -34,11 +34,30 @@ type BeProduct = {
   category?: BeCategory | null;
 };
 
+type BePagination = {
+  page?: number;
+  limit?: number;
+  total?: number;
+  totalPages?: number;
+  /** 일부 API 변형 */
+  hasNext?: boolean;
+  hasNextPage?: boolean;
+  nextCursor?: string | null;
+};
+
 type BeListResponse = {
   message?: string;
   data: BeProduct[];
-  pagination?: unknown;
+  pagination?: BePagination;
 };
+
+type BeProductPage = {
+  products: Product[];
+  pagination?: BePagination;
+};
+
+/** leaf 전체 수집 시 무한 루프 방지. 초과하면 부분 목록 대신 실패 */
+const LEAF_FETCH_MAX_PAGES = 200;
 
 type BeDetailResponse = {
   message?: string;
@@ -190,7 +209,7 @@ async function fetchBeProductPage(options: {
   sort?: ProductListParams["sort"];
   page: number;
   pageSize: number;
-}): Promise<Product[]> {
+}): Promise<BeProductPage> {
   const search = new URLSearchParams();
   if (options.categoryId) search.set("categoryId", options.categoryId);
   if (options.sort) search.set("sort", options.sort);
@@ -201,7 +220,37 @@ async function fetchBeProductPage(options: {
   const response = await apiFetch<BeListResponse>(
     `/api/products${query ? `?${query}` : ""}`,
   );
-  return (response.data ?? []).map(mapBeProduct);
+  return {
+    products: (response.data ?? []).map(mapBeProduct),
+    pagination: response.pagination,
+  };
+}
+
+/** BE 페이지 메타로 다음 페이지 존재 여부 판별. 메타 없으면 청크 길이로 추정 */
+function hasMoreProductPages(
+  page: number,
+  pageSize: number,
+  chunkLength: number,
+  pagination?: BePagination,
+): boolean {
+  if (pagination) {
+    if (typeof pagination.hasNext === "boolean") return pagination.hasNext;
+    if (typeof pagination.hasNextPage === "boolean") {
+      return pagination.hasNextPage;
+    }
+    if (
+      typeof pagination.totalPages === "number" &&
+      Number.isFinite(pagination.totalPages)
+    ) {
+      return page < pagination.totalPages;
+    }
+    if (pagination.nextCursor) return true;
+    if (pagination.nextCursor === null || pagination.nextCursor === "") {
+      return false;
+    }
+  }
+  // 메타 없을 때만 length 휴리스틱 (마지막 페이지는 limit 미만)
+  return chunkLength >= pageSize;
 }
 
 /** leaf 한 개의 상품을 BE limit 단위로 모두 수집 */
@@ -212,15 +261,26 @@ async function fetchAllProductsForLeaf(
   const collected: Product[] = [];
   let page = 1;
 
-  while (page <= 50) {
-    const chunk = await fetchBeProductPage({
+  while (true) {
+    if (page > LEAF_FETCH_MAX_PAGES) {
+      throw new Error(
+        `Product fetch exceeded safety limit (${LEAF_FETCH_MAX_PAGES} pages) for category ${leafId}`,
+      );
+    }
+
+    const { products, pagination } = await fetchBeProductPage({
       categoryId: leafId,
       sort,
       page,
       pageSize: BE_MAX_LIMIT,
     });
-    collected.push(...chunk);
-    if (chunk.length < BE_MAX_LIMIT) break;
+    collected.push(...products);
+
+    if (
+      !hasMoreProductPages(page, BE_MAX_LIMIT, products.length, pagination)
+    ) {
+      break;
+    }
     page += 1;
   }
 
@@ -247,12 +307,13 @@ export async function getProducts(
 
   // 소분류(leaf) 선택: 서버 페이지네이션 그대로 사용
   if (leafApiId) {
-    return fetchBeProductPage({
+    const { products } = await fetchBeProductPage({
       categoryId: leafApiId,
       sort: params.sort,
       page,
       pageSize,
     });
+    return products;
   }
 
   // 대분류만 선택: 하위 leaf들을 조회·병합한 뒤 정렬/페이지네이션
@@ -268,11 +329,12 @@ export async function getProducts(
   }
 
   // 필터 없음: 서버 페이지네이션
-  return fetchBeProductPage({
+  const { products } = await fetchBeProductPage({
     sort: params.sort,
     page,
     pageSize,
   });
+  return products;
 }
 
 export async function getProduct(id: number | string): Promise<Product> {
