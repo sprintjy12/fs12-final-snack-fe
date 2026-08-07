@@ -32,7 +32,7 @@ const BUBBLES = [
 export default function HomePage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-background">
-      <div className="relative mx-auto box-border min-h-screen w-full max-w-[1920px] px-5 pt-6 pb-[100px] lg:px-[58px] lg:pt-[52px] lg:pb-10">
+      <div className="relative mx-auto box-border min-h-screen w-full max-w-[1920px] px-5 pt-6 pb-[100px] lg:px-[58px] lg:pt-[52px] lg:pb-[116px]">
         <div className="relative z-[2] mb-6 inline-flex items-center gap-4 rounded-[20px] bg-[#555] px-5 py-3 text-base leading-[1.3] font-extrabold text-surface lg:absolute lg:top-[52px] lg:left-[58px] lg:mb-0 lg:px-10 lg:py-5 lg:pr-10 lg:pl-8 lg:text-[clamp(1.25rem,2.5vw,2rem)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
