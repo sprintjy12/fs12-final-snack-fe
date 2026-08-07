@@ -198,7 +198,7 @@
 
 @media (max-width: 1200px) {
   .inner {
-    padding: 32px 40px 64px;
+    padding: 32px 40px 96px;
   }
 
   .grid {
@@ -221,7 +221,8 @@
   .inner {
     gap: 32px;
     min-height: auto;
-    padding: 24px 16px 48px;
+    /* FAB(52px) + bottom offset + safe spacing */
+    padding: 24px 16px 100px;
   }
 
   .grid {
