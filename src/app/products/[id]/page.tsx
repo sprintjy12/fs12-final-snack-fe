@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { Icon } from "@/components/ui";
@@ -81,20 +82,39 @@ export default function ProductDetailPage() {
   const decrease = () => setQuantity((value) => Math.max(1, value - 1));
   const increase = () => setQuantity((value) => Math.min(999, value + 1));
 
-  const handleAddToCart = () => {
-    if (!product) return;
-    const saved = addToCart(product.id, quantity);
-    if (saved) {
+  const addToCartMutation = useMutation({
+    mutationFn: async (payload: {
+      productId: number | string;
+      quantity: number;
+      productName: string;
+    }) => {
+      const saved = addToCart(payload.productId, payload.quantity);
+      if (!saved) {
+        throw new Error("CART_SAVE_FAILED");
+      }
+      return payload;
+    },
+    onSuccess: (payload) => {
       setFeedback({
         type: "success",
-        message: `${product.name} ${quantity}개를 장바구니에 담았습니다.`,
+        message: `${payload.productName} ${payload.quantity}개를 장바구니에 담았습니다.`,
       });
-      return;
-    }
-    setFeedback({
-      type: "error",
-      message:
-        "장바구니에 담지 못했습니다. 브라우저 저장소 설정을 확인해 주세요.",
+    },
+    onError: () => {
+      setFeedback({
+        type: "error",
+        message:
+          "장바구니에 담지 못했습니다. 브라우저 저장소 설정을 확인해 주세요.",
+      });
+    },
+  });
+
+  const handleAddToCart = () => {
+    if (!product || addToCartMutation.isPending) return;
+    addToCartMutation.mutate({
+      productId: product.id,
+      quantity,
+      productName: product.name,
     });
   };
 
@@ -277,8 +297,12 @@ export default function ProductDetailPage() {
                 type="button"
                 className={styles.addCart}
                 onClick={handleAddToCart}
+                disabled={addToCartMutation.isPending}
+                aria-busy={addToCartMutation.isPending}
               >
-                장바구니 담기
+                {addToCartMutation.isPending
+                  ? "담는 중..."
+                  : "장바구니 담기"}
               </button>
             </div>
 
