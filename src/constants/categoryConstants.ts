@@ -33,8 +33,12 @@ export type CategoryMenuItem = Category & {
 };
 
 /**
- * BE seed(`fs12-final-snack-be/prisma/seed.ts`)와 맞춘 고정 uuid.
+ * BE seed 카테고리와 맞춘 고정 uuid (`NEXT_PUBLIC_USE_MOCK=false` 시 필터에 사용).
  * mock 메뉴는 숫자 id를 쓰고, API 모드에서 apiId로 변환합니다.
+ *
+ * BE 공식 seed는 대분류 3(스낵·음료·간편식) + leaf 7을 시딩합니다.
+ * 아래 uuid 중 snack/drink/meal 및 대응 leaf는 BE seed `FE_CAT`와 동일해야 합니다.
+ * (생수·신선·비품·원두 등 FE 전용 메뉴는 BE에 없으면 빈 목록)
  *
  * 규칙:
  * - 대분류: ...000001 ~ ...000007
