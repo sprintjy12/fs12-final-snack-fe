@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, type MouseEvent } from "react";
+import { useState } from "react";
 
 import {
   PurchaseRequestDecisionModal,
@@ -68,13 +68,9 @@ export function PurchaseRequestsList({
   const [isOpening, setIsOpening] = useState(false);
 
   const openModal = async (
-    event: MouseEvent<HTMLButtonElement>,
     request: OrderRequestListItem,
     nextMode: PurchaseRequestDecisionMode,
   ) => {
-    event.preventDefault();
-    event.stopPropagation();
-
     if (isOpening) {
       return;
     }
@@ -109,55 +105,79 @@ export function PurchaseRequestsList({
           </div>
 
           <ul className="mt-4">
-            {requests.map((request) => (
-              <li key={request.id}>
-                <Link
-                  href={`/purchase/requests/${request.id}`}
-                  className="grid h-[104px] grid-cols-[207px_1fr_219px_219px_219px] items-center border-b border-solid border-border px-20 text-center text-xl leading-8 text-snack-black-100 transition-colors hover:bg-surface"
+            {requests.map((request) => {
+              const productName = formatProductName(request);
+              const detailHref = `/purchase/requests/${request.id}`;
+
+              return (
+                <li
+                  key={request.id}
+                  className="relative grid h-[104px] grid-cols-[207px_1fr_219px_219px_219px] items-center border-b border-solid border-border px-20 text-center text-xl leading-8 text-snack-black-100 transition-colors hover:bg-surface"
                 >
-                  <span>{formatDate(request.requestedAt)}</span>
-                  <div className="text-left">
+                  <Link
+                    href={detailHref}
+                    className="absolute inset-0 z-0"
+                    aria-label={`${productName} 상세 보기`}
+                  />
+                  <span className="relative z-10 pointer-events-none">
+                    {formatDate(request.requestedAt)}
+                  </span>
+                  <div className="relative z-10 pointer-events-none text-left">
                     <p className="font-semibold text-snack-black-200">
-                      {formatProductName(request)}
+                      {productName}
                     </p>
                     <p className="text-sm leading-6 font-medium text-foreground-muted">
                       총 수량: {request.totalQuantity}
                     </p>
                   </div>
-                  <span>{formatPrice(request.totalPrice)}</span>
-                  <span>{request.requesterName}</span>
-                  <div className="relative z-10 flex items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      disabled={isOpening}
-                      onClick={(event) => openModal(event, request, "reject")}
-                      className="h-11 w-[94px] cursor-pointer rounded-lg bg-snack-background-300 text-lg leading-[26px] font-semibold text-foreground-muted disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      반려
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isOpening}
-                      onClick={(event) => openModal(event, request, "approve")}
-                      className="h-11 w-[94px] cursor-pointer rounded-lg bg-accent text-lg leading-[26px] font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      승인
-                    </button>
+                  <span className="relative z-10 pointer-events-none">
+                    {formatPrice(request.totalPrice)}
+                  </span>
+                  <span className="relative z-10 pointer-events-none">
+                    {request.requesterName}
+                  </span>
+                  <div className="relative z-10 pointer-events-none flex items-center justify-center">
+                    <div className="pointer-events-auto flex gap-2">
+                      <button
+                        type="button"
+                        disabled={isOpening}
+                        onClick={() => openModal(request, "reject")}
+                        className="h-11 w-[94px] cursor-pointer rounded-lg bg-snack-background-300 text-lg leading-[26px] font-semibold text-foreground-muted disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        반려
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isOpening}
+                        onClick={() => openModal(request, "approve")}
+                        className="h-11 w-[94px] cursor-pointer rounded-lg bg-accent text-lg leading-[26px] font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        승인
+                      </button>
+                    </div>
                   </div>
-                </Link>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </div>
 
         <ul className="xl:hidden">
-          {requests.map((request) => (
-            <li key={request.id}>
-              <Link
-                href={`/purchase/requests/${request.id}`}
-                className="block h-[280px] border-b-2 border-solid border-border px-6 pt-6 pb-6 transition-colors hover:bg-surface"
+          {requests.map((request) => {
+            const productName = formatProductName(request);
+            const detailHref = `/purchase/requests/${request.id}`;
+
+            return (
+              <li
+                key={request.id}
+                className="relative block h-[280px] border-b-2 border-solid border-border px-6 pt-6 pb-6 transition-colors hover:bg-surface"
               >
-                <div className="flex h-[100px] gap-4">
+                <Link
+                  href={detailHref}
+                  className="absolute inset-0 z-0"
+                  aria-label={`${productName} 상세 보기`}
+                />
+                <div className="relative z-10 pointer-events-none flex h-[100px] gap-4">
                   <div className="flex size-[100px] shrink-0 items-center justify-center rounded-lg border border-solid border-border bg-surface shadow-[4px_4px_10px_rgba(250,247,243,0.25)]">
                     <Image
                       src="/images/purchase-history-product.png"
@@ -170,17 +190,17 @@ export function PurchaseRequestsList({
                   <div className="flex w-[211px] min-w-0 flex-none flex-col justify-between">
                     <div>
                       <p className="text-sm leading-6 text-foreground-strong">
-                        {formatProductName(request)}
+                        {productName}
                       </p>
                       <p className="text-xs leading-[18px] text-foreground-muted">
                         총 수량: {request.totalQuantity}
                       </p>
                     </div>
-                    <div className="relative z-10 flex gap-2">
+                    <div className="pointer-events-auto flex gap-2">
                       <button
                         type="button"
                         disabled={isOpening}
-                        onClick={(event) => openModal(event, request, "reject")}
+                        onClick={() => openModal(request, "reject")}
                         className="h-[34px] flex-1 cursor-pointer rounded-lg bg-snack-background-300 text-[13px] leading-[22px] font-semibold text-foreground-muted disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         반려
@@ -188,9 +208,7 @@ export function PurchaseRequestsList({
                       <button
                         type="button"
                         disabled={isOpening}
-                        onClick={(event) =>
-                          openModal(event, request, "approve")
-                        }
+                        onClick={() => openModal(request, "approve")}
                         className="h-[34px] flex-1 cursor-pointer rounded-lg bg-accent text-[13px] leading-[22px] font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         승인
@@ -199,12 +217,12 @@ export function PurchaseRequestsList({
                   </div>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between border-b border-solid border-snack-gray-200 py-3 text-sm leading-6 font-semibold text-foreground-strong">
+                <div className="relative z-10 pointer-events-none mt-4 flex items-center justify-between border-b border-solid border-snack-gray-200 py-3 text-sm leading-6 font-semibold text-foreground-strong">
                   <span>주문금액</span>
                   <span>{formatPrice(request.totalPrice)}원</span>
                 </div>
 
-                <dl className="mt-3 space-y-2 text-sm leading-6 text-foreground-muted">
+                <dl className="relative z-10 pointer-events-none mt-3 space-y-2 text-sm leading-6 text-foreground-muted">
                   <div className="flex items-center justify-between">
                     <dt>구매요청일</dt>
                     <dd className="font-medium">
@@ -216,9 +234,9 @@ export function PurchaseRequestsList({
                     <dd className="font-medium">{request.requesterName}</dd>
                   </div>
                 </dl>
-              </Link>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       </section>
 
