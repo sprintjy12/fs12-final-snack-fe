@@ -16,4 +16,16 @@ export const queryKeys = {
   categories: {
     all: ["categories"] as const,
   },
+  orders: {
+    all: ["orders"] as const,
+    list: (params: object) => ["orders", "list", params] as const,
+    detail: (orderId: string) => ["orders", "detail", orderId] as const,
+    requests: (params: object) => ["orders", "requests", params] as const,
+    requestDetail: (orderId: string) =>
+      ["orders", "requestDetail", orderId] as const,
+  },
+  budgets: {
+    all: ["budgets"] as const,
+    summary: () => ["budgets", "summary"] as const,
+  },
 };

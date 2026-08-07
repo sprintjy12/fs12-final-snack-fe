@@ -174,9 +174,11 @@ export function findSubCategoryMenuItem(
   const pools = parent
     ? parent.subCategories
     : CATEGORY_MENU.flatMap((c) => c.subCategories);
-  return pools.find(
+  const matches = pools.filter(
     (sub) => sameId(sub.id, subCategoryId) || sub.apiId === subCategoryId,
   );
+  // parent 없이 숫자 id만 오면 대분류마다 1,2…가 겹침 → 유일한 경우만 채택
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 /**
@@ -205,6 +207,18 @@ export function resolveApiParentCategoryId(
   if (categoryId === undefined) return undefined;
   if (typeof categoryId === "string" && isUuid(categoryId)) return categoryId;
   return findCategoryMenuItem(categoryId)?.apiId;
+}
+
+/**
+ * 대분류에 속한 leaf uuid 목록.
+ * BE는 leaf categoryId만 필터하므로 대분류 조회 시 이 목록으로 조회합니다.
+ */
+export function resolveApiLeafCategoryIdsForParent(
+  categoryId: number | string | undefined,
+): string[] {
+  const parent = findCategoryMenuItem(categoryId);
+  if (!parent) return [];
+  return parent.subCategories.map((sub) => sub.apiId);
 }
 
 /** API 모드에서 leaf 매핑이 있는 소분류만 선택 가능 */

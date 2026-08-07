@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { showToast, useToast } from "@/components/ui";
+import { Button, showToast, useToast } from "@/components/ui";
 
 /**
  * 토스트 샘플 페이지
@@ -50,36 +50,32 @@ export default function ToastSamplePage() {
         </label>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          {/* 1) showToast — 전역 헬퍼 */}
-          <button
-            type="button"
+          <Button
+            size="compact"
             onClick={() => showToast(message || "예산이 변경되었습니다.")}
-            className="flex h-14 cursor-pointer items-center justify-center rounded-2xl bg-accent px-6 text-base font-semibold text-surface"
           >
             showToast로 열기
-          </button>
+          </Button>
 
-          {/* 2) useToast 훅 */}
-          <button
-            type="button"
+          <Button
+            size="compact"
+            variant="secondary"
             onClick={() =>
               showToastFromHook(message || "예산이 변경되었습니다.")
             }
-            className="flex h-14 cursor-pointer items-center justify-center rounded-2xl bg-snack-background-500 px-6 text-base font-semibold text-accent"
           >
             useToast로 열기
-          </button>
+          </Button>
 
-          {/* 3) 자동 닫힘 없음 */}
-          <button
-            type="button"
+          <Button
+            size="compact"
+            variant="outline"
             onClick={() =>
               showToast(message || "예산이 변경되었습니다.", { duration: 0 })
             }
-            className="flex h-14 cursor-pointer items-center justify-center rounded-2xl border border-border bg-surface px-6 text-base font-semibold text-foreground-strong"
           >
             수동 닫기만 (duration: 0)
-          </button>
+          </Button>
         </div>
 
         <section className="rounded-2xl border border-border bg-surface p-5 text-sm leading-6 text-foreground-muted">
