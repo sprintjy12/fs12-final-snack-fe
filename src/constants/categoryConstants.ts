@@ -11,6 +11,16 @@ export const SORT_OPTIONS: {
   { value: "priceDesc", label: "높은가격순" },
 ];
 
+/**
+ * 카테고리 resolver/메뉴 선택용 입력.
+ * mock 숫자 id와 BE UUID를 모두 허용합니다.
+ * ProductListParams API 계약과 분리해 UUID 문자열을 안전하게 받습니다.
+ */
+export type CategorySelectionParams = {
+  categoryId?: number | string;
+  subCategoryId?: number | string;
+};
+
 export type CategoryMenuSubItem = SubCategory & {
   /** BE leaf Category.id — 상품.categoryId와 동일 계층 */
   apiId: string;
@@ -157,7 +167,7 @@ function sameId(a: number | string, b: number | string) {
 }
 
 export function findCategoryMenuItem(
-  categoryId: number | string | undefined,
+  categoryId: CategorySelectionParams["categoryId"],
 ): CategoryMenuItem | undefined {
   if (categoryId === undefined) return undefined;
   return CATEGORY_MENU.find(
@@ -166,8 +176,8 @@ export function findCategoryMenuItem(
 }
 
 export function findSubCategoryMenuItem(
-  categoryId: number | string | undefined,
-  subCategoryId: number | string | undefined,
+  categoryId: CategorySelectionParams["categoryId"],
+  subCategoryId: CategorySelectionParams["subCategoryId"],
 ): CategoryMenuSubItem | undefined {
   if (subCategoryId === undefined) return undefined;
   const parent = findCategoryMenuItem(categoryId);
@@ -189,7 +199,7 @@ export function findSubCategoryMenuItem(
  * 소분류 선택 시 leaf, 대분류만 선택 시 undefined (부모는 클라이언트 보강 필터).
  */
 export function resolveApiLeafCategoryId(
-  params: Pick<ProductListParams, "categoryId" | "subCategoryId">,
+  params: CategorySelectionParams,
 ): string | undefined {
   const { categoryId, subCategoryId } = params;
 
@@ -205,7 +215,7 @@ export function resolveApiLeafCategoryId(
 
 /** 대분류만 선택된 경우 BE/매핑용 parent uuid */
 export function resolveApiParentCategoryId(
-  categoryId: number | string | undefined,
+  categoryId: CategorySelectionParams["categoryId"],
 ): string | undefined {
   if (categoryId === undefined) return undefined;
   if (typeof categoryId === "string" && isUuid(categoryId)) return categoryId;
@@ -217,7 +227,7 @@ export function resolveApiParentCategoryId(
  * BE는 leaf categoryId만 필터하므로 대분류 조회 시 이 목록으로 조회합니다.
  */
 export function resolveApiLeafCategoryIdsForParent(
-  categoryId: number | string | undefined,
+  categoryId: CategorySelectionParams["categoryId"],
 ): string[] {
   const parent = findCategoryMenuItem(categoryId);
   if (!parent) return [];
@@ -226,8 +236,8 @@ export function resolveApiLeafCategoryIdsForParent(
 
 /** API 모드에서 leaf 매핑이 있는 소분류만 선택 가능 */
 export function isApiSelectableSubCategory(
-  categoryId: number | string | undefined,
-  subCategoryId: number | string | undefined,
+  categoryId: CategorySelectionParams["categoryId"],
+  subCategoryId: CategorySelectionParams["subCategoryId"],
 ): boolean {
   return Boolean(resolveApiLeafCategoryId({ categoryId, subCategoryId }));
 }
