@@ -3,9 +3,16 @@ import { NextResponse } from "next/server";
 /**
  * 로그인 UI 연동 전용 로컬 헬퍼.
  * DEV_LOGIN_EMAIL / DEV_LOGIN_PASSWORD로 백엔드 로그인을 대신 호출합니다.
- * 배포 환경에서는 이 값을 비워 두면 401을 반환합니다.
+ * 프로덕션에서는 404로 막아 토큰 발급 경로를 차단합니다.
  */
 export async function POST() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json(
+      { success: false, message: "Not Found" },
+      { status: 404 },
+    );
+  }
+
   const email = process.env.DEV_LOGIN_EMAIL;
   const password = process.env.DEV_LOGIN_PASSWORD;
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -51,7 +58,7 @@ export async function POST() {
     return NextResponse.json(
       {
         success: false,
-        message: `백엔드 로그인 요청에 실패했습니다. ${apiUrl} 서버가 켜져 있는지 확인하세요.`,
+        message: `백엔드 로그인 요청에 실패했습니다.`,
       },
       { status: 502 },
     );
