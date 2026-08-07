@@ -114,22 +114,22 @@ export default function MyProductsPage() {
 
   return (
     <main className="min-h-screen bg-surface-muted pb-20 text-foreground">
-      <section className="border-b border-border px-6 xl:border-0 xl:px-[120px]">
-        <div className="mx-auto flex h-16 max-w-[1680px] items-center xl:h-36">
-          <h1 className="text-xl leading-8 font-semibold text-foreground-strong md:ml-2.5 xl:text-[32px] xl:leading-[42px]">
+      <section className="border-b border-border px-4 sm:px-6 xl:border-0 xl:px-[120px]">
+        <div className="mx-auto flex h-14 max-w-[1680px] items-center sm:h-16 xl:h-36">
+          <h1 className="text-lg leading-7 font-semibold text-foreground-strong sm:text-xl sm:leading-8 md:ml-2.5 xl:text-[32px] xl:leading-[42px]">
             상품 등록 내역
           </h1>
         </div>
       </section>
 
       <div className="mx-auto max-w-[1680px]">
-        <section className="flex h-16 items-center justify-end border-b-2 border-border px-6 xl:h-[66px] xl:border-0 xl:px-0">
+        <section className="flex h-14 items-center justify-end border-b-2 border-border px-4 sm:h-16 sm:px-6 xl:h-[66px] xl:border-0 xl:px-0">
           <label className="relative block">
             <span className="sr-only">상품 등록 내역 정렬</span>
             <select
               value={sort}
               onChange={(event) => setSort(event.target.value as SortValue)}
-              className="h-9 w-[110px] appearance-none rounded-lg border border-snack-gray-200 bg-surface py-1.5 pr-7 pl-2 text-sm leading-6 font-normal text-foreground-muted outline-none focus:border-accent xl:h-[50px] xl:w-[150px] xl:px-3.5 xl:pr-10 xl:text-lg xl:leading-[26px]"
+              className="h-9 w-[110px] appearance-none rounded-lg border border-snack-gray-200 bg-surface py-1.5 pr-7 pl-2 text-sm leading-6 font-normal text-foreground-muted outline-none focus:border-accent md:w-[130px] xl:h-[50px] xl:w-[150px] xl:px-3.5 xl:pr-10 xl:text-lg xl:leading-[26px]"
             >
               {SORT_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -220,7 +220,7 @@ export default function MyProductsPage() {
             </ul>
           </div>
 
-          {/* Mobile — 구매요청 내역 카드 패턴 준용 */}
+          {/* Mobile / tablet — 구매요청 내역 카드 패턴 준용 (xl 미만) */}
           <ul className="xl:hidden">
             {sortedProducts.map((product) => {
               const photoSrc = getProductPhotoSrc(product.photo);
@@ -230,10 +230,10 @@ export default function MyProductsPage() {
               return (
                 <li
                   key={product.id}
-                  className="border-b-2 border-border px-6 py-6"
+                  className="border-b-2 border-border px-4 py-5 sm:px-6 sm:py-6"
                 >
-                  <div className="flex h-[100px] gap-4">
-                    <div className="flex size-[100px] shrink-0 items-center justify-center rounded-lg border border-border bg-surface p-3 shadow-[4px_4px_10px_rgba(250,247,243,0.25)]">
+                  <div className="flex min-h-[88px] gap-3 sm:h-[100px] sm:gap-4">
+                    <div className="flex size-[88px] shrink-0 items-center justify-center rounded-lg border border-border bg-surface p-2.5 shadow-[4px_4px_10px_rgba(250,247,243,0.25)] sm:size-[100px] sm:p-3">
                       {showImage ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -251,10 +251,10 @@ export default function MyProductsPage() {
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col justify-between">
                       <div>
-                        <p className="text-sm leading-6 font-semibold text-foreground-strong">
+                        <p className="text-sm leading-6 font-semibold text-foreground-strong md:text-base md:leading-7">
                           {product.name}
                         </p>
-                        <p className="text-xs leading-[18px] text-foreground-muted">
+                        <p className="text-xs leading-[18px] text-foreground-muted md:text-sm md:leading-6">
                           {product.categoryLabel}
                         </p>
                       </div>
@@ -272,7 +272,7 @@ export default function MyProductsPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between border-b border-snack-gray-200 py-3 text-sm leading-6 font-semibold text-foreground-strong">
+                  <div className="mt-4 flex items-center justify-between border-b border-snack-gray-200 py-3 text-sm leading-6 font-semibold text-foreground-strong md:text-base md:leading-7">
                     <span>가격</span>
                     <span>{formatPrice(product.price)}원</span>
                   </div>
@@ -292,17 +292,17 @@ export default function MyProductsPage() {
         </section>
 
         {!hasProducts ? (
-          <div className="flex flex-col items-center gap-6 xl:gap-10">
+          <div className="flex flex-col items-center gap-6 px-4 sm:px-6 xl:gap-10 xl:px-0">
             <EmptyState
               aria-label="등록한 상품 없음"
               image="empty-purchase"
               className="pt-16 md:pt-40 xl:pt-[179px]"
-              contentClassName="h-[202px] w-[327px] xl:h-[304px] xl:w-[388px]"
+              contentClassName="h-[202px] w-full max-w-[327px] xl:h-[304px] xl:max-w-[388px]"
               description="등록한 상품이 없어요"
             />
             <Link
               href="/products/new"
-              className="rounded-lg bg-accent px-6 py-3 text-lg leading-[26px] font-semibold text-surface"
+              className="inline-flex w-full max-w-[327px] items-center justify-center rounded-lg bg-accent px-6 py-3 text-base leading-6 font-semibold text-surface sm:w-auto sm:text-lg sm:leading-[26px]"
             >
               상품 등록하러 가기
             </Link>
