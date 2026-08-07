@@ -43,6 +43,7 @@ export type GetOrdersParams = {
 export type MyOrderRequestListItem = {
   id: string;
   type: OrderListType;
+  status: OrderDetailStatus;
   approvedAt: string | null;
   totalPrice: number;
   totalQuantity: number;
@@ -66,7 +67,11 @@ export type GetMyOrderRequestsParams = {
   sort?: OrderListSort;
 };
 
-export type OrderDetailStatus = "APPROVED" | "REJECTED" | "PENDING";
+export type OrderDetailStatus =
+  | "APPROVED"
+  | "REJECTED"
+  | "PENDING"
+  | "CANCELLED";
 
 /** GET /api/orders/:id 품목 한 줄 */
 export type OrderDetailItem = {

@@ -22,12 +22,13 @@ import type {
 
 const PAGE_SIZE = 10;
 
-type MyRequestStatus = "pending" | "rejected" | "approved";
+type MyRequestStatus = "pending" | "rejected" | "approved" | "cancelled";
 
 const STATUS_LABEL: Record<MyRequestStatus, string> = {
   pending: "승인 대기",
   rejected: "구매 반려",
   approved: "승인 완료",
+  cancelled: "요청 취소",
 };
 
 const formatDate = (iso: string) => {
@@ -55,15 +56,19 @@ const formatProductName = (item: MyOrderRequestListItem) => {
   return `${firstProductName} 외 ${itemCount - 1}건`;
 };
 
-/** approvedAt / processorName으로 목록 상태 표시 */
+/** API status로 목록 상태 표시 */
 const getRequestStatus = (item: MyOrderRequestListItem): MyRequestStatus => {
-  if (item.approvedAt) {
-    return "approved";
+  switch (item.status) {
+    case "APPROVED":
+      return "approved";
+    case "REJECTED":
+      return "rejected";
+    case "CANCELLED":
+      return "cancelled";
+    case "PENDING":
+    default:
+      return "pending";
   }
-  if (item.processorName) {
-    return "rejected";
-  }
-  return "pending";
 };
 
 const buildPaginationItems = (
