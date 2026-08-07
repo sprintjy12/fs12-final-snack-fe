@@ -27,6 +27,8 @@ export interface Product {
   subCategory?: SubCategory;
   /** 시안 뱃지용. API에 없으면 생략 */
   purchaseCount?: number;
+  /** BE 등록 시각 (ISO). latest 정렬용 */
+  createdAt?: string;
 }
 
 export interface ProductListParams {

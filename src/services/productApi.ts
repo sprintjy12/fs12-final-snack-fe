@@ -30,6 +30,7 @@ type BeProduct = {
   productUrl: string | null;
   categoryId: string;
   purchaseCount: number;
+  createdAt?: string;
   category?: BeCategory | null;
 };
 
@@ -78,6 +79,7 @@ function mapBeProduct(product: BeProduct): Product {
         : undefined,
     subCategory,
     purchaseCount: product.purchaseCount,
+    createdAt: product.createdAt,
   };
 }
 
@@ -96,13 +98,20 @@ function sortProducts(
         return b.price - a.price;
       case "latest":
       default: {
+        // BE latest = createdAt desc. UUID 비교는 사용하지 않음
+        const aTime = a.createdAt ? Date.parse(a.createdAt) : NaN;
+        const bTime = b.createdAt ? Date.parse(b.createdAt) : NaN;
+        if (Number.isFinite(aTime) || Number.isFinite(bTime)) {
+          return (Number.isFinite(bTime) ? bTime : 0) -
+            (Number.isFinite(aTime) ? aTime : 0);
+        }
+        // mock: createdAt 없으면 number id 내림차순
         const aKey = String(a.id);
         const bKey = String(b.id);
-        // uuid는 문자열 비교, mock number id는 숫자 비교
         if (/^\d+$/.test(aKey) && /^\d+$/.test(bKey)) {
           return Number(bKey) - Number(aKey);
         }
-        return bKey.localeCompare(aKey);
+        return 0;
       }
     }
   });
