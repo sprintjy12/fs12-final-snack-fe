@@ -3,7 +3,7 @@
 import { CommonImage, Modal, showToast } from "@/components/ui";
 
 export type CancelPurchaseRequestTarget = {
-  id: number;
+  id: string;
   productName: string;
 };
 

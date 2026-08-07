@@ -20,6 +20,7 @@ export const queryKeys = {
     all: ["orders"] as const,
     list: (params: object) => ["orders", "list", params] as const,
     detail: (orderId: string) => ["orders", "detail", orderId] as const,
+    myRequests: (params: object) => ["orders", "myRequests", params] as const,
     requests: (params: object) => ["orders", "requests", params] as const,
     requestDetail: (orderId: string) =>
       ["orders", "requestDetail", orderId] as const,

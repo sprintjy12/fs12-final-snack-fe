@@ -39,6 +39,33 @@ export type GetOrdersParams = {
   sort?: OrderListSort;
 };
 
+/** GET /api/orders/my-requests 목록 한 줄 */
+export type MyOrderRequestListItem = {
+  id: string;
+  type: OrderListType;
+  approvedAt: string | null;
+  totalPrice: number;
+  totalQuantity: number;
+  requesterName: string;
+  processorName: string | null;
+  createdAt: string;
+  firstProductName: string;
+  itemCount: number;
+};
+
+export type MyOrderRequestListResponse = {
+  success: boolean;
+  message: string;
+  data: MyOrderRequestListItem[];
+  pagination: OrderListPagination;
+};
+
+export type GetMyOrderRequestsParams = {
+  page?: number;
+  limit?: number;
+  sort?: OrderListSort;
+};
+
 export type OrderDetailStatus = "APPROVED" | "REJECTED" | "PENDING";
 
 /** GET /api/orders/:id 품목 한 줄 */

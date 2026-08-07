@@ -1,7 +1,9 @@
 import { apiClient } from "@/api/core/apiClient";
 import type {
+  GetMyOrderRequestsParams,
   GetOrderRequestsParams,
   GetOrdersParams,
+  MyOrderRequestListResponse,
   OrderDetailResponse,
   OrderListResponse,
   OrderRequestDetailResponse,
@@ -24,6 +26,24 @@ export const getOrders = async (
       sort: params.sort ?? "latest",
     },
   });
+
+  return response.data;
+};
+
+/** 내 구매 요청 목록 */
+export const getMyOrderRequests = async (
+  params: GetMyOrderRequestsParams = {},
+): Promise<MyOrderRequestListResponse> => {
+  const response = await apiClient.get<MyOrderRequestListResponse>(
+    "/api/orders/my-requests",
+    {
+      params: {
+        page: params.page ?? 1,
+        limit: params.limit ?? 10,
+        sort: params.sort ?? "latest",
+      },
+    },
+  );
 
   return response.data;
 };
