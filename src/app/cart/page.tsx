@@ -34,7 +34,10 @@ function cx(...parts: Array<string | false | null | undefined>) {
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [selectedIds, setSelectedIds] = useState<ProductId[]>([]);
+  /** undefined: 전체 선택(초기) · []: 선택 없음 · ProductId[]: 부분 선택 */
+  const [selectedIds, setSelectedIds] = useState<ProductId[] | undefined>(
+    undefined,
+  );
   const [hydrated, setHydrated] = useState(false);
   const [failedImageIds, setFailedImageIds] = useState<Set<ProductId>>(
     () => new Set(),
@@ -43,7 +46,7 @@ export default function CartPage() {
   useEffect(() => {
     const items = getCartItems();
     setCartItems(items);
-    setSelectedIds(items.map((item) => item.productId));
+    // 초기 전체 선택: undefined 유지 ([]는 선택 없음)
     setHydrated(true);
   }, []);
 
@@ -58,8 +61,15 @@ export default function CartPage() {
     [cartItems],
   );
 
+  const allProductIds = useMemo(
+    () => cartItems.map((item) => item.productId),
+    [cartItems],
+  );
+
+  const effectiveSelectedIds = selectedIds ?? allProductIds;
+
   const selectedProducts = cartProducts.filter((item) =>
-    selectedIds.includes(item.product.id),
+    effectiveSelectedIds.includes(item.product.id),
   );
   const allSelected =
     cartProducts.length > 0 && selectedProducts.length === cartProducts.length;
@@ -74,9 +84,10 @@ export default function CartPage() {
 
   const syncCart = (next: CartItem[]) => {
     setCartItems(next);
-    setSelectedIds((prev) =>
-      prev.filter((id) => next.some((item) => item.productId === id)),
-    );
+    setSelectedIds((prev) => {
+      if (prev === undefined) return undefined;
+      return prev.filter((id) => next.some((item) => item.productId === id));
+    });
   };
 
   const toggleSelectAll = () => {
@@ -84,15 +95,16 @@ export default function CartPage() {
       setSelectedIds([]);
       return;
     }
-    setSelectedIds(cartProducts.map((item) => item.product.id));
+    setSelectedIds(undefined);
   };
 
   const toggleSelect = (productId: ProductId) => {
-    setSelectedIds((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId],
-    );
+    setSelectedIds((prev) => {
+      const current = prev ?? allProductIds;
+      return current.includes(productId)
+        ? current.filter((id) => id !== productId)
+        : [...current, productId];
+    });
   };
 
   const changeQuantity = (productId: ProductId, nextQuantity: number) => {
@@ -105,7 +117,7 @@ export default function CartPage() {
 
   const handleRemoveSelected = () => {
     if (!someSelected) return;
-    syncCart(removeFromCartMany(selectedIds));
+    syncCart(removeFromCartMany(effectiveSelectedIds));
   };
 
   const handleClearAll = () => {
@@ -192,7 +204,7 @@ export default function CartPage() {
                   const showImage =
                     Boolean(photoSrc) && !failedImageIds.has(product.id);
                   const lineTotal = product.price * quantity;
-                  const isSelected = selectedIds.includes(product.id);
+                  const isSelected = effectiveSelectedIds.includes(product.id);
 
                   return (
                     <article
