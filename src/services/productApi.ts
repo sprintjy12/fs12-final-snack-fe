@@ -143,6 +143,12 @@ export async function getProducts(
 
   const leafApiId = resolveApiLeafCategoryId(params);
   const parentApiId = resolveApiParentCategoryId(params.categoryId);
+  const subSelected = params.subCategoryId !== undefined;
+
+  // 소분류를 골랐는데 leaf uuid가 없으면 대분류 전체로 떨어지지 않게 빈 목록
+  if (subSelected && !leafApiId) {
+    return [];
+  }
 
   const search = new URLSearchParams();
   // BE는 leaf categoryId만 필터. 소분류 선택 시 leaf uuid 전달
