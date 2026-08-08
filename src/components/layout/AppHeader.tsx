@@ -4,6 +4,14 @@ import { usePathname } from "next/navigation";
 import { Suspense } from "react";
 
 import { Header } from "@/components/layout";
+import { useCart } from "@/hooks/queries/useCart";
+
+function HeaderWithCartCount() {
+  const { data: cart } = useCart();
+  const cartCount = cart?.summary?.totalQuantity ?? 0;
+
+  return <Header cartCount={cartCount} />;
+}
 
 /** 표지(`/`), 샘플 페이지에서는 헤더를 숨깁니다. */
 export function AppHeader() {
@@ -17,7 +25,7 @@ export function AppHeader() {
 
   return (
     <Suspense fallback={null}>
-      <Header cartCount={2} />
+      <HeaderWithCartCount />
     </Suspense>
   );
 }

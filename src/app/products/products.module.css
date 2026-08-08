@@ -1,4 +1,4 @@
-﻿/* Figma 상품 리스트 화면: 1920×1734, Background/Background-400 */
+﻿/* Figma 상품 리스트 화면: Background/Background-400 — 높이는 콘텐츠에 맞춤 */
 
 .page {
   width: 100%;
@@ -13,7 +13,6 @@
   gap: 56px;
   width: 100%;
   max-width: 1920px;
-  min-height: 1734px;
   margin: 0 auto;
   padding: 40px 120px 80px;
   box-sizing: border-box;
@@ -198,7 +197,7 @@
 
 @media (max-width: 1200px) {
   .inner {
-    padding: 32px 40px 64px;
+    padding: 32px 40px 96px;
   }
 
   .grid {
@@ -220,16 +219,22 @@
 @media (max-width: 768px) {
   .inner {
     gap: 32px;
-    min-height: auto;
-    padding: 24px 16px 48px;
+    /* FAB(52px) + bottom offset + safe spacing */
+    padding: 24px 16px 100px;
   }
 
   .grid {
-    grid-template-columns: 1fr;
+    gap: 20px 12px;
   }
 
   .fab {
     right: 16px;
     bottom: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
   }
 }

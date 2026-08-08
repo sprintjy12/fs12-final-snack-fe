@@ -25,15 +25,17 @@ import {
  */
 type ModalType = "result" | "warning" | "form" | null;
 
-const ROLE_OPTIONS = [
-  { value: "admin" as const, label: "관리자" },
-  { value: "member" as const, label: "일반" },
+type Role = "admin" | "member";
+
+const ROLE_OPTIONS: { value: Role; label: string }[] = [
+  { value: "admin", label: "관리자" },
+  { value: "member", label: "일반" },
 ];
 
 export default function ModalSamplePage() {
   const router = useRouter();
   const [openModal, setOpenModal] = useState<ModalType>(null);
-  const [role, setRole] = useState<"admin" | "member">("admin");
+  const [role, setRole] = useState<Role>("admin");
   const formTitleId = useId();
   const roleLabelId = useId();
 

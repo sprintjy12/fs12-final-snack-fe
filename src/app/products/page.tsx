@@ -9,7 +9,8 @@ import {
   ProductsEmpty,
   ProductsSkeleton,
 } from "@/features/products";
-import { useProducts } from "@/hooks/useProducts";
+import { useProducts } from "@/hooks/queries/useProducts";
+import { parseRouteId } from "@/lib/parseOptionalId";
 import type { ProductListParams } from "@/types/productTypes";
 
 import styles from "./products.module.css";
@@ -26,15 +27,18 @@ export default function ProductListPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
 
-  const categoryIdParam = searchParams.get("categoryId");
-  const subCategoryIdParam = searchParams.get("subCategoryId");
-  const categoryId = categoryIdParam ? Number(categoryIdParam) : undefined;
-  const subCategoryId = subCategoryIdParam
-    ? Number(subCategoryIdParam)
-    : undefined;
+  const categoryId = parseRouteId(searchParams.get("categoryId"));
+  const subCategoryId = parseRouteId(searchParams.get("subCategoryId"));
 
+  // API: BE limit 상한(30)까지 한 번에 받아 클라이언트에서 8개씩 더보기
   const listParams: ProductListParams = useMemo(
-    () => ({ sort, categoryId, subCategoryId }),
+    () => ({
+      sort,
+      categoryId,
+      subCategoryId,
+      page: 1,
+      pageSize: 30,
+    }),
     [sort, categoryId, subCategoryId],
   );
 

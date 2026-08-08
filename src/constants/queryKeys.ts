@@ -11,9 +11,25 @@ export const queryKeys = {
   products: {
     all: ["products"] as const,
     list: (params: object) => ["products", "list", params] as const,
-    detail: (id: number) => ["products", "detail", id] as const,
+    detail: (id: number | string | undefined) => ["products", "detail", id] as const,
   },
   categories: {
     all: ["categories"] as const,
   },
+  orders: {
+    all: ["orders"] as const,
+    list: (params: object) => ["orders", "list", params] as const,
+    detail: (orderId: string) => ["orders", "detail", orderId] as const,
+    requests: (params: object) => ["orders", "requests", params] as const,
+    requestDetail: (orderId: string) =>
+      ["orders", "requestDetail", orderId] as const,
+  },
+  budgets: {
+    all: ["budgets"] as const,
+    summary: () => ["budgets", "summary"] as const,
+  },
+  //userId 가져올 수 있으면 수정 필요
+    cart: {
+      all: ["cart"] as const,
+    },
 };

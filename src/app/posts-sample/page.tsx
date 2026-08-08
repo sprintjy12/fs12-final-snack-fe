@@ -4,12 +4,8 @@ import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
-import {
-  useCreatePost,
-  useDeletePost,
-  usePosts,
-  useUpdatePost,
-} from "@/hooks/usePosts";
+import { useCreatePost, useDeletePost, useUpdatePost } from "@/hooks/mutations/usePosts";
+import { usePosts } from "@/hooks/queries/usePosts";
 
 /**
  * =====================================================
