@@ -109,7 +109,12 @@ function PurchaseRequestCompleteContent() {
     let cancelled = false;
 
     async function load() {
-      const sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+      let sessionRaw: string | null = null;
+      try {
+        sessionRaw = sessionStorage.getItem(STORAGE_KEY);
+      } catch {
+        // Continue with API or mock fallback.
+      }
       if (sessionRaw) {
         const parsed = parseSessionSummary(sessionRaw);
         if (parsed && !cancelled) {
