@@ -11,6 +11,16 @@ export const SORT_OPTIONS: {
   { value: "priceDesc", label: "높은가격순" },
 ];
 
+/**
+ * 카테고리 resolver/메뉴 선택용 입력.
+ * mock 숫자 id와 BE UUID를 모두 허용합니다.
+ * ProductListParams API 계약과 분리해 UUID 문자열을 안전하게 받습니다.
+ */
+export type CategorySelectionParams = {
+  categoryId?: number | string;
+  subCategoryId?: number | string;
+};
+
 export type CategoryMenuSubItem = SubCategory & {
   /** BE leaf Category.id — 상품.categoryId와 동일 계층 */
   apiId: string;
@@ -23,8 +33,12 @@ export type CategoryMenuItem = Category & {
 };
 
 /**
- * BE seed(`fs12-final-snack-be/prisma/seed.ts`)와 맞춘 고정 uuid.
+ * BE seed 카테고리와 맞춘 고정 uuid (`NEXT_PUBLIC_USE_MOCK=false` 시 필터에 사용).
  * mock 메뉴는 숫자 id를 쓰고, API 모드에서 apiId로 변환합니다.
+ *
+ * BE 공식 seed는 대분류 3(스낵·음료·간편식) + leaf 7을 시딩합니다.
+ * 아래 uuid 중 snack/drink/meal 및 대응 leaf는 BE seed `FE_CAT`와 동일해야 합니다.
+ * (생수·신선·비품·원두 등 FE 전용 메뉴는 BE에 없으면 빈 목록)
  *
  * 규칙:
  * - 대분류: ...000001 ~ ...000007
@@ -157,7 +171,7 @@ function sameId(a: number | string, b: number | string) {
 }
 
 export function findCategoryMenuItem(
-  categoryId: number | string | undefined,
+  categoryId: CategorySelectionParams["categoryId"],
 ): CategoryMenuItem | undefined {
   if (categoryId === undefined) return undefined;
   return CATEGORY_MENU.find(
@@ -166,18 +180,28 @@ export function findCategoryMenuItem(
 }
 
 export function findSubCategoryMenuItem(
-  categoryId: number | string | undefined,
-  subCategoryId: number | string | undefined,
+  categoryId: CategorySelectionParams["categoryId"],
+  subCategoryId: CategorySelectionParams["subCategoryId"],
 ): CategoryMenuSubItem | undefined {
   if (subCategoryId === undefined) return undefined;
   const parent = findCategoryMenuItem(categoryId);
+  // 잘못된/미존재 부모 id는 "부모 미지정"과 다르게 취급 — 전체 메뉴 폴백 금지
+  if (categoryId !== undefined && !parent) {
+    return undefined;
+  }
+  // 부모 없이 숫자 로컬 id만 오면 대분류마다 1,2…가 겹쳐 첫 매칭이 잘못될 수 있음
+  if (
+    categoryId === undefined &&
+    !(typeof subCategoryId === "string" && isUuid(subCategoryId))
+  ) {
+    return undefined;
+  }
   const pools = parent
     ? parent.subCategories
     : CATEGORY_MENU.flatMap((c) => c.subCategories);
   const matches = pools.filter(
     (sub) => sameId(sub.id, subCategoryId) || sub.apiId === subCategoryId,
   );
-  // parent 없이 숫자 id만 오면 대분류마다 1,2…가 겹침 → 유일한 경우만 채택
   return matches.length === 1 ? matches[0] : undefined;
 }
 
@@ -186,7 +210,7 @@ export function findSubCategoryMenuItem(
  * 소분류 선택 시 leaf, 대분류만 선택 시 undefined (부모는 클라이언트 보강 필터).
  */
 export function resolveApiLeafCategoryId(
-  params: Pick<ProductListParams, "categoryId" | "subCategoryId">,
+  params: CategorySelectionParams,
 ): string | undefined {
   const { categoryId, subCategoryId } = params;
 
@@ -202,7 +226,7 @@ export function resolveApiLeafCategoryId(
 
 /** 대분류만 선택된 경우 BE/매핑용 parent uuid */
 export function resolveApiParentCategoryId(
-  categoryId: number | string | undefined,
+  categoryId: CategorySelectionParams["categoryId"],
 ): string | undefined {
   if (categoryId === undefined) return undefined;
   if (typeof categoryId === "string" && isUuid(categoryId)) return categoryId;
@@ -214,7 +238,7 @@ export function resolveApiParentCategoryId(
  * BE는 leaf categoryId만 필터하므로 대분류 조회 시 이 목록으로 조회합니다.
  */
 export function resolveApiLeafCategoryIdsForParent(
-  categoryId: number | string | undefined,
+  categoryId: CategorySelectionParams["categoryId"],
 ): string[] {
   const parent = findCategoryMenuItem(categoryId);
   if (!parent) return [];
@@ -223,8 +247,8 @@ export function resolveApiLeafCategoryIdsForParent(
 
 /** API 모드에서 leaf 매핑이 있는 소분류만 선택 가능 */
 export function isApiSelectableSubCategory(
-  categoryId: number | string | undefined,
-  subCategoryId: number | string | undefined,
+  categoryId: CategorySelectionParams["categoryId"],
+  subCategoryId: CategorySelectionParams["subCategoryId"],
 ): boolean {
   return Boolean(resolveApiLeafCategoryId({ categoryId, subCategoryId }));
 }
