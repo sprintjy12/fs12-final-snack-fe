@@ -22,14 +22,15 @@ const MOCK_SUMMARY = {
   source: "mock" as const,
 };
 
-const finiteNumberSchema = z.number().finite();
+const quantitySchema = z.number().finite().int().nonnegative();
+const amountSchema = z.number().finite().nonnegative();
 
 const completeSummarySchema = z
   .object({
     name: z.string().min(1),
-    totalCount: finiteNumberSchema,
-    totalAmount: finiteNumberSchema,
-    extraCount: finiteNumberSchema.optional(),
+    totalCount: quantitySchema,
+    totalAmount: amountSchema,
+    extraCount: quantitySchema.optional(),
     categoryLabel: z.string().optional(),
     photo: z.string().optional(),
     requestMessage: z.string().optional(),
@@ -42,7 +43,7 @@ const completeSummarySchema = z
     totalAmount: data.totalAmount,
     extraCount:
       data.extraCount !== undefined
-        ? Math.max(0, data.extraCount)
+        ? data.extraCount
         : Math.max(0, data.totalCount - 1),
     categoryLabel: data.categoryLabel ?? "",
     photo: data.photo ?? "",
