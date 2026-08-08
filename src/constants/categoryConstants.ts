@@ -185,8 +185,15 @@ export function findSubCategoryMenuItem(
 ): CategoryMenuSubItem | undefined {
   if (subCategoryId === undefined) return undefined;
   const parent = findCategoryMenuItem(categoryId);
+  // 잘못된/미존재 부모 id는 "부모 미지정"과 다르게 취급 — 전체 메뉴 폴백 금지
+  if (categoryId !== undefined && !parent) {
+    return undefined;
+  }
   // 부모 없이 숫자 로컬 id만 오면 대분류마다 1,2…가 겹쳐 첫 매칭이 잘못될 수 있음
-  if (!parent && !(typeof subCategoryId === "string" && isUuid(subCategoryId))) {
+  if (
+    categoryId === undefined &&
+    !(typeof subCategoryId === "string" && isUuid(subCategoryId))
+  ) {
     return undefined;
   }
   const pools = parent
