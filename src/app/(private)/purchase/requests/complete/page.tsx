@@ -25,19 +25,51 @@ const MOCK_SUMMARY = {
 const quantitySchema = z.number().finite().int().nonnegative();
 const amountSchema = z.number().finite().nonnegative();
 
-const completeSummarySchema = z
-  .object({
-    name: z.string().min(1),
-    totalCount: quantitySchema,
-    totalAmount: amountSchema,
-    extraCount: quantitySchema.optional(),
-    categoryLabel: z.string().optional(),
-    photo: z.string().optional(),
-    requestMessage: z.string().optional(),
-    orderId: z.string().nullable().optional(),
-    source: z.enum(["mock", "be-api", "session"]).optional(),
-  })
-  .transform((data) => ({
+const completeSummarySchema = z.object({
+  name: z.string().min(1),
+  totalCount: quantitySchema,
+  totalAmount: amountSchema,
+  extraCount: quantitySchema.optional(),
+  categoryLabel: z.string().optional(),
+  photo: z.string().optional(),
+  requestMessage: z.string().optional(),
+  orderId: z.string().nullable().optional(),
+});
+
+type SummarySource = "be-api" | "session";
+
+type ParsedSummary = {
+  name: string;
+  totalCount: number;
+  totalAmount: number;
+  extraCount: number;
+  categoryLabel: string;
+  photo: string;
+  requestMessage: string;
+  orderId: string | null;
+  source: SummarySource;
+};
+
+type CompleteSummary = typeof MOCK_SUMMARY | ParsedSummary;
+
+function formatPrice(price: number) {
+  return `${price.toLocaleString("ko-KR")}원`;
+}
+
+function formatProductLabel(name: string, extraCount: number) {
+  if (extraCount <= 0) return name;
+  return `${name} 외 ${extraCount}개`;
+}
+
+function parseSummary(
+  raw: unknown,
+  source: SummarySource,
+): CompleteSummary | null {
+  const result = completeSummarySchema.safeParse(raw);
+  if (!result.success) return null;
+
+  const data = result.data;
+  return {
     name: data.name,
     totalCount: data.totalCount,
     totalAmount: data.totalAmount,
@@ -49,30 +81,13 @@ const completeSummarySchema = z
     photo: data.photo ?? "",
     requestMessage: data.requestMessage ?? "",
     orderId: data.orderId ?? null,
-    source: data.source === "be-api" ? ("be-api" as const) : ("session" as const),
-  }));
-
-type CompleteSummary =
-  | typeof MOCK_SUMMARY
-  | z.infer<typeof completeSummarySchema>;
-
-function formatPrice(price: number) {
-  return `${price.toLocaleString("ko-KR")}원`;
-}
-
-function formatProductLabel(name: string, extraCount: number) {
-  if (extraCount <= 0) return name;
-  return `${name} 외 ${extraCount}개`;
-}
-
-function parseSummary(raw: unknown): CompleteSummary | null {
-  const result = completeSummarySchema.safeParse(raw);
-  return result.success ? result.data : null;
+    source,
+  };
 }
 
 function parseSessionSummary(raw: string): CompleteSummary | null {
   try {
-    return parseSummary(JSON.parse(raw) as unknown);
+    return parseSummary(JSON.parse(raw) as unknown, "session");
   } catch {
     return null;
   }
@@ -110,7 +125,7 @@ function PurchaseRequestCompleteContent() {
             cache: "no-store",
           });
           if (response.ok) {
-            const parsed = parseSummary(await response.json());
+            const parsed = parseSummary(await response.json(), "be-api");
             if (parsed && !cancelled) {
               setSummary(parsed);
               setLoadState("ready");
