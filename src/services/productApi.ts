@@ -8,7 +8,11 @@ import {
 import { DUMMY_PRODUCTS } from "@/features/products/dummyProducts";
 import { isUuid } from "@/lib/parseOptionalId";
 import { apiFetch } from "@/services/api";
-import type { Category, Product, ProductListParams } from "@/types/productTypes";
+import type {
+  Category,
+  Product,
+  ProductListParams,
+} from "@/types/productTypes";
 
 /** 기본 true. 실 API: .env에 NEXT_PUBLIC_USE_MOCK=false */
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";

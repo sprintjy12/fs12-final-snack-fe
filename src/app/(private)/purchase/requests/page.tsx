@@ -1,28 +1,65 @@
-import { EmptyState, Icon } from "@/components/ui";
+"use client";
 
-import { PurchaseRequestsList } from "./PurchaseRequestsList";
+import Image from "next/image";
+import { useMemo, useState, type ChangeEvent } from "react";
 
-const purchaseRequests = Array.from({ length: 6 }, (_, index) => ({
-  id: index + 1,
-  requestedAt: "2024. 07. 04",
-  productName: "코카콜라 제로 외 1건",
-  quantity: 4,
-  amount: "21,000",
-  requester: "김스낵",
-}));
+import { PurchaseRequestsList } from "@/app/(private)/purchase/requests/PurchaseRequestsList";
+import {
+  EmptyState,
+  Icon,
+  type PaginationItem,
+} from "@/components/ui";
+import { useOrderRequests } from "@/hooks/queries/useOrderRequests";
+import type { OrderRequestListSort } from "@/types/orderTypes";
 
-type PurchaseRequestsPageProps = {
-  searchParams: Promise<{
-    empty?: string;
-  }>;
+const PAGE_SIZE = 10;
+
+/** 시안용 페이지 번호 배열을 API totalPages 기준으로 만듭니다. */
+const buildPaginationItems = (
+  currentPage: number,
+  totalPages: number,
+): PaginationItem[] => {
+  if (totalPages <= 0) {
+    return ["1"];
+  }
+
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => String(index + 1));
+  }
+
+  const items: PaginationItem[] = ["1", "2", "3", "4", "5", "more"];
+  items.push(String(totalPages));
+  return items;
 };
 
-const PurchaseRequestsPage = async ({
-  searchParams,
-}: PurchaseRequestsPageProps) => {
-  const { empty } = await searchParams;
-  const visiblePurchaseRequests = empty === "true" ? [] : purchaseRequests;
-  const hasPurchaseRequests = visiblePurchaseRequests.length > 0;
+export default function PurchaseRequestsPage() {
+  const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<OrderRequestListSort>("latest");
+
+  const { data, isPending, isError, error } = useOrderRequests({
+    page,
+    limit: PAGE_SIZE,
+    sort,
+  });
+
+  const requests = data?.data ?? [];
+  const pagination = data?.pagination;
+  const hasPurchaseRequests = requests.length > 0;
+
+  const paginationItems = useMemo(
+    () =>
+      buildPaginationItems(
+        pagination?.currentPage ?? page,
+        pagination?.totalPages ?? 0,
+      ),
+    [pagination?.currentPage, pagination?.totalPages, page],
+  );
+
+  const handleSortChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const nextSort = event.target.value as OrderRequestListSort;
+    setSort(nextSort);
+    setPage(1);
+  };
 
   return (
     <main className="min-h-screen bg-surface-muted pb-20 text-foreground">
@@ -38,9 +75,14 @@ const PurchaseRequestsPage = async ({
         <section className="flex h-16 items-center justify-end border-b-2 border-solid border-border px-6 xl:h-[66px] xl:border-0 xl:px-0">
           <label className="relative block">
             <span className="sr-only">구매 요청 정렬</span>
-            <select className="h-9 w-[87px] appearance-none rounded-lg border border-solid border-snack-gray-200 bg-surface py-1.5 pr-7 pl-2 text-sm leading-6 font-normal text-foreground-muted outline-none focus:border-accent xl:h-[50px] xl:w-[136px] xl:px-3.5 xl:pr-10 xl:text-lg xl:leading-[26px]">
-              <option>최신순</option>
-              <option>오래된순</option>
+            <select
+              value={sort}
+              onChange={handleSortChange}
+              className="h-9 w-[120px] appearance-none rounded-lg border border-solid border-snack-gray-200 bg-surface py-1.5 pr-7 pl-2 text-sm leading-6 font-normal text-foreground-muted outline-none focus:border-accent xl:h-[50px] xl:w-[160px] xl:px-3.5 xl:pr-10 xl:text-lg xl:leading-[26px]"
+            >
+              <option value="latest">최신순</option>
+              <option value="highPrice">가격 높은순</option>
+              <option value="lowPrice">가격 낮은순</option>
             </select>
             <Icon
               name="chevron-down"
@@ -50,27 +92,63 @@ const PurchaseRequestsPage = async ({
           </label>
         </section>
 
-        {hasPurchaseRequests ? (
-          <PurchaseRequestsList requests={visiblePurchaseRequests} />
-        ) : (
-          <EmptyState
-            aria-label="구매 요청 없음"
-            image="empty-purchase"
-            className="pt-16 md:pt-40 xl:pt-[179px]"
-            contentClassName="h-[202px] w-[327px] xl:h-[304px] xl:w-[388px]"
-            description={
-              <>
-                <span className="block">요청받은 내역이 없어요</span>
-                <span className="block">
-                  상품 리스트를 둘러보고 제품을 담아보세요!
-                </span>
-              </>
-            }
-          />
-        )}
+        {isPending ? (
+          <p className="px-6 py-16 text-center text-foreground-muted xl:px-0">
+            구매 요청을 불러오는 중…
+          </p>
+        ) : null}
+
+        {isError ? (
+          <p className="px-6 py-16 text-center text-snack-state-100 xl:px-0">
+            {error instanceof Error
+              ? error.message
+              : "구매 요청을 불러오지 못했습니다."}
+          </p>
+        ) : null}
+
+        {!isPending && !isError ? (
+          <>
+            {hasPurchaseRequests ? (
+              <PurchaseRequestsList
+                requests={requests}
+                paginationItems={paginationItems}
+                currentPage={String(pagination?.currentPage ?? page)}
+                previousDisabled={(pagination?.currentPage ?? page) <= 1}
+                nextDisabled={!pagination?.hasNextPage}
+                onPrevious={() =>
+                  setPage((current) => Math.max(1, current - 1))
+                }
+                onNext={() =>
+                  setPage((current) =>
+                    pagination?.hasNextPage ? current + 1 : current,
+                  )
+                }
+                onPageSelect={(selected) => {
+                  const nextPage = Number(selected);
+                  if (Number.isInteger(nextPage) && nextPage > 0) {
+                    setPage(nextPage);
+                  }
+                }}
+              />
+            ) : (
+              <EmptyState
+                aria-label="구매 요청 없음"
+                image="empty-purchase"
+                className="pt-16 md:pt-40 xl:pt-[179px]"
+                contentClassName="h-[202px] w-[327px] xl:h-[304px] xl:w-[388px]"
+                description={
+                  <>
+                    <span className="block">요청받은 내역이 없어요</span>
+                    <span className="block">
+                      상품 리스트를 둘러보고 제품을 담아보세요!
+                    </span>
+                  </>
+                }
+              />
+            )}
+          </>
+        ) : null}
       </div>
     </main>
   );
-};
-
-export default PurchaseRequestsPage;
+}
