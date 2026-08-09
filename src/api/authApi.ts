@@ -7,8 +7,6 @@ import {
 } from "@/lib/authStorage";
 import type { SuperAdminSignupPayload } from "@/types/authTypes";
 
-export type { SuperAdminSignupPayload } from "@/types/authTypes";
-
 type LoginResponse = {
   message: string;
   data: {
@@ -147,5 +145,6 @@ export const signupSuperAdmin = async (payload: SuperAdminSignupPayload) => {
     "/api/auth/super-admin/signup",
     payload,
   );
+
   return response.data;
 };

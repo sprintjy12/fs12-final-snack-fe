@@ -13,7 +13,7 @@ export type ProductCardProps = {
   /** Figma: Card/상품리스트_좋아요 — 기본 리스트 카드에는 없음 */
   showLike?: boolean;
   liked?: boolean;
-  onToggleLike?: (productId: number) => void;
+  onToggleLike?: (productId: number | string) => void;
 };
 
 function formatPrice(price: number) {

@@ -4,14 +4,15 @@ import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { z } from "zod";
 
 import { signupSuperAdmin } from "@/api/authApi";
 import { Button, CommonImage, Icon, TextField, useToast } from "@/components/ui";
-import type {
-  AdminSignupApiField,
-  AdminSignupErrors,
-  AdminSignupForm,
-} from "@/types/authTypes";
+import {
+  adminSignupFormSchema,
+  normalizeBusinessNumber,
+} from "@/schemas/authSchema";
+import type { AdminSignupErrors, AdminSignupForm } from "@/types/authTypes";
 
 const INITIAL_FORM: AdminSignupForm = {
   name: "",
@@ -22,118 +23,43 @@ const INITIAL_FORM: AdminSignupForm = {
   businessNumber: "",
 };
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_MAX_LENGTH = 20;
-const ALLOWED_PASSWORD_CHARACTERS =
-  /^[A-Za-z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]+$/;
-const PASSWORD_SPECIAL_CHARACTER =
-  /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/;
+/** 화면 표시용 사업자등록번호 (123-45-67890) */
+const formatBusinessNumber = (value: string) => {
+  const digits = normalizeBusinessNumber(value).slice(0, 10);
 
-const SIGNUP_FIELD_KEYS: readonly AdminSignupApiField[] = [
-  "name",
-  "email",
-  "password",
-  "companyName",
-  "businessNumber",
-];
-
-function isSignupApiField(key: string): key is AdminSignupApiField {
-  return (SIGNUP_FIELD_KEYS as readonly string[]).includes(key);
-}
-
-/** 하이픈·공백 제거 후 숫자만 남깁니다. */
-function normalizeBusinessNumber(value: string) {
-  return value.replace(/\D/g, "");
-}
-
-/** Figma 회원가입_error + BE superAdminSignupSchema */
-function validateAdminSignupForm(form: AdminSignupForm): AdminSignupErrors {
-  const errors: AdminSignupErrors = {};
-  const name = form.name.trim();
-  const email = form.email.trim();
-  const companyName = form.companyName.trim();
-  const businessNumber = normalizeBusinessNumber(form.businessNumber);
-
-  if (!name) {
-    errors.name = "이름을 입력해주세요.";
-  } else if (name.length > 8) {
-    errors.name = "이름은 8자 이하로 입력해주세요.";
+  if (digits.length <= 3) {
+    return digits;
   }
 
-  if (!email) {
-    errors.email = "이메일을 입력해주세요.";
-  } else if (email.length > 254) {
-    errors.email = "이메일은 254자 이하로 입력해주세요.";
-  } else if (!EMAIL_PATTERN.test(email)) {
-    errors.email = "올바른 이메일 형식이 아닙니다.";
+  if (digits.length <= 5) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
   }
 
-  if (!form.password) {
-    errors.password = "비밀번호를 입력해주세요.";
-  } else if (form.password.length < PASSWORD_MIN_LENGTH) {
-    errors.password = `비밀번호는 ${PASSWORD_MIN_LENGTH}자 이상이어야 합니다.`;
-  } else if (form.password.length > PASSWORD_MAX_LENGTH) {
-    errors.password = `비밀번호는 ${PASSWORD_MAX_LENGTH}자 이하여야 합니다.`;
-  } else if (!ALLOWED_PASSWORD_CHARACTERS.test(form.password)) {
-    errors.password = "비밀번호는 영문, 숫자, 특수문자만 사용할 수 있습니다.";
-  } else if (!/[A-Za-z]/.test(form.password)) {
-    errors.password = "비밀번호에 영문을 1자 이상 포함해주세요.";
-  } else if (!/[0-9]/.test(form.password)) {
-    errors.password = "비밀번호에 숫자를 1자 이상 포함해주세요.";
-  } else if (!PASSWORD_SPECIAL_CHARACTER.test(form.password)) {
-    errors.password = "비밀번호에 특수문자를 1자 이상 포함해주세요.";
-  }
+  return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+};
 
-  if (!form.passwordConfirm) {
-    errors.passwordConfirm = "비밀번호를 입력해주세요.";
-  } else if (form.password && form.password !== form.passwordConfirm) {
-    errors.passwordConfirm = "비밀번호가 일치하지 않습니다.";
-  }
-
-  if (!companyName) {
-    errors.companyName = "회사명을 입력해주세요.";
-  } else if (companyName.length > 15) {
-    errors.companyName = "회사명은 15자 이하로 입력해주세요.";
-  }
-
-  if (!businessNumber) {
-    errors.businessNumber = "사업자등록번호를 입력해주세요.";
-  } else if (!/^\d{10}$/.test(businessNumber)) {
-    errors.businessNumber =
-      "사업자등록번호는 하이픈 없이 숫자 10자리로 입력해주세요.";
-  }
-
-  return errors;
-}
-
-function mapValidationErrors(
-  fieldErrors: Record<string, unknown>,
-): AdminSignupErrors {
+const getAdminSignupFormErrors = (
+  error: z.ZodError<z.infer<typeof adminSignupFormSchema>>,
+): AdminSignupErrors => {
+  const { fieldErrors } = z.flattenError(error);
   const next: AdminSignupErrors = {};
 
-  for (const [key, value] of Object.entries(fieldErrors)) {
-    if (!isSignupApiField(key)) {
-      continue;
+  (Object.keys(fieldErrors) as (keyof AdminSignupForm)[]).forEach((key) => {
+    const message = fieldErrors[key]?.[0];
+    if (message) {
+      next[key] = message;
     }
-
-    if (Array.isArray(value) && typeof value[0] === "string" && value[0]) {
-      next[key] = value[0];
-      continue;
-    }
-
-    if (typeof value === "string" && value) {
-      next[key] = value;
-    }
-  }
+  });
 
   return next;
-}
+};
 
-function applySignupApiError(error: unknown): {
+const applySignupApiError = (
+  error: unknown,
+): {
   fieldErrors: AdminSignupErrors;
   message?: string;
-} {
+} => {
   if (!axios.isAxiosError(error)) {
     return {
       fieldErrors: {},
@@ -148,7 +74,6 @@ function applySignupApiError(error: unknown): {
     | {
         message?: unknown;
         code?: unknown;
-        errors?: Record<string, unknown>;
       }
     | undefined;
 
@@ -156,13 +81,6 @@ function applySignupApiError(error: unknown): {
     typeof data?.message === "string" && data.message.trim()
       ? data.message
       : "회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.";
-
-  if (error.response?.status === 400 && data?.errors) {
-    const fieldErrors = mapValidationErrors(data.errors);
-    if (Object.keys(fieldErrors).length > 0) {
-      return { fieldErrors, message };
-    }
-  }
 
   if (error.response?.status === 409) {
     if (data?.code === "AUTH_DUPLICATE_EMAIL") {
@@ -174,20 +92,24 @@ function applySignupApiError(error: unknown): {
   }
 
   return { fieldErrors: {}, message };
-}
+};
 
-function FieldLabel({ htmlFor, children }: { htmlFor: string; children: string }) {
-  return (
-    <label
-      htmlFor={htmlFor}
-      className="text-base leading-[26px] text-foreground-strong xl:text-xl xl:leading-8"
-    >
-      {children}
-    </label>
-  );
-}
+const FieldLabel = ({
+  htmlFor,
+  children,
+}: {
+  htmlFor: string;
+  children: string;
+}) => (
+  <label
+    htmlFor={htmlFor}
+    className="text-base leading-[26px] text-foreground-strong xl:text-xl xl:leading-8"
+  >
+    {children}
+  </label>
+);
 
-function FieldError({ id, message }: { id: string; message?: string }) {
+const FieldError = ({ id, message }: { id: string; message?: string }) => {
   if (!message) {
     return null;
   }
@@ -201,9 +123,9 @@ function FieldError({ id, message }: { id: string; message?: string }) {
       {message}
     </p>
   );
-}
+};
 
-function PasswordField({
+const PasswordField = ({
   id,
   label,
   placeholder,
@@ -223,7 +145,7 @@ function PasswordField({
   disabled?: boolean;
   onToggleVisible: () => void;
   onChange: (value: string) => void;
-}) {
+}) => {
   const errorId = `${id}-error`;
 
   return (
@@ -258,28 +180,30 @@ function PasswordField({
       </div>
     </div>
   );
-}
+};
 
 /**
  * Figma: 회원가입/Desktop (기업 담당자) — node 1:1316
  * 에러 반응: 회원가입_error/Desktop — node 1:1421
  * API: POST /api/auth/super-admin/signup
  */
-export default function AdminSignupPage() {
+const AdminSignupPage = () => {
   const router = useRouter();
   const { showToast } = useToast();
   const [form, setForm] = useState<AdminSignupForm>(INITIAL_FORM);
   const [errors, setErrors] = useState<AdminSignupErrors>({});
-  const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
 
   const allFilled = Object.values(form).every((value) => value.trim() !== "");
-  const isCtaActive = (allFilled || submitted) && !isSubmitting;
+  const isCtaActive = allFilled && !isSubmitting;
 
   const updateField = (key: keyof AdminSignupForm) => (value: string) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    const nextValue =
+      key === "businessNumber" ? formatBusinessNumber(value) : value;
+
+    setForm((prev) => ({ ...prev, [key]: nextValue }));
     if (errors[key]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -295,24 +219,23 @@ export default function AdminSignupPage() {
       return;
     }
 
-    setSubmitted(true);
+    const result = adminSignupFormSchema.safeParse(form);
 
-    const nextErrors = validateAdminSignupForm(form);
-    setErrors(nextErrors);
-
-    if (Object.keys(nextErrors).length > 0) {
+    if (!result.success) {
+      setErrors(getAdminSignupFormErrors(result.error));
       return;
     }
 
+    setErrors({});
     setIsSubmitting(true);
 
     try {
       await signupSuperAdmin({
-        name: form.name.trim(),
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-        companyName: form.companyName.trim(),
-        businessNumber: normalizeBusinessNumber(form.businessNumber),
+        name: result.data.name,
+        email: result.data.email,
+        password: result.data.password,
+        companyName: result.data.companyName,
+        businessNumber: result.data.businessNumber,
       });
 
       showToast("회원가입이 완료되었습니다. 로그인해 주세요.");
@@ -477,9 +400,7 @@ export default function AdminSignupPage() {
               width="full"
               disabled={isSubmitting}
               className={
-                isCtaActive
-                  ? undefined
-                  : "bg-snack-gray-200 text-surface"
+                isCtaActive ? undefined : "bg-snack-gray-200 text-surface"
               }
             >
               {isSubmitting ? "가입 중..." : "시작하기"}
@@ -501,4 +422,6 @@ export default function AdminSignupPage() {
       </div>
     </main>
   );
-}
+};
+
+export default AdminSignupPage;

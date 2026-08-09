@@ -13,12 +13,6 @@ export type AdminSignupErrors = Partial<
   Record<keyof AdminSignupForm, string>
 >;
 
-/** API로 보내는 필드 (passwordConfirm 제외) */
-export type AdminSignupApiField = Exclude<
-  keyof AdminSignupForm,
-  "passwordConfirm"
->;
-
 export type SuperAdminSignupPayload = {
   name: string;
   email: string;
