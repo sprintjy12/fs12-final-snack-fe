@@ -6,6 +6,10 @@ import {
   setAccessToken,
 } from "@/lib/authStorage";
 import type {
+  CreateInvitationPayload,
+  CreateInvitationResult,
+  InvitationVerifyData,
+  InvitedSignupPayload,
   LoginPayload,
   SuperAdminSignupPayload,
 } from "@/types/authTypes";
@@ -147,4 +151,57 @@ export const signupSuperAdmin = async (payload: SuperAdminSignupPayload) => {
   );
 
   return response.data;
+};
+
+type VerifyInvitationResponse = {
+  message: string;
+  data: InvitationVerifyData;
+};
+
+type InvitedSignupResponse = {
+  message: string;
+  data: {
+    id: string;
+    companyId: string;
+    name: string;
+    email: string;
+    role: string;
+    status: string;
+    createdAt: string;
+  };
+};
+
+/** 초대 토큰 검증 — GET /api/invitations/verify */
+export const verifyInvitation = async (token: string) => {
+  const response = await apiClient.get<VerifyInvitationResponse>(
+    "/api/invitations/verify",
+    { params: { token } },
+  );
+
+  return response.data.data;
+};
+
+/** 초대 회원가입 — POST /api/invitations/signup */
+export const signupInvitedUser = async (payload: InvitedSignupPayload) => {
+  const response = await apiClient.post<InvitedSignupResponse>(
+    "/api/invitations/signup",
+    payload,
+  );
+
+  return response.data;
+};
+
+type CreateInvitationResponse = {
+  message: string;
+  data: CreateInvitationResult;
+};
+
+/** 회원 초대 생성 — POST /api/invitations (SUPER_ADMIN) */
+export const createInvitation = async (payload: CreateInvitationPayload) => {
+  const response = await apiClient.post<CreateInvitationResponse>(
+    "/api/invitations",
+    payload,
+  );
+
+  return response.data.data;
 };

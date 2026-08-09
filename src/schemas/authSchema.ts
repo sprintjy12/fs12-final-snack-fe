@@ -105,3 +105,40 @@ export const loginFormSchema = z.object({
 
 export type LoginFormSchemaInput = z.input<typeof loginFormSchema>;
 export type LoginFormSchemaOutput = z.output<typeof loginFormSchema>;
+
+/**
+ * 초대 회원가입 비밀번호 규칙 (BE invitedSignupSchema와 동일).
+ * @see fs12-final-snack-be/src/schemas/invitationSchema.ts
+ */
+const invitedSignupPasswordSchema = z
+  .string()
+  .min(1, "비밀번호를 입력해주세요.")
+  .min(PASSWORD_MIN_LENGTH, "비밀번호는 최소 8자 이상이어야 합니다.")
+  .max(PASSWORD_MAX_LENGTH, "비밀번호는 최대 20자까지 입력할 수 있습니다.")
+  .regex(/[A-Za-z]/, "비밀번호에는 영문이 포함되어야 합니다.")
+  .regex(/[0-9]/, "비밀번호에는 숫자가 포함되어야 합니다.")
+  .regex(/[^A-Za-z0-9]/, "비밀번호에는 특수문자가 포함되어야 합니다.")
+  .regex(
+    /^[\x21-\x7E]+$/,
+    "비밀번호에는 한글, 공백, 이모지를 사용할 수 없습니다.",
+  );
+
+/**
+ * 초대 회원가입 폼 스키마 (BE invitedSignupSchema + passwordConfirm).
+ */
+export const invitedSignupFormSchema = z
+  .object({
+    password: invitedSignupPasswordSchema,
+    passwordConfirm: z.string().min(1, "비밀번호를 입력해주세요."),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "비밀번호가 일치하지 않습니다.",
+    path: ["passwordConfirm"],
+  });
+
+export type InvitedSignupFormSchemaInput = z.input<
+  typeof invitedSignupFormSchema
+>;
+export type InvitedSignupFormSchemaOutput = z.output<
+  typeof invitedSignupFormSchema
+>;
