@@ -230,26 +230,27 @@ const AdminSignupPage = () => {
     setIsSubmitting(true);
 
     try {
-      await signupSuperAdmin({
-        name: result.data.name,
-        email: result.data.email,
-        password: result.data.password,
-        companyName: result.data.companyName,
-        businessNumber: result.data.businessNumber,
-      });
-
-      showToast("회원가입이 완료되었습니다. 로그인해 주세요.");
-      router.push("/login");
-    } catch (error) {
-      const { fieldErrors, message } = applySignupApiError(error);
-      if (Object.keys(fieldErrors).length > 0) {
-        setErrors(fieldErrors);
-      } else if (message) {
-        showToast(message);
+        await signupSuperAdmin({
+          name: result.data.name,
+          email: result.data.email,
+          password: result.data.password,
+          companyName: result.data.companyName,
+          businessNumber: result.data.businessNumber,
+        });
+      
+        showToast("회원가입이 완료되었습니다. 로그인해 주세요.");
+        router.push("/login");
+      } catch (error) {
+        const { fieldErrors, message } = applySignupApiError(error);
+      
+        if (Object.keys(fieldErrors).length > 0) {
+          setErrors(fieldErrors);
+        } else if (message) {
+          showToast(message);
+        }
+      
+        setIsSubmitting(false);
       }
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   return (
