@@ -18,7 +18,8 @@ export function AppHeader() {
   const pathname = usePathname();
   const isSampleRoute =
     pathname === "/modal-sample" || pathname === "/toast-sample";
-  const isAuthRoute = pathname.startsWith("/signup");
+  const isAuthRoute =
+    pathname.startsWith("/signup") || pathname.startsWith("/login");
 
   if (pathname === "/" || isSampleRoute || isAuthRoute) {
     return null;

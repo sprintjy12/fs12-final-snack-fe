@@ -20,3 +20,17 @@ export type SuperAdminSignupPayload = {
   companyName: string;
   businessNumber: string;
 };
+
+/** 로그인 폼 */
+
+export type LoginForm = {
+  email: string;
+  password: string;
+};
+
+export type LoginErrors = Partial<Record<keyof LoginForm, string>>;
+
+export type LoginPayload = {
+  email: string;
+  password: string;
+};
