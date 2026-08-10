@@ -1,5 +1,9 @@
 import { apiClient } from "@/api/core/apiClient";
-import type { GetUsersParams, UserListResponse } from "@/types/userTypes";
+import type {
+  GetUsersParams,
+  UserListResponse,
+  WithdrawUserResponse,
+} from "@/types/userTypes";
 
 /**
  * 회원 목록 API.
@@ -17,6 +21,17 @@ export const getUsers = async (
       ...(name ? { name } : {}),
     },
   });
+
+  return response.data;
+};
+
+/** 회원 강제 탈퇴 */
+export const withdrawUser = async (
+  userId: string,
+): Promise<WithdrawUserResponse> => {
+  const response = await apiClient.delete<WithdrawUserResponse>(
+    `/api/users/${userId}`,
+  );
 
   return response.data;
 };

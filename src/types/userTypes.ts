@@ -28,3 +28,8 @@ export type GetUsersParams = {
   /** 이름 검색 — 없으면 쿼리에서 제외 */
   name?: string;
 };
+
+/** DELETE /api/users/:userId */
+export type WithdrawUserResponse = {
+  message: string;
+};
