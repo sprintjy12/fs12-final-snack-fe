@@ -31,6 +31,7 @@ export const queryKeys = {
   budgets: {
     all: ["budgets"] as const,
     summary: () => ["budgets", "summary"] as const,
+    settings: () => ["budgets", "settings"] as const,
   },
   //userId 가져올 수 있으면 수정 필요
   cart: {

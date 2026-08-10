@@ -26,3 +26,28 @@ export type BudgetSummaryResponse = {
   message: string;
   data: BudgetSummaryData;
 };
+
+/** GET /api/budgets/settings */
+export type BudgetSettingsCurrentMonth = {
+  yearMonth: string;
+  /** null이면 이번 달 예산을 비우고 기본값 따름 */
+  amount: number | null;
+};
+
+export type BudgetSettingsData = {
+  defaultMonthlyBudget: number;
+  currentMonth: BudgetSettingsCurrentMonth;
+};
+
+export type BudgetSettingsResponse = {
+  success: boolean;
+  message: string;
+  data: BudgetSettingsData;
+};
+
+/** PATCH /api/budgets/settings body — 변경된 필드만 전송 */
+export type UpdateBudgetSettingsBody = {
+  defaultMonthlyBudget?: number;
+  /** null이면 이번 달 예산을 비우고 기본값 따름 */
+  monthlyBudget?: number | null;
+};
