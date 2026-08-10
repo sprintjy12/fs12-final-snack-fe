@@ -83,3 +83,27 @@ export type AdminSignupFormSchemaInput = z.input<
 export type AdminSignupFormSchemaOutput = z.output<
   typeof adminSignupFormSchema
 >;
+
+/**
+ * 로그인 폼 스키마 (BE loginSchema와 맞춤).
+ * email은 검증 후 소문자로 변환됩니다.
+ */
+export const loginFormSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "이메일을 입력해주세요.")
+    .max(254, "이메일은 254자 이하로 입력해주세요.")
+    .email("올바른 이메일 형식이 아닙니다.")
+    .transform((value) => value.toLowerCase()),
+  password: z
+    .string()
+    .min(1, "비밀번호를 입력해주세요.")
+    .max(
+      PASSWORD_MAX_LENGTH,
+      `비밀번호는 ${PASSWORD_MAX_LENGTH}자 이하여야 합니다.`,
+    ),
+});
+
+export type LoginFormSchemaInput = z.input<typeof loginFormSchema>;
+export type LoginFormSchemaOutput = z.output<typeof loginFormSchema>;

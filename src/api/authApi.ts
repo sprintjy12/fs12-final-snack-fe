@@ -5,7 +5,10 @@ import {
   isAccessTokenValid,
   setAccessToken,
 } from "@/lib/authStorage";
-import type { SuperAdminSignupPayload } from "@/types/authTypes";
+import type {
+  LoginPayload,
+  SuperAdminSignupPayload,
+} from "@/types/authTypes";
 
 type LoginResponse = {
   message: string;
@@ -104,10 +107,7 @@ export const ensureAccessToken = async () => {
   return token;
 };
 
-export const login = async (payload: {
-  email: string;
-  password: string;
-}) => {
+export const login = async (payload: LoginPayload) => {
   const response = await apiClient.post<LoginResponse>("/api/auth/login", payload);
   const token = getAccessTokenFromLoginBody(response.data);
   if (!token) {
