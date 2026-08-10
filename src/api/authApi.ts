@@ -5,7 +5,12 @@ import {
   isAccessTokenValid,
   setAccessToken,
 } from "@/lib/authStorage";
+import { invitationVerifyDataSchema } from "@/schemas/authSchema";
 import type {
+  CreateInvitationPayload,
+  CreateInvitationResult,
+  InvitationVerifyData,
+  InvitedSignupPayload,
   LoginPayload,
   SuperAdminSignupPayload,
 } from "@/types/authTypes";
@@ -147,4 +152,64 @@ export const signupSuperAdmin = async (payload: SuperAdminSignupPayload) => {
   );
 
   return response.data;
+};
+
+type VerifyInvitationResponse = {
+  message: string;
+  data: InvitationVerifyData;
+};
+
+type InvitedSignupResponse = {
+  message: string;
+  data: {
+    id: string;
+    companyId: string;
+    name: string;
+    email: string;
+    role: string;
+    status: string;
+    createdAt: string;
+  };
+};
+
+/** 초대 토큰 검증 — GET /api/invitations/verify */
+export const verifyInvitation = async (
+  token: string,
+): Promise<InvitationVerifyData> => {
+  const response = await apiClient.get<VerifyInvitationResponse>(
+    "/api/invitations/verify",
+    { params: { token } },
+  );
+
+  const parsed = invitationVerifyDataSchema.safeParse(response.data.data);
+  if (!parsed.success) {
+    throw new Error("초대 정보 응답 형식이 올바르지 않습니다.");
+  }
+
+  return parsed.data;
+};
+
+/** 초대 회원가입 — POST /api/invitations/signup */
+export const signupInvitedUser = async (payload: InvitedSignupPayload) => {
+  const response = await apiClient.post<InvitedSignupResponse>(
+    "/api/invitations/signup",
+    payload,
+  );
+
+  return response.data;
+};
+
+type CreateInvitationResponse = {
+  message: string;
+  data: CreateInvitationResult;
+};
+
+/** 회원 초대 생성 — POST /api/invitations (SUPER_ADMIN) */
+export const createInvitation = async (payload: CreateInvitationPayload) => {
+  const response = await apiClient.post<CreateInvitationResponse>(
+    "/api/invitations",
+    payload,
+  );
+
+  return response.data.data;
 };

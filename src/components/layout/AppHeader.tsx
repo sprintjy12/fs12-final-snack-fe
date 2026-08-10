@@ -19,7 +19,9 @@ export function AppHeader() {
   const isSampleRoute =
     pathname === "/modal-sample" || pathname === "/toast-sample";
   const isAuthRoute =
-    pathname.startsWith("/signup") || pathname.startsWith("/login");
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/invite");
 
   if (pathname === "/" || isSampleRoute || isAuthRoute) {
     return null;

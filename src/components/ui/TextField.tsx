@@ -38,8 +38,8 @@ export function TextField({
       <div
         className={[
           BASE_CLASS,
-          borderClass,
-          "flex items-center bg-surface-muted text-foreground",
+          error ? "border border-danger" : "border border-border",
+          "flex items-center bg-surface-muted text-foreground-muted",
           className,
         ]
           .filter(Boolean)
