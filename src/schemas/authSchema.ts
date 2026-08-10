@@ -145,14 +145,14 @@ export type InvitedSignupFormSchemaOutput = z.output<
 
 /**
  * 초대 토큰 검증 응답 data (BE verifyInvitation 반환값).
+ * expiresAt: Prisma Date → Express res.json(JSON.stringify) → ISO 8601 문자열
  * @see fs12-final-snack-be/src/services/invitationService.ts
  * @see fs12-final-snack-be/src/controllers/invitationController.ts
  */
 export const invitationVerifyDataSchema = z.object({
-  name: z.string(),
-  email: z.string(),
+  name: z.string().min(1),
+  email: z.email(),
   role: z.enum(["USER", "ADMIN"]),
-  companyName: z.string(),
-  /** Express JSON 직렬화 후 ISO 문자열 */
-  expiresAt: z.string(),
+  companyName: z.string().min(1),
+  expiresAt: z.iso.datetime(),
 });
