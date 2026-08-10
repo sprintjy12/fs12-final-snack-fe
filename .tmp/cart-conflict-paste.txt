@@ -1,0 +1,172 @@
+<<<<<<< fix/responsive-pages
+                  const isSelected = effectiveSelectedIds.includes(product.id);
+                  const productHref = `/products/${product.id}?categoryId=${product.categoryId}&subCategoryId=${product.subCategoryId}`;
+
+                  return (
+                    <article key={product.id}>
+                      {/* Desktop row */}
+                      <div
+                        className={cx(
+                          desktopRowGrid,
+                          "min-h-[208px] bg-surface-muted",
+                        )}
+                      >
+                        <div className="relative flex min-w-0 items-start gap-8 border-b border-snack-gray-300 p-6">
+                          <SelectCheckbox
+                            checked={isSelected}
+                            label={`${product.name} 선택`}
+                            onToggle={() => toggleSelect(product.id)}
+                          />
+                          <Link
+                            href={productHref}
+                            className="flex min-w-0 gap-6"
+                          >
+                            <span className="relative grid size-40 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border bg-surface shadow-[4px_4px_10px_rgb(250_247_243_/_25%)] max-[1400px]:size-[140px]">
+                              {showImage ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={photoSrc!}
+                                  alt=""
+                                  className="relative h-auto max-h-[98px] w-14 object-contain"
+                                  onError={() => markImageFailed(product.id)}
+                                />
+                              ) : null}
+                            </span>
+                            <span className="flex min-w-0 flex-col justify-center gap-2 self-stretch">
+                              <span className="overflow-hidden text-xl leading-8 text-ellipsis whitespace-nowrap text-foreground-strong">
+                                {product.name}
+                              </span>
+                              <strong className="text-2xl leading-8 font-bold text-foreground-strong">
+                                {formatPrice(product.price)}
+                              </strong>
+                            </span>
+                          </Link>
+                          <button
+                            type="button"
+                            className="absolute top-[18px] right-2.5 grid size-9 place-items-center border-0 bg-transparent p-0 text-snack-black-100 hover:text-foreground-strong"
+                            aria-label={`${product.name} 삭제`}
+                            onClick={() => handleRemoveOne(product.id)}
+                          >
+                            <Icon name="close" size="sm" />
+                          </button>
+                        </div>
+
+                        <div className="flex min-w-0 flex-col items-center justify-center gap-5 border-r border-b border-l border-snack-gray-300 px-2.5 py-6">
+                          <QuantityControl
+                            productName={product.name}
+                            quantity={quantity}
+                            onChange={(next) =>
+                              changeQuantity(product.id, next)
+                            }
+                          />
+                        </div>
+
+                        <div className="flex min-w-0 flex-col items-center justify-center gap-5 border-r border-b border-snack-gray-300 px-2.5 py-6">
+                          <strong className="text-center text-2xl leading-8 font-bold text-foreground-strong">
+                            {formatPrice(lineTotal)}
+                          </strong>
+=======
+                  const isSelected = effectiveSelectedIds.includes(item.id);
+
+                  return (
+                    <article
+                      className={cx(rowGrid, "min-h-[208px] bg-surface-muted")}
+                      key={item.id}
+                    >
+                      <div className="relative flex min-w-0 items-start gap-8 border-b border-snack-gray-300 p-6">
+                        <button
+                          type="button"
+                          className={cx(
+                            "grid size-[26px] shrink-0 place-items-center rounded border border-snack-gray-300 bg-transparent p-0 text-[17px] leading-none text-surface",
+                            isSelected && "border-accent bg-accent",
+                          )}
+                          aria-label={`${product.name} 선택`}
+                          aria-pressed={isSelected}
+                          onClick={() => toggleSelect(item.id)}
+                        >
+                          {isSelected ? (
+                            <span aria-hidden="true">✓</span>
+                          ) : null}
+                        </button>
+                        <Link
+                          href={`/products/${product.id}`}
+                          className="flex min-w-0 gap-6"
+                        >
+                          <span className="relative grid size-40 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border bg-surface shadow-[4px_4px_10px_rgb(250_247_243_/_25%)] max-[1400px]:size-[140px]">
+                            {showImage ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={photoSrc!}
+                                alt=""
+                                className="relative h-auto max-h-[98px] w-14 object-contain"
+                                onError={() => {
+                                  setFailedImageIds((prev) => {
+                                    if (prev.has(item.id)) return prev;
+                                    const next = new Set(prev);
+                                    next.add(item.id);
+                                    return next;
+                                  });
+                                }}
+                              />
+                            ) : null}
+                          </span>
+                          <span className="flex min-w-0 flex-col justify-center gap-2 self-stretch">
+                            <span className="overflow-hidden text-xl leading-8 text-ellipsis whitespace-nowrap text-foreground-strong">
+                              {product.name}
+                            </span>
+                            <strong className="text-2xl leading-8 font-bold text-foreground-strong">
+                              {formatPrice(product.price)}
+                            </strong>
+                          </span>
+                        </Link>
+                        <button
+                          type="button"
+                          className="absolute top-[18px] right-2.5 grid size-9 place-items-center border-0 bg-transparent p-0 text-snack-black-100 hover:text-foreground-strong"
+                          aria-label={`${product.name} 삭제`}
+                          onClick={() => handleRemoveOne(item.id)}
+                        >
+                          <Icon name="close" size="sm" />
+                        </button>
+                      </div>
+
+                      <div className="flex min-w-0 flex-col items-center justify-center gap-5 border-r border-b border-l border-snack-gray-300 px-2.5 py-6">
+                        <div
+                          className="flex h-[54px] w-[140px] items-center justify-end gap-1 rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-lg leading-[26px] text-accent xl:w-40"
+                          role="group"
+                          aria-label={`${product.name} 수량`}
+                        >
+                          <span aria-live="polite">{quantity} 개</span>
+                          <div className="ml-1 flex flex-col gap-0.5">
+                            <button
+                              type="button"
+                              className="grid h-3.5 w-[18px] place-items-center border-0 bg-transparent p-0 text-snack-orange-300 disabled:cursor-not-allowed disabled:opacity-35"
+                              aria-label="수량 증가"
+                              disabled={quantity >= MAX_QUANTITY}
+                              onClick={() =>
+                                changeQuantity(item.id, quantity, 1)
+                              }
+                            >
+                              <Icon
+                                name="chevron-up"
+                                size="xs"
+                                className="!h-3 !w-3"
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              className="grid h-3.5 w-[18px] place-items-center border-0 bg-transparent p-0 text-snack-orange-300 disabled:cursor-not-allowed disabled:opacity-35"
+                              aria-label="수량 감소"
+                              disabled={quantity <= 1}
+                              onClick={() =>
+                                changeQuantity(item.id, quantity, -1)
+                              }
+                            >
+                              <Icon
+                                name="chevron-down"
+                                size="xs"
+                                className="!h-3 !w-3"
+                              />
+                            </button>
+                          </div>
+>>>>>>> dev
+</user_query>

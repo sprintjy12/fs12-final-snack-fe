@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { CommonImage, Icon } from "@/components/ui";
 import { DUMMY_PRODUCTS } from "@/features/products/dummyProducts";
+import { PurchaseRequestModal } from "@/features/cart/PurchaseRequestModal";
 import {
   clearCart,
   getCartItems,
@@ -33,6 +35,7 @@ function cx(...parts: Array<string | false | null | undefined>) {
 }
 
 export default function CartPage() {
+  const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   /** undefined: 전체 선택(초기) · []: 선택 없음 · ProductId[]: 부분 선택 */
   const [selectedIds, setSelectedIds] = useState<ProductId[] | undefined>(
@@ -42,6 +45,8 @@ export default function CartPage() {
   const [failedImageIds, setFailedImageIds] = useState<Set<ProductId>>(
     () => new Set(),
   );
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requestItems, setRequestItems] = useState<CartProduct[]>([]);
 
   useEffect(() => {
     const items = getCartItems();
@@ -69,7 +74,7 @@ export default function CartPage() {
   const effectiveSelectedIds = selectedIds ?? allProductIds;
 
   const selectedProducts = cartProducts.filter((item) =>
-    effectiveSelectedIds.includes(item.product.id),
+    effectiveSelectedIds.includes(Number(item.product.id)),
   );
   const allSelected =
     cartProducts.length > 0 && selectedProducts.length === cartProducts.length;
@@ -81,6 +86,26 @@ export default function CartPage() {
   );
   const shippingFee = someSelected ? SHIPPING_FEE : 0;
   const orderTotal = productTotal + shippingFee;
+
+  const requestProductTotal = requestItems.reduce(
+    (total, item) => total + item.product.price * item.quantity,
+    0,
+  );
+  const requestShippingFee = requestItems.length > 0 ? SHIPPING_FEE : 0;
+  const requestOrderTotal = requestProductTotal + requestShippingFee;
+
+  const openRequestModal = (items: CartProduct[]) => {
+    if (items.length === 0) return;
+    setRequestItems(items);
+    setRequestOpen(true);
+  };
+
+  const handlePurchaseSubmit = (_payload: { message: string }) => {
+    // 이 브랜치는 아직 구매 요청 API가 없어 완료 화면(더미)으로만 이동합니다.
+    setRequestOpen(false);
+    setRequestItems([]);
+    router.push("/purchase-requests/complete");
+  };
 
   const syncCart = (next: CartItem[]) => {
     setCartItems(next);
@@ -200,11 +225,12 @@ export default function CartPage() {
 
               <div className="flex flex-col">
                 {cartProducts.map(({ product, quantity }) => {
+                  const productId = Number(product.id);
                   const photoSrc = getProductPhotoSrc(product.photo);
                   const showImage =
-                    Boolean(photoSrc) && !failedImageIds.has(product.id);
+                    Boolean(photoSrc) && !failedImageIds.has(productId);
                   const lineTotal = product.price * quantity;
-                  const isSelected = effectiveSelectedIds.includes(product.id);
+                  const isSelected = effectiveSelectedIds.includes(productId);
 
                   return (
                     <article
@@ -220,7 +246,7 @@ export default function CartPage() {
                           )}
                           aria-label={`${product.name} 선택`}
                           aria-pressed={isSelected}
-                          onClick={() => toggleSelect(product.id)}
+                          onClick={() => toggleSelect(productId)}
                         >
                           {isSelected ? (
                             <span aria-hidden="true">✓</span>
@@ -239,9 +265,9 @@ export default function CartPage() {
                                 className="relative h-auto max-h-[98px] w-14 object-contain"
                                 onError={() => {
                                   setFailedImageIds((prev) => {
-                                    if (prev.has(product.id)) return prev;
+                                    if (prev.has(productId)) return prev;
                                     const next = new Set(prev);
-                                    next.add(product.id);
+                                    next.add(productId);
                                     return next;
                                   });
                                 }}
@@ -261,7 +287,7 @@ export default function CartPage() {
                           type="button"
                           className="absolute top-[18px] right-2.5 grid size-9 place-items-center border-0 bg-transparent p-0 text-snack-black-100 hover:text-foreground-strong"
                           aria-label={`${product.name} 삭제`}
-                          onClick={() => handleRemoveOne(product.id)}
+                          onClick={() => handleRemoveOne(productId)}
                         >
                           <Icon name="close" size="sm" />
                         </button>
@@ -281,7 +307,7 @@ export default function CartPage() {
                               aria-label="수량 증가"
                               disabled={quantity >= MAX_QUANTITY}
                               onClick={() =>
-                                changeQuantity(product.id, quantity + 1)
+                                changeQuantity(productId, quantity + 1)
                               }
                             >
                               <Icon
@@ -296,7 +322,7 @@ export default function CartPage() {
                               aria-label="수량 감소"
                               disabled={quantity <= 1}
                               onClick={() =>
-                                changeQuantity(product.id, quantity - 1)
+                                changeQuantity(productId, quantity - 1)
                               }
                             >
                               <Icon
@@ -313,13 +339,24 @@ export default function CartPage() {
                         <strong className="text-center text-2xl leading-8 font-bold text-foreground-strong">
                           {formatPrice(lineTotal)}
                         </strong>
+                        <button
+                          type="button"
+                          className="flex items-center justify-center rounded-full border-0 bg-accent px-8 py-3 text-lg leading-[26px] font-semibold text-surface"
+                          onClick={() =>
+                            openRequestModal([
+                              { productId, quantity, product },
+                            ])
+                          }
+                        >
+                          즉시 요청
+                        </button>
                       </div>
 
                       <div className="flex min-w-0 flex-col items-center justify-center gap-2 border-b border-snack-gray-300 px-2.5 py-6">
                         <strong className="text-center text-2xl leading-8 font-bold text-foreground-strong">
                           {formatPrice(SHIPPING_FEE)}
                         </strong>
-                        <span className="text-xl leading-8 text-snack-black-100">
+                        <span className="text-center text-xl leading-8 text-snack-black-100">
                           택배 배송
                         </span>
                       </div>
@@ -331,14 +368,14 @@ export default function CartPage() {
               <div className="mt-4 flex gap-4">
                 <button
                   type="button"
-                  className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-[20px] border border-border bg-transparent px-4 py-2 text-base leading-[26px] text-foreground-strong hover:border-snack-gray-400 hover:text-snack-black-100 disabled:cursor-not-allowed disabled:opacity-45"
+                  className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-snack-gray-200 bg-surface-muted px-[18px] py-3 text-lg leading-[26px] text-snack-gray-500 hover:border-snack-gray-400 hover:text-snack-black-100 disabled:cursor-not-allowed disabled:opacity-45"
                   onClick={handleClearAll}
                 >
                   전체 상품 삭제
                 </button>
                 <button
                   type="button"
-                  className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-[20px] border border-border bg-transparent px-4 py-2 text-base leading-[26px] text-foreground-strong hover:border-snack-gray-400 hover:text-snack-black-100 disabled:cursor-not-allowed disabled:opacity-45"
+                  className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-snack-gray-200 bg-surface-muted px-[18px] py-3 text-lg leading-[26px] text-snack-gray-500 hover:border-snack-gray-400 hover:text-snack-black-100 disabled:cursor-not-allowed disabled:opacity-45"
                   disabled={!someSelected}
                   onClick={handleRemoveSelected}
                 >
@@ -390,6 +427,14 @@ export default function CartPage() {
               </div>
 
               <div className="flex flex-col gap-4">
+                <button
+                  type="button"
+                  disabled={!someSelected}
+                  onClick={() => openRequestModal(selectedProducts)}
+                  className="flex h-16 w-full cursor-pointer items-center justify-center rounded-2xl border-0 bg-accent p-4 text-xl leading-8 font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  구매 요청
+                </button>
                 <Link
                   href="/products"
                   className="flex h-16 w-full cursor-pointer items-center justify-center rounded-2xl border-0 bg-background p-4 text-xl leading-8 font-semibold text-accent"
@@ -401,6 +446,19 @@ export default function CartPage() {
           </div>
         )}
       </div>
+
+      <PurchaseRequestModal
+        open={requestOpen}
+        items={requestItems}
+        productTotal={requestProductTotal}
+        shippingFee={requestShippingFee}
+        orderTotal={requestOrderTotal}
+        onClose={() => {
+          setRequestOpen(false);
+          setRequestItems([]);
+        }}
+        onSubmit={handlePurchaseSubmit}
+      />
     </main>
   );
 }

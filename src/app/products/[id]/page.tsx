@@ -5,6 +5,11 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Icon } from "@/components/ui";
+import {
+  DeleteProductModal,
+  EditProductModal,
+  ProductOwnerMenu,
+} from "@/features/products";
 import { useProduct } from "@/hooks/useProducts";
 import { addToCart } from "@/lib/cartStorage";
 import { getProductPhotoSrc } from "@/lib/productMedia";
@@ -51,11 +56,14 @@ function DetailSkeleton() {
 export default function ProductDetailPage() {
   const params = useParams();
   const rawId = params?.id;
-  const id = Number(Array.isArray(rawId) ? rawId[0] : rawId);
+  const idParam = Array.isArray(rawId) ? rawId[0] : rawId;
+  const id = idParam ?? "";
 
   const { data: product, isLoading, isError } = useProduct(id);
   const [quantity, setQuantity] = useState(1);
   const [imageFailed, setImageFailed] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
@@ -65,6 +73,8 @@ export default function ProductDetailPage() {
     setQuantity(1);
     setImageFailed(false);
     setFeedback(null);
+    setEditOpen(false);
+    setDeleteOpen(false);
   }, [id]);
 
   useEffect(() => {
@@ -98,7 +108,7 @@ export default function ProductDetailPage() {
     });
   };
 
-  if (!Number.isFinite(id) || id <= 0) {
+  if (!id) {
     return (
       <div className={styles.page}>
         <div className={styles.inner}>
@@ -158,7 +168,7 @@ export default function ProductDetailPage() {
                 className={styles.breadcrumbSep}
               />
             </li>
-            {product.category ? (
+            {product.category?.name ? (
               <li className={styles.breadcrumbItem}>
                 <Link
                   href={`/products?categoryId=${product.categoryId}`}
@@ -173,8 +183,24 @@ export default function ProductDetailPage() {
                 />
               </li>
             ) : null}
+            {product.subCategory?.name &&
+            product.subCategory.name !== product.category?.name ? (
+              <li className={styles.breadcrumbItem}>
+                <Link
+                  href={`/products?categoryId=${product.categoryId}&subCategoryId=${product.subCategoryId}`}
+                  className={styles.breadcrumbLink}
+                >
+                  {product.subCategory.name}
+                </Link>
+                <Icon
+                  name="chevron-right"
+                  size="sm"
+                  className={styles.breadcrumbSep}
+                />
+              </li>
+            ) : null}
             <li className={styles.breadcrumbItem} aria-current="page">
-              {categoryLabel ?? product.name}
+              {product.name}
             </li>
           </ol>
         </nav>
@@ -198,11 +224,19 @@ export default function ProductDetailPage() {
 
           <div className={styles.info}>
             <div className={styles.headerBlock}>
-              <div className={styles.titleBlock}>
-                {categoryLabel ? (
-                  <p className={styles.category}>{categoryLabel}</p>
-                ) : null}
-                <h1 className={styles.name}>{product.name}</h1>
+              <div className={styles.titleRow}>
+                <div className={styles.titleBlock}>
+                  {categoryLabel ? (
+                    <p className={styles.category}>{categoryLabel}</p>
+                  ) : null}
+                  <h1 className={styles.name}>{product.name}</h1>
+                </div>
+                <ProductOwnerMenu
+                  productName={product.name}
+                  size="md"
+                  onEdit={() => setEditOpen(true)}
+                  onDelete={() => setDeleteOpen(true)}
+                />
               </div>
               {typeof product.purchaseCount === "number" ? (
                 <span className={styles.purchaseBadge}>
@@ -294,6 +328,17 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+
+      <EditProductModal
+        open={editOpen}
+        product={product}
+        onClose={() => setEditOpen(false)}
+      />
+      <DeleteProductModal
+        open={deleteOpen}
+        product={{ id: product.id, name: product.name }}
+        onClose={() => setDeleteOpen(false)}
+      />
     </div>
   );
 }

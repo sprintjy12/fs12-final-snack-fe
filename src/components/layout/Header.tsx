@@ -5,6 +5,13 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { Icon } from "@/components/ui";
+import {
+  CATEGORY_MENU_ORDERED,
+  findCategoryMenuItem,
+} from "@/constants/categoryConstants";
+import { useCategories } from "@/hooks/useProducts";
+import { parseRouteId } from "@/lib/parseOptionalId";
+import { isProductApiMock } from "@/services/productApi";
 
 export type HeaderNavItem = {
   href: string;
@@ -17,7 +24,15 @@ export type HeaderProps = {
   onLogout?: () => void;
 };
 
-const DEFAULT_NAV_ITEMS = [
+/** Figma 일반 유저 상단바 (기본) — Gnb main-badge `1:9245` */
+export const USER_NAV_ITEMS = [
+  { href: "/products", label: "상품 리스트" },
+  { href: "/purchase/requests?view=history", label: "구매 요청 내역" },
+  { href: "/products/mine", label: "상품 등록 내역" },
+] as const satisfies readonly HeaderNavItem[];
+
+/** Figma 관리자 상단바 — 역할 연동 시 `navItems={ADMIN_NAV_ITEMS}`로 전달 */
+export const ADMIN_NAV_ITEMS = [
   { href: "/products", label: "상품 리스트" },
   { href: "/purchase/requests?view=history", label: "구매 요청 내역" },
   { href: "/purchase/requests", label: "구매 요청 관리" },
@@ -26,11 +41,53 @@ const DEFAULT_NAV_ITEMS = [
   { href: "/admin", label: "관리" },
 ] as const satisfies readonly HeaderNavItem[];
 
+function buildProductsHref(
+  categoryId?: number | string,
+  subCategoryId?: number | string,
+) {
+  const params = new URLSearchParams();
+  if (categoryId !== undefined) {
+    params.set("categoryId", String(categoryId));
+  }
+  if (subCategoryId !== undefined) {
+    params.set("subCategoryId", String(subCategoryId));
+  }
+  const query = params.toString();
+  return query ? `/products?${query}` : "/products";
+}
+
+function isProductListPath(pathname: string) {
+  return pathname === "/products" || pathname === "/products/";
+}
+
+/** 리스트·상세 — Figma: gnb + Tab/menu (mock 숫자 id / BE uuid 모두) */
+function isProductArea(pathname: string) {
+  if (isProductListPath(pathname)) return true;
+  if (
+    pathname.startsWith("/products/mine") ||
+    pathname.startsWith("/products/new")
+  ) {
+    return false;
+  }
+  return /^\/products\/[^/]+/.test(pathname);
+}
+
+function categoryRouteId(
+  category: { id: number | string; apiId: string },
+  useApiIds: boolean,
+) {
+  return useApiIds ? category.apiId : category.id;
+}
+
 function isNavItemActive(
   href: string,
   pathname: string,
   view: string | null,
 ) {
+  if (href === "/products") {
+    return isProductArea(pathname);
+  }
+
   if (href === "/purchase/history") {
     return (
       pathname === "/purchase/history" ||
@@ -47,7 +104,11 @@ function isNavItemActive(
       return true;
     }
 
-    return pathname === "/purchase/requests" && view !== "history";
+    if (pathname === "/purchase/requests") {
+      return true;
+    }
+
+    return false;
   }
 
   if (href === "/admin") {
@@ -85,8 +146,8 @@ function getActiveNavHref(
 }
 
 export function Header({
-  cartCount = 2,
-  navItems = DEFAULT_NAV_ITEMS,
+  cartCount = 0,
+  navItems = USER_NAV_ITEMS,
   onLogout,
 }: HeaderProps) {
   const pathname = usePathname();
@@ -95,8 +156,18 @@ export function Header({
   const showCartBadge = cartCount > 0;
   const activeHref = getActiveNavHref(navItems, pathname, view);
 
+  const categoryId = parseRouteId(searchParams.get("categoryId"));
+  const subCategoryId = parseRouteId(searchParams.get("subCategoryId"));
+  const showCategoryBar = isProductArea(pathname);
+  const useApiIds = !isProductApiMock();
+  const { data: categoryMenu = CATEGORY_MENU_ORDERED } = useCategories();
+
+  const activeCategory = findCategoryMenuItem(categoryId);
+  const subCategories = activeCategory?.subCategories ?? [];
+
   return (
-    <header className="border-b border-border bg-surface-muted">
+    <header className="sticky top-0 z-[100] border-b border-border bg-surface-muted">
+      {/* Figma Gnb main-badge lg `1:9245` */}
       <div className="mx-auto flex h-[54px] max-w-[1680px] items-center justify-between px-6 md:h-16 xl:h-[88px] xl:px-0">
         <div className="flex items-center gap-6 xl:gap-16">
           <button
@@ -156,7 +227,7 @@ export function Header({
                 ? `장바구니, 상품 ${cartCount}개`
                 : "장바구니"
             }
-            className="relative flex items-center text-snack-gray-400 xl:gap-2 xl:px-4"
+            className="relative flex items-center text-snack-gray-300 xl:gap-2 xl:px-4"
           >
             <Icon
               name="cart"
@@ -164,11 +235,16 @@ export function Header({
               variant="outlined"
               className="xl:hidden"
             />
-            <span className="hidden text-xl leading-8 font-bold text-snack-gray-300 xl:inline">
+            <span
+              className={[
+                "hidden text-xl leading-8 font-bold xl:inline",
+                showCartBadge ? "text-accent" : "text-snack-gray-300",
+              ].join(" ")}
+            >
               Cart
             </span>
             {showCartBadge ? (
-              <span className="absolute -top-1.5 -right-1.5 flex min-w-3.5 items-center justify-center rounded-full bg-accent px-1 text-[10px] leading-3.5 font-semibold text-surface xl:static xl:min-w-0 xl:px-3.5 xl:text-xl xl:leading-8 xl:font-bold">
+              <span className="absolute -top-1.5 -right-1.5 flex min-w-3.5 items-center justify-center rounded-full bg-accent px-1 text-[10px] leading-3.5 font-semibold text-surface xl:static xl:min-w-0 xl:rounded-[32px] xl:px-3.5 xl:text-xl xl:leading-8 xl:font-bold">
                 {cartCount}
               </span>
             ) : null}
@@ -190,6 +266,72 @@ export function Header({
           </button>
         </div>
       </div>
+
+      {/* Figma Tab/menu_01 + Tab/menu_02 (`1:11362`, `1:11361`) */}
+      {showCategoryBar ? (
+        <div className="border-t border-border bg-surface-muted">
+          <div
+            className="mx-auto flex h-[52px] max-w-[1680px] items-center gap-3 overflow-x-auto px-6 xl:h-16 xl:px-0"
+            aria-label="상품 카테고리"
+          >
+            {categoryMenu.map((category) => {
+              const routeId = categoryRouteId(category, useApiIds);
+              const isActive =
+                categoryId !== undefined &&
+                (category.id === categoryId || category.apiId === categoryId);
+
+              return (
+                <Link
+                  key={String(category.apiId)}
+                  href={buildProductsHref(routeId)}
+                  className={[
+                    "flex h-full shrink-0 items-center whitespace-nowrap px-4 py-3.5 text-lg leading-[26px]",
+                    isActive
+                      ? "border-b-2 border-accent px-2.5 font-bold text-accent"
+                      : "font-medium text-snack-gray-400",
+                  ].join(" ")}
+                >
+                  {category.name}
+                </Link>
+              );
+            })}
+          </div>
+
+          {subCategories.length > 0 ? (
+            <div
+              className="mx-auto flex h-[52px] max-w-[1680px] items-center gap-3 overflow-x-auto border-t border-border px-6 xl:h-16 xl:px-0"
+              aria-label="상품 소분류"
+            >
+              {subCategories.map((sub) => {
+                const parentRouteId =
+                  categoryId ??
+                  (activeCategory
+                    ? categoryRouteId(activeCategory, useApiIds)
+                    : undefined);
+                const subRouteId = useApiIds ? sub.apiId : sub.id;
+                const isActive =
+                  subCategoryId !== undefined &&
+                  (sub.id === subCategoryId || sub.apiId === subCategoryId);
+
+                return (
+                  <Link
+                    key={`${sub.categoryId}-${sub.id}`}
+                    href={buildProductsHref(parentRouteId, subRouteId)}
+                    className={[
+                      "flex h-full shrink-0 items-center whitespace-nowrap px-4 py-3.5 text-base leading-[26px]",
+                      isActive
+                        ? "px-2.5 font-semibold text-accent"
+                        : "font-medium text-snack-gray-400",
+                    ].join(" ")}
+                  >
+                    {sub.name}
+                  </Link>
+                );
+              })}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </header>
   );
 }

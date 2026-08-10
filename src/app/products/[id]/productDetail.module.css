@@ -106,8 +106,18 @@
 
 .titleBlock {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
+}
+
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
 }
 
 .category {

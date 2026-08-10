@@ -1,0 +1,362 @@
+.page {
+  min-height: 100vh;
+  background: var(--color-surface-muted);
+  color: var(--color-foreground);
+}
+
+.inner {
+  width: min(920px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 48px 0 80px;
+}
+
+.hero {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.kicker {
+  margin: 0;
+  color: var(--color-accent);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: var(--color-foreground-strong);
+  font-size: clamp(1.75rem, 3vw, 2.35rem);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  margin: 0;
+  max-width: 56ch;
+  color: var(--color-foreground-muted);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.inlineLink {
+  color: var(--color-accent);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.areaTabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.areaTab {
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+  color: var(--color-foreground-strong);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.areaTab:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+}
+
+.areaTabActive {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-surface);
+}
+
+.tab {
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-surface) 80%, transparent);
+  color: var(--color-foreground);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border));
+}
+
+.tabActive {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-surface);
+}
+
+.panel {
+  display: grid;
+  gap: 16px;
+  padding: 28px 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-surface);
+}
+
+.panelTitle {
+  margin: 0;
+  color: var(--color-foreground-strong);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.body {
+  margin: 0;
+  color: var(--color-foreground-muted);
+  font-size: 0.975rem;
+  line-height: 1.65;
+}
+
+.body code {
+  padding: 0.1em 0.35em;
+  border-radius: 6px;
+  background: var(--color-surface-muted);
+  font-size: 0.9em;
+}
+
+.tokenList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.tokenList li {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface-muted);
+}
+
+.tokenList code {
+  color: var(--color-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.tokenList span {
+  color: var(--color-foreground-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.code {
+  margin: 0;
+  padding: 16px 18px;
+  overflow-x: auto;
+  border-radius: 14px;
+  background: #1f1f1f;
+  color: #f5f5f5;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  white-space: pre;
+}
+
+.fileLabel {
+  margin: 0 0 8px;
+  color: var(--color-accent);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+}
+
+.lineList {
+  display: grid;
+  gap: 4px;
+}
+
+.lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.lineItem {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-muted);
+}
+
+.lineMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: baseline;
+}
+
+.lineNo {
+  flex-shrink: 0;
+  min-width: 3.5rem;
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.lineCode {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #1f1f1f;
+  color: #f0f0f0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.lineNote {
+  margin: 0;
+  padding-left: calc(3.5rem + 12px);
+  color: var(--color-foreground-strong);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.footerLink {
+  color: var(--color-accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.footerLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.compare {
+  display: grid;
+  gap: 12px;
+}
+
+.compareRow {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: stretch;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+}
+
+.compareCol {
+  display: grid;
+  gap: 4px;
+}
+
+.compareLabel {
+  margin: 0;
+  color: var(--color-foreground-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.compareValue {
+  margin: 0;
+  color: var(--color-foreground-strong);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.875rem;
+  font-weight: 650;
+  word-break: break-word;
+}
+
+.compareNote {
+  margin: 0;
+  color: var(--color-foreground);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.arrow {
+  align-self: center;
+  color: var(--color-foreground-muted);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.badge {
+  display: inline-flex;
+  width: fit-content;
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.badgeOk {
+  background: color-mix(in srgb, var(--color-snack-illustration-600) 18%, transparent);
+  color: var(--color-snack-illustration-600);
+}
+
+.badgeSkip {
+  background: color-mix(in srgb, var(--color-snack-gray-400) 20%, transparent);
+  color: var(--color-snack-gray-500);
+}
+
+.badgeOptional {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  color: var(--color-accent);
+}
+
+@media (max-width: 640px) {
+  .areaTabs {
+    grid-template-columns: 1fr;
+  }
+
+  .lineNote {
+    padding-left: 0;
+  }
+
+  .compareRow {
+    grid-template-columns: 1fr;
+  }
+
+  .arrow {
+    justify-self: start;
+    transform: rotate(90deg);
+  }
+}

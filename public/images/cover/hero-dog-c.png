@@ -1,0 +1,32 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="759" height="409" viewBox="0 0 759 409" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 3617">
+<path id="Rectangle 22630" d="M40.9609 4H718.233C736.39 4 749.745 21.0138 745.433 38.6504L661.08 383.65C658.016 396.183 646.784 405 633.882 405H127C114.146 405 102.943 396.248 99.832 383.775L13.793 38.7754C9.38672 21.1072 22.7516 4 40.9609 4Z" fill="#FDF0DF" stroke="#F97B22" stroke-width="8"/>
+<g id="Mask group">
+<mask id="mask0_0_197" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="8" y="0" width="743" height="409">
+<path id="Rectangle 22629" d="M40.9609 4H718.233C736.39 4 749.745 21.0138 745.433 38.6504L661.08 383.65C658.016 396.183 646.784 405 633.882 405H127C114.146 405 102.943 396.248 99.832 383.775L13.793 38.7754C9.38672 21.1072 22.7516 4 40.9609 4Z" fill="#FDF0DF" stroke="#64D396" stroke-width="8"/>
+</mask>
+<g mask="url(#mask0_0_197)">
+<g id="Group 3610">
+<path id="Vector 2530" d="M-39 -27H761" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2531" d="M-39 41H761" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2532" d="M-39 109H761" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2533" d="M-39 177H761" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2534" d="M-39 245H761" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2535" d="M-39 313H761" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2536" d="M-39 381H761" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2537" d="M34 -176L34 624" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2538" d="M103 -176L103 624" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2539" d="M172 -176L172 624" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2540" d="M241 -176L241 624" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2541" d="M310 -176L310 624" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2542" d="M379 -176L379 624" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2543" d="M448 -176L448 624" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2544" d="M517 -176L517 624" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2545" d="M586 -176L586 624" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2546" d="M655 -176L655 624" stroke="#F97B22" stroke-width="8"/>
+<path id="Vector 2547" d="M724 -176L724 624" stroke="#F97B22" stroke-width="8"/>
+</g>
+</g>
+</g>
+</g>
+</svg>

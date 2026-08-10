@@ -1,4 +1,5 @@
 import type { Category, ProductListParams, SubCategory } from "@/types/productTypes";
+import { getRuntimeCategoryMenu } from "@/lib/categoryMenuRegistry";
 import { isUuid } from "@/lib/parseOptionalId";
 
 export const SORT_OPTIONS: {
@@ -156,11 +157,22 @@ function sameId(a: number | string, b: number | string) {
   return String(a) === String(b);
 }
 
+/** API 트리가 있으면 우선, 없으면 mock 정적 메뉴 */
+export function getActiveCategoryMenu(): CategoryMenuItem[] {
+  return getRuntimeCategoryMenu() ?? CATEGORY_MENU;
+}
+
+export function getActiveCategoryMenuOrdered(): CategoryMenuItem[] {
+  const runtime = getRuntimeCategoryMenu();
+  if (runtime) return runtime;
+  return CATEGORY_MENU_ORDERED;
+}
+
 export function findCategoryMenuItem(
   categoryId: number | string | undefined,
 ): CategoryMenuItem | undefined {
   if (categoryId === undefined) return undefined;
-  return CATEGORY_MENU.find(
+  return getActiveCategoryMenu().find(
     (item) => sameId(item.id, categoryId) || item.apiId === categoryId,
   );
 }
@@ -171,12 +183,24 @@ export function findSubCategoryMenuItem(
 ): CategoryMenuSubItem | undefined {
   if (subCategoryId === undefined) return undefined;
   const parent = findCategoryMenuItem(categoryId);
+  // 잘못된/미존재 부모 id는 전체 메뉴 폴백 금지
+  if (categoryId !== undefined && !parent) {
+    return undefined;
+  }
+  if (
+    categoryId === undefined &&
+    !(typeof subCategoryId === "string" && isUuid(subCategoryId))
+  ) {
+    return undefined;
+  }
+  const menu = getActiveCategoryMenu();
   const pools = parent
     ? parent.subCategories
-    : CATEGORY_MENU.flatMap((c) => c.subCategories);
-  return pools.find(
+    : menu.flatMap((c) => c.subCategories);
+  const matches = pools.filter(
     (sub) => sameId(sub.id, subCategoryId) || sub.apiId === subCategoryId,
   );
+  return matches.length === 1 ? matches[0] : undefined;
 }
 
 /**
@@ -205,6 +229,18 @@ export function resolveApiParentCategoryId(
   if (categoryId === undefined) return undefined;
   if (typeof categoryId === "string" && isUuid(categoryId)) return categoryId;
   return findCategoryMenuItem(categoryId)?.apiId;
+}
+
+/**
+ * 대분류에 속한 leaf uuid 목록.
+ * BE는 leaf categoryId만 필터하므로 대분류 조회 시 이 목록으로 조회합니다.
+ */
+export function resolveApiLeafCategoryIdsForParent(
+  categoryId: number | string | undefined,
+): string[] {
+  const parent = findCategoryMenuItem(categoryId);
+  if (!parent) return [];
+  return parent.subCategories.map((sub) => sub.apiId);
 }
 
 /** API 모드에서 leaf 매핑이 있는 소분류만 선택 가능 */

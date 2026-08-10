@@ -1,0 +1,415 @@
+﻿"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+
+import { CommonImage, Icon } from "@/components/ui";
+import { useCart } from "@/hooks/queries/useCart";
+import {
+  useDeleteCart,
+  useDeleteCartItem,
+  useDeleteSelectedCartItems,
+  useUpdateCartItem,
+} from "@/hooks/mutations/useCart";
+import type { CartItemWithProduct } from "@/types/cartTypes";
+
+const SHIPPING_FEE = 3000;
+const MAX_QUANTITY = 999;
+
+type CartItemId = string;
+
+function formatPrice(price: number) {
+  return `${price.toLocaleString("ko-KR")}??;
+}
+
+function cx(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(" ");
+}
+
+export default function CartPage() {
+  const { data: cart, isLoading, isError, refetch } = useCart();
+  const updateCartItem = useUpdateCartItem();
+  const deleteCartItemMutation = useDeleteCartItem();
+  const deleteSelectedCartItemsMutation = useDeleteSelectedCartItems();
+  const deleteCartMutation = useDeleteCart();
+
+  const cartItems = cart?.items ?? [];
+  
+
+  const [selectedIds, setSelectedIds] = useState<CartItemId[] | undefined>();
+  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+
+  // ?곗씠?곌? 濡쒕뱶?섎㈃ ?꾩껜 ?좏깮 ?곹깭濡?珥덇린??  const effectiveSelectedIds = useMemo(() => {
+    return selectedIds ?? cartItems.map((cartItem) => cartItem.id);
+  }, [selectedIds, cartItems]);
+
+  if (isLoading) {
+    return (
+      <main className="min-h-[calc(100vh-88px)] w-full bg-surface-muted">
+        <div className="mx-auto min-h-0 w-full max-w-[1920px] px-4 pb-12 md:min-h-[1182px] md:px-10 md:pb-20 xl:px-[120px]">
+          <div className="flex h-[104px] items-center px-0 py-6 md:h-[144px] md:px-2.5 md:py-10">
+            <h1 className="m-0 text-2xl leading-9 font-semibold text-foreground-strong md:text-[32px] md:leading-[42px]">
+              ?λ컮援щ땲
+            </h1>
+          </div>
+          <div
+            className="flex min-h-[420px] items-center justify-center"
+            role="status"
+          >
+            ?λ컮援щ땲瑜?遺덈윭?ㅻ뒗 以묅?          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (isError) {
+    return (
+      <main className="min-h-[calc(100vh-88px)] w-full bg-surface-muted">
+        <div className="mx-auto min-h-0 w-full max-w-[1920px] px-4 pb-12 md:min-h-[1182px] md:px-10 md:pb-20 xl:px-[120px]">
+          <div className="flex h-[104px] items-center px-0 py-6 md:h-[144px] md:px-2.5 md:py-10">
+            <h1 className="m-0 text-2xl leading-9 font-semibold text-foreground-strong md:text-[32px] md:leading-[42px]">
+              ?λ컮援щ땲
+            </h1>
+          </div>
+          <div className="flex min-h-[420px] flex-col items-center justify-center gap-3">
+            <p className="text-base text-snack-black-100">?λ컮援щ땲瑜?遺덈윭?ㅼ? 紐삵뻽?듬땲??</p>
+            <button
+              onClick={() => refetch()}
+              className="rounded-2xl border border-border px-4 py-2 text-base"
+            >
+              ?ㅼ떆 ?쒕룄
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const selectedProducts = cartItems.filter((item) =>
+    effectiveSelectedIds.includes(item.id),
+  );
+  const allSelected =
+    cartItems.length > 0 && selectedProducts.length === cartItems.length;
+  const someSelected = selectedProducts.length > 0;
+
+  const productTotal = selectedProducts.reduce(
+    (total, item) => total + item.product.price * item.quantity,
+    0,
+  );
+  const shippingFee = someSelected ? SHIPPING_FEE : 0;
+  const orderTotal = productTotal + shippingFee;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIds([]);
+      return;
+    }
+    setSelectedIds(cartItems.map((item) => item.id));
+  };
+
+  const toggleSelect = (cartItemId: CartItemId) => {
+    setSelectedIds((prev) => {
+      const current = prev ?? cartItems.map((cartItem) => cartItem.id);
+      return current.includes(cartItemId)
+        ? current.filter((id) => id !== cartItemId)
+        : [...current, cartItemId];
+    });
+  };
+
+  const changeQuantity = (cartItemId: CartItemId, currentQuantity: number, delta: 1 | -1) => {
+    const nextQuantity = currentQuantity + delta;
+    if (nextQuantity < 1 || nextQuantity > MAX_QUANTITY) return;
+    updateCartItem.mutate({ cartId: cartItemId, request: { delta } });
+  };
+
+  const handleRemoveOne = (cartItemId: CartItemId) => {
+    deleteCartItemMutation.mutate(cartItemId);
+    setSelectedIds((prev) =>
+      (prev ?? cartItems.map((item) => item.id)).filter((id) => id !== cartItemId),
+    );
+  };
+
+  const handleRemoveSelected = () => {
+    if (!someSelected) return;
+    deleteSelectedCartItemsMutation.mutate({ cartItemIds: effectiveSelectedIds });
+    setSelectedIds([]);
+  };
+
+  const handleClearAll = () => {
+    deleteCartMutation.mutate();
+    setSelectedIds([]);
+  };
+
+  const rowGrid =
+    "grid min-w-[1000px] grid-cols-[minmax(380px,1fr)_repeat(3,180px)] xl:min-w-0 xl:grid-cols-[minmax(454px,1fr)_repeat(3,220px)] max-[1400px]:grid-cols-[minmax(380px,1fr)_repeat(3,180px)]";
+
+  return (
+    <main className="min-h-[calc(100vh-88px)] w-full bg-surface-muted">
+      <div className="mx-auto min-h-0 w-full max-w-[1920px] px-4 pb-12 md:min-h-[1182px] md:px-10 md:pb-20 xl:px-[120px]">
+        <div className="flex h-[104px] items-center px-0 py-6 md:h-[144px] md:px-2.5 md:py-10">
+          <h1 className="m-0 text-2xl leading-9 font-semibold text-foreground-strong md:text-[32px] md:leading-[42px]">
+            ?λ컮援щ땲
+          </h1>
+        </div>
+
+        {cartItems.length === 0 ? (
+          <section className="flex min-h-[420px] flex-col items-center justify-center gap-3 border-y border-snack-gray-300">
+            <CommonImage
+              name="empty-purchase"
+              size="md"
+              className="h-auto w-full max-w-[280px]"
+            />
+            <h2 className="mt-1 mb-0 text-2xl leading-8 text-foreground-strong">
+              ?λ컮援щ땲媛 鍮꾩뼱 ?덉뒿?덈떎
+            </h2>
+            <p className="m-0 text-base leading-[26px] text-foreground-strong">
+              ?먰븯???곹뭹???λ컮援щ땲???댁븘 蹂댁꽭??
+            </p>
+            <Link
+              href="/products"
+              className="mt-3 rounded-2xl bg-accent px-6 py-3 text-lg font-semibold text-surface"
+            >
+              ?곹뭹 蹂대윭 媛湲?            </Link>
+          </section>
+        ) : (
+          <div className="grid grid-cols-1 items-start gap-10 max-[1100px]:grid-cols-1 min-[1101px]:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1254px)_386px] max-[1400px]:min-[1101px]:grid-cols-[minmax(0,1fr)_340px]">
+            <section className="min-w-0 max-[1100px]:overflow-x-auto" aria-label="?λ컮援щ땲 ?곹뭹">
+              <div
+                className={cx(
+                  rowGrid,
+                  "h-20 border-y border-snack-gray-300 text-xl leading-8 text-snack-black-100",
+                )}
+              >
+                <div className="flex items-center gap-8 pl-6">
+                  <button
+                    type="button"
+                    className={cx(
+                      "grid size-[26px] shrink-0 place-items-center rounded border border-snack-gray-300 bg-transparent p-0 text-[17px] leading-none text-surface",
+                      allSelected && "border-accent bg-accent",
+                    )}
+                    aria-label={allSelected ? "?꾩껜 ?좏깮 ?댁젣" : "?꾩껜 ?좏깮"}
+                    aria-pressed={allSelected}
+                    onClick={toggleSelectAll}
+                  >
+                    {allSelected ? <span aria-hidden="true">??/span> : null}
+                  </button>
+                  <span>?곹뭹?뺣낫</span>
+                </div>
+                <div className="grid place-items-center border-l border-snack-gray-300">
+                  ?섎웾
+                </div>
+                <div className="grid place-items-center border-l border-snack-gray-300">
+                  二쇰Ц 湲덉븸
+                </div>
+                <div className="grid place-items-center border-l border-snack-gray-300">
+                  諛곗넚 ?뺣낫
+                </div>
+              </div>
+
+              <div className="flex flex-col">
+                {cartItems.map((item: CartItemWithProduct) => {
+                  const { product, quantity } = item;
+                  const photoSrc = product.imageUrl;
+                  const showImage =
+                    Boolean(photoSrc) && !failedImageIds.has(item.id);
+                  const lineTotal = product.price * quantity;
+                  const isSelected = effectiveSelectedIds.includes(item.id);
+
+                  return (
+                    <article
+                      className={cx(rowGrid, "min-h-[208px] bg-surface-muted")}
+                      key={item.id}
+                    >
+                      <div className="relative flex min-w-0 items-start gap-8 border-b border-snack-gray-300 p-6">
+                        <button
+                          type="button"
+                          className={cx(
+                            "grid size-[26px] shrink-0 place-items-center rounded border border-snack-gray-300 bg-transparent p-0 text-[17px] leading-none text-surface",
+                            isSelected && "border-accent bg-accent",
+                          )}
+                          aria-label={`${product.name} ?좏깮`}
+                          aria-pressed={isSelected}
+                          onClick={() => toggleSelect(item.id)}
+                        >
+                          {isSelected ? (
+                            <span aria-hidden="true">??/span>
+                          ) : null}
+                        </button>
+                        <Link
+                          href={`/products/${product.id}`}
+                          className="flex min-w-0 gap-6"
+                        >
+                          <span className="relative grid size-40 shrink-0 place-items-center overflow-hidden rounded-2xl border border-border bg-surface shadow-[4px_4px_10px_rgb(250_247_243_/_25%)] max-[1400px]:size-[140px]">
+                            {showImage ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={photoSrc!}
+                                alt=""
+                                className="relative h-auto max-h-[98px] w-14 object-contain"
+                                onError={() => {
+                                  setFailedImageIds((prev) => {
+                                    if (prev.has(item.id)) return prev;
+                                    const next = new Set(prev);
+                                    next.add(item.id);
+                                    return next;
+                                  });
+                                }}
+                              />
+                            ) : null}
+                          </span>
+                          <span className="flex min-w-0 flex-col justify-center gap-2 self-stretch">
+                            <span className="overflow-hidden text-xl leading-8 text-ellipsis whitespace-nowrap text-foreground-strong">
+                              {product.name}
+                            </span>
+                            <strong className="text-2xl leading-8 font-bold text-foreground-strong">
+                              {formatPrice(product.price)}
+                            </strong>
+                          </span>
+                        </Link>
+                        <button
+                          type="button"
+                          className="absolute top-[18px] right-2.5 grid size-9 place-items-center border-0 bg-transparent p-0 text-snack-black-100 hover:text-foreground-strong"
+                          aria-label={`${product.name} ??젣`}
+                          onClick={() => handleRemoveOne(item.id)}
+                        >
+                          <Icon name="close" size="sm" />
+                        </button>
+                      </div>
+
+                      <div className="flex min-w-0 flex-col items-center justify-center gap-5 border-r border-b border-l border-snack-gray-300 px-2.5 py-6">
+                        <div
+                          className="flex h-[54px] w-[140px] items-center justify-end gap-1 rounded-2xl border border-snack-orange-300 bg-surface px-3.5 text-lg leading-[26px] text-accent xl:w-40"
+                          role="group"
+                          aria-label={`${product.name} ?섎웾`}
+                        >
+                          <span aria-live="polite">{quantity} 媛?/span>
+                          <div className="ml-1 flex flex-col gap-0.5">
+                            <button
+                              type="button"
+                              className="grid h-3.5 w-[18px] place-items-center border-0 bg-transparent p-0 text-snack-orange-300 disabled:cursor-not-allowed disabled:opacity-35"
+                              aria-label="?섎웾 利앷?"
+                              disabled={quantity >= MAX_QUANTITY}
+                              onClick={() =>
+                                changeQuantity(item.id, quantity, 1)
+                              }
+                            >
+                              <Icon
+                                name="chevron-up"
+                                size="xs"
+                                className="!h-3 !w-3"
+                              />
+                            </button>
+                            <button
+                              type="button"
+                              className="grid h-3.5 w-[18px] place-items-center border-0 bg-transparent p-0 text-snack-orange-300 disabled:cursor-not-allowed disabled:opacity-35"
+                              aria-label="?섎웾 媛먯냼"
+                              disabled={quantity <= 1}
+                              onClick={() =>
+                                changeQuantity(item.id, quantity, -1)
+                              }
+                            >
+                              <Icon
+                                name="chevron-down"
+                                size="xs"
+                                className="!h-3 !w-3"
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex min-w-0 flex-col items-center justify-center gap-5 border-r border-b border-snack-gray-300 px-2.5 py-6">
+                        <strong className="text-center text-2xl leading-8 font-bold text-foreground-strong">
+                          {formatPrice(lineTotal)}
+                        </strong>
+                      </div>
+
+                      <div className="flex min-w-0 flex-col items-center justify-center gap-2 border-b border-snack-gray-300 px-2.5 py-6">
+                        <strong className="text-center text-2xl leading-8 font-bold text-foreground-strong">
+                          {formatPrice(SHIPPING_FEE)}
+                        </strong>
+                        <span className="text-xl leading-8 text-snack-black-100">
+                          ?앸같 諛곗넚
+                        </span>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex gap-4">
+                <button
+                  type="button"
+                  className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-[20px] border border-border bg-transparent px-4 py-2 text-base leading-[26px] text-foreground-strong hover:border-snack-gray-400 hover:text-snack-black-100 disabled:cursor-not-allowed disabled:opacity-45"
+                  onClick={handleClearAll}
+                >
+                  ?꾩껜 ?곹뭹 ??젣
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-[20px] border border-border bg-transparent px-4 py-2 text-base leading-[26px] text-foreground-strong hover:border-snack-gray-400 hover:text-snack-black-100 disabled:cursor-not-allowed disabled:opacity-45"
+                  disabled={!someSelected}
+                  onClick={handleRemoveSelected}
+                >
+                  ?좏깮 ?곹뭹 ??젣
+                </button>
+              </div>
+            </section>
+
+            <aside className="sticky top-6 flex w-full max-w-none flex-col gap-8 max-[1100px]:static max-[1100px]:ml-auto max-[1100px]:max-w-[480px] md:max-[1100px]:max-w-[480px]">
+              <div className="flex flex-col gap-6 rounded-2xl border border-border-subtle bg-surface px-5 py-10 shadow-[4px_4px_10px_rgb(250_247_243_/_25%)] md:px-6 md:py-[60px]">
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-base leading-[26px] font-medium text-snack-black-100">
+                      珥?二쇰Ц ?곹뭹
+                    </span>
+                    <strong className="whitespace-nowrap text-2xl leading-8 font-bold text-accent">
+                      {selectedProducts.length}
+                      <span className="ml-2 font-semibold text-foreground-strong">
+                        媛?                      </span>
+                    </strong>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-base leading-[26px] font-medium text-snack-black-100">
+                      ?곹뭹湲덉븸
+                    </span>
+                    <strong className="whitespace-nowrap text-2xl leading-8 font-bold text-foreground-strong">
+                      {formatPrice(productTotal)}
+                    </strong>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-base leading-[26px] font-medium text-snack-black-100">
+                      諛곗넚鍮?                    </span>
+                    <strong className="whitespace-nowrap text-2xl leading-8 font-bold text-foreground-strong">
+                      {formatPrice(shippingFee)}
+                    </strong>
+                  </div>
+                </div>
+                <hr className="m-0 w-full border-0 border-t border-snack-gray-200" />
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-lg leading-[26px] font-semibold text-snack-black-500">
+                    珥?二쇰Ц湲덉븸
+                  </span>
+                  <strong className="whitespace-nowrap text-2xl leading-8 font-bold text-accent">
+                    {formatPrice(orderTotal)}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <Link
+                  href="/products"
+                  className="flex h-16 w-full cursor-pointer items-center justify-center rounded-2xl border-0 bg-background p-4 text-xl leading-8 font-semibold text-accent"
+                >
+                  怨꾩냽 ?쇳븨?섍린
+                </Link>
+              </div>
+            </aside>
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}

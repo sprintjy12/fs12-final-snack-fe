@@ -36,6 +36,33 @@ const BUBBLES = [
 export default function HomePage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-background">
+      {/* 상단 바: Snack 워드마크 + (xl+) 로그인/회원가입 텍스트 링크 */}
+      <header className="mx-auto flex w-full max-w-[1920px] items-center justify-between px-4 pt-4 sm:px-5 sm:pt-5 md:px-8 xl:px-[58px] xl:pt-8">
+        <CommonImage
+          name="logo-text"
+          size="sm"
+          label="Snack"
+          className="h-8 w-auto sm:h-9 xl:h-11"
+        />
+        <nav
+          aria-label="계정"
+          className="hidden items-center gap-8 xl:flex"
+        >
+          <Link
+            href="/login"
+            className="text-lg leading-8 font-bold text-snack-gray-400 hover:text-foreground"
+          >
+            로그인
+          </Link>
+          <Link
+            href="/signup/admin"
+            className="text-lg leading-8 font-bold text-accent hover:brightness-90"
+          >
+            기업 담당자 회원가입
+          </Link>
+        </nav>
+      </header>
+
       <div className="relative mx-auto box-border min-h-screen w-full max-w-[1920px] px-4 pt-5 pb-[120px] sm:px-5 sm:pt-6 md:px-8 xl:px-[58px] xl:pt-[52px] xl:pb-[116px]">
         {/* 배지: 모바일·태블릿은 흐름, xl+ absolute */}
         <div className="relative z-[2] mb-4 inline-flex max-w-full items-center gap-3 rounded-[20px] bg-[#555] px-4 py-2.5 text-sm leading-[1.3] font-extrabold text-surface sm:mb-6 sm:gap-4 sm:px-5 sm:py-3 sm:text-base xl:absolute xl:top-[52px] xl:left-[58px] xl:mb-0 xl:px-10 xl:py-5 xl:pr-10 xl:pl-8 xl:text-[clamp(1.25rem,2.5vw,2rem)]">
@@ -62,6 +89,22 @@ export default function HomePage() {
           <p className="m-0 box-border flex w-full items-center justify-center rounded-full border-[3px] border-snack-orange-300 bg-surface px-3.5 py-3 text-[clamp(0.8125rem,3.2vw,1.625rem)] leading-[1.35] font-bold break-keep text-accent sm:px-[18px] sm:py-3.5 sm:leading-[1.25] xl:border-4 xl:px-8 xl:py-5">
             흩어진 간식 구매처를 통합하고, 기수별 지출을 똑똑하게 관리하세요
           </p>
+
+          {/* 로그인/회원가입: 모바일·태블릿은 알약 버튼, xl+는 상단 헤더에 별도 노출 */}
+          <div className="flex w-full max-w-[420px] items-center gap-3 sm:gap-4 xl:hidden">
+            <Link
+              href="/login"
+              className="flex h-12 flex-1 items-center justify-center rounded-full border-2 border-accent bg-surface text-sm font-bold text-accent sm:h-[52px] sm:text-base"
+            >
+              로그인
+            </Link>
+            <Link
+              href="/signup/admin"
+              className="flex h-12 flex-1 items-center justify-center rounded-full bg-accent text-sm font-bold text-surface sm:h-[52px] sm:text-base"
+            >
+              관리자 회원가입
+            </Link>
+          </div>
         </div>
 
         <div className="relative mx-auto mt-5 flex w-full max-w-[1674px] flex-col items-center overflow-visible sm:mt-6 xl:mt-[clamp(24px,5vw,80px)]">

@@ -1,0 +1,12 @@
+{
+  "orderId": "538d36e5-8e96-4c8f-9859-b49306250256",
+  "name": "마운틴듀",
+  "categoryLabel": "음료>청량 · 탄산음료",
+  "totalCount": 2,
+  "totalAmount": 7200,
+  "requestMessage": "코카콜라 제로 인기가 많아요.\n많이 주문하면 좋을 것 같아요!",
+  "extraCount": 1,
+  "photo": "",
+  "source": "be-api",
+  "status": "PENDING"
+}

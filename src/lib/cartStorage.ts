@@ -5,12 +5,17 @@ const MIN_QUANTITY = 1;
 const MAX_QUANTITY = 999;
 
 export type CartItem = {
-  productId: number;
+  productId: number | string;
   quantity: number;
 };
 
 function isPositiveInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value > 0;
+}
+
+function isValidProductId(value: unknown): value is number | string {
+  if (isPositiveInteger(value)) return true;
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 /**
@@ -27,7 +32,7 @@ function isValidCartItem(value: unknown): value is CartItem {
   if (typeof value !== "object" || value === null) return false;
   const item = value as { productId?: unknown; quantity?: unknown };
   return (
-    isPositiveInteger(item.productId) &&
+    isValidProductId(item.productId) &&
     typeof item.quantity === "number" &&
     Number.isInteger(item.quantity) &&
     item.quantity >= MIN_QUANTITY &&
@@ -76,8 +81,11 @@ export function getCartItemCount(): number {
 }
 
 /** 같은 productId가 있으면 수량을 더함. @returns 저장 성공 여부 */
-export function addToCart(productId: number, quantity: number): boolean {
-  if (!isPositiveInteger(productId)) return false;
+export function addToCart(
+  productId: number | string,
+  quantity: number,
+): boolean {
+  if (!isValidProductId(productId)) return false;
   const nextQuantity = normalizeQuantity(quantity);
   if (nextQuantity === null) return false;
 
@@ -103,10 +111,10 @@ export function addToCart(productId: number, quantity: number): boolean {
 
 /** 장바구니 수량을 절대값으로 설정 (1–999). 실패 시 기존 목록 반환 */
 export function setCartQuantity(
-  productId: number,
+  productId: number | string,
   quantity: number,
 ): CartItem[] {
-  if (!isPositiveInteger(productId)) return getCartItems();
+  if (!isValidProductId(productId)) return getCartItems();
   const nextQuantity = normalizeQuantity(quantity);
   const items = getCartItems();
   if (nextQuantity === null) return items;
@@ -121,17 +129,19 @@ export function setCartQuantity(
 }
 
 /** 실패 시 기존 목록 반환 */
-export function removeFromCart(productId: number): CartItem[] {
+export function removeFromCart(productId: number | string): CartItem[] {
   const items = getCartItems();
-  if (!isPositiveInteger(productId)) return items;
+  if (!isValidProductId(productId)) return items;
   const next = items.filter((item) => item.productId !== productId);
   return saveCartItems(next) ? next : items;
 }
 
 /** 실패 시 기존 목록 반환 */
-export function removeFromCartMany(productIds: number[]): CartItem[] {
+export function removeFromCartMany(
+  productIds: Array<number | string>,
+): CartItem[] {
   const items = getCartItems();
-  const removeSet = new Set(productIds.filter(isPositiveInteger));
+  const removeSet = new Set(productIds.filter(isValidProductId));
   if (removeSet.size === 0) return items;
   const next = items.filter((item) => !removeSet.has(item.productId));
   return saveCartItems(next) ? next : items;

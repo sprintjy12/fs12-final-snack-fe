@@ -1,0 +1,30 @@
+﻿<!doctype html>
+<html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body>
+<pre id="o">loading</pre>
+<iframe id="f" src="http://127.0.0.1:3005/products/mine" style="width:390px;height:800px;border:1px solid red"></iframe>
+<script>
+const f = document.getElementById("f");
+f.onload = () => {
+  try {
+    const d = f.contentDocument;
+    const de = d.documentElement;
+    const b = d.body;
+    const main = d.querySelector("main");
+    const header = d.querySelector("header");
+    const info = {
+      iframeInnerWidth: f.contentWindow.innerWidth,
+      scrollWidth: de.scrollWidth,
+      clientWidth: de.clientWidth,
+      bodyScroll: b.scrollWidth,
+      mainScroll: main ? main.scrollWidth : null,
+      headerScroll: header ? header.scrollWidth : null,
+      overflow: de.scrollWidth > de.clientWidth
+    };
+    document.getElementById("o").textContent = JSON.stringify(info, null, 2);
+  } catch (e) {
+    document.getElementById("o").textContent = "cross-origin: " + e.message;
+  }
+};
+</script>
+</body></html>
