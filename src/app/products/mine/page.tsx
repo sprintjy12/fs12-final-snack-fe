@@ -389,7 +389,6 @@ export default function MyProductsPage() {
             currentPage={String(currentPage)}
             previousDisabled={currentPage <= 1}
             nextDisabled={currentPage >= totalPages}
-            collapseMiddlePages
             onPrevious={() => setPage((current) => Math.max(1, current - 1))}
             onNext={() =>
               setPage((current) => Math.min(totalPages, current + 1))
