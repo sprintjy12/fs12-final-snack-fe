@@ -36,6 +36,12 @@ export function TextField({
   if (readOnlyBox) {
     return (
       <div
+        id={props.id}
+        role={props.role}
+        aria-labelledby={props["aria-labelledby"]}
+        aria-label={props["aria-label"]}
+        aria-readonly={props["aria-readonly"]}
+        aria-describedby={props["aria-describedby"]}
         className={[
           BASE_CLASS,
           error ? "border border-danger" : "border border-border",

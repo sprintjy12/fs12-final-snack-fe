@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
@@ -7,6 +8,7 @@ import { z } from "zod";
 
 import { logout } from "@/api/authApi";
 import { Button, Icon, TextField, useToast } from "@/components/ui";
+import { queryKeys } from "@/constants/queryKeys";
 import {
   useChangeCompanyName,
   useChangePassword,
@@ -159,6 +161,10 @@ const applyProfileApiError = (
   return { fieldErrors: {}, message };
 };
 
+const fieldLabelClassName =
+  "text-base leading-[26px] text-foreground-strong xl:text-xl xl:leading-8";
+
+/** 실제 input과 연결되는 라벨 (htmlFor) */
 const FieldLabel = ({
   htmlFor,
   children,
@@ -166,12 +172,25 @@ const FieldLabel = ({
   htmlFor: string;
   children: string;
 }) => (
-  <label
-    htmlFor={htmlFor}
-    className="text-base leading-[26px] text-foreground-strong xl:text-xl xl:leading-8"
-  >
+  <label htmlFor={htmlFor} className={fieldLabelClassName}>
     {children}
   </label>
+);
+
+/**
+ * readOnlyBox(div)용 라벨 — form control이 아니므로 htmlFor 대신
+ * span id + aria-labelledby로 연결합니다.
+ */
+const ReadOnlyFieldLabel = ({
+  id,
+  children,
+}: {
+  id: string;
+  children: string;
+}) => (
+  <span id={id} className={fieldLabelClassName}>
+    {children}
+  </span>
 );
 
 const FieldError = ({ id, message }: { id: string; message?: string }) => {
@@ -260,6 +279,7 @@ const PasswordField = ({
  */
 const ProfilePage = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { showToast } = useToast();
   const {
     data: profile,
@@ -293,10 +313,13 @@ const ProfilePage = () => {
     isSuperAdmin &&
     form.companyName.trim() !== "" &&
     form.companyName.trim() !== (profile?.company.name ?? "");
+  // handleSubmit과 동일: SUPER_ADMIN은 회사명이 비어 있으면 제출 불가
+  const companyNameMissing = isSuperAdmin && form.companyName.trim() === "";
 
   const isCtaActive =
     Boolean(profile) &&
     !isSubmitting &&
+    !companyNameMissing &&
     (companyChanged || passwordAllFilled) &&
     (!passwordTouched || passwordAllFilled);
 
@@ -440,7 +463,10 @@ const ProfilePage = () => {
         showToast(message);
       }
     } finally {
-      setIsSubmitting(false);
+      // 비밀번호 변경 성공 시에는 logout/redirect가 끝날 때까지 submitting 유지
+      if (!passwordChanged) {
+        setIsSubmitting(false);
+      }
     }
 
     // 비밀번호 변경 성공 후에는 logout API 결과와 무관하게 세션 정리 + 로그인 이동
@@ -451,6 +477,7 @@ const ProfilePage = () => {
         // refresh 쿠키 정리는 best-effort
       }
       clearAccessToken();
+      void queryClient.removeQueries({ queryKey: queryKeys.users.me() });
       showToast(passwordSuccessMessage);
       if (companyErrorAfterPassword) {
         const { message } = applyProfileApiError(companyErrorAfterPassword);
@@ -477,7 +504,13 @@ const ProfilePage = () => {
         >
           <div className="flex w-full flex-col gap-6 xl:gap-8">
             <div className="flex w-full flex-col gap-4">
-              <FieldLabel htmlFor="companyName">기업명</FieldLabel>
+              {isSuperAdmin ? (
+                <FieldLabel htmlFor="companyName">기업명</FieldLabel>
+              ) : (
+                <ReadOnlyFieldLabel id="companyName-label">
+                  기업명
+                </ReadOnlyFieldLabel>
+              )}
               <div className="flex w-full flex-col gap-1">
                 {isSuperAdmin ? (
                   <TextField
@@ -495,7 +528,11 @@ const ProfilePage = () => {
                     }
                   />
                 ) : (
-                  <TextField id="companyName" readOnlyBox aria-readonly="true">
+                  <TextField
+                    readOnlyBox
+                    aria-labelledby="companyName-label"
+                    aria-readonly="true"
+                  >
                     {isLoading ? "불러오는 중..." : (profile?.company.name ?? "")}
                   </TextField>
                 )}
@@ -508,23 +545,35 @@ const ProfilePage = () => {
 
             {showRoleField ? (
               <div className="flex w-full flex-col gap-4">
-                <FieldLabel htmlFor="role">권한</FieldLabel>
-                <TextField id="role" readOnlyBox aria-readonly="true">
+                <ReadOnlyFieldLabel id="role-label">권한</ReadOnlyFieldLabel>
+                <TextField
+                  readOnlyBox
+                  aria-labelledby="role-label"
+                  aria-readonly="true"
+                >
                   {role ? ROLE_LABEL[role] : ""}
                 </TextField>
               </div>
             ) : null}
 
             <div className="flex w-full flex-col gap-4">
-              <FieldLabel htmlFor="name">이름</FieldLabel>
-              <TextField id="name" readOnlyBox aria-readonly="true">
+              <ReadOnlyFieldLabel id="name-label">이름</ReadOnlyFieldLabel>
+              <TextField
+                readOnlyBox
+                aria-labelledby="name-label"
+                aria-readonly="true"
+              >
                 {isLoading ? "불러오는 중..." : (profile?.name ?? "")}
               </TextField>
             </div>
 
             <div className="flex w-full flex-col gap-4">
-              <FieldLabel htmlFor="email">이메일</FieldLabel>
-              <TextField id="email" readOnlyBox aria-readonly="true">
+              <ReadOnlyFieldLabel id="email-label">이메일</ReadOnlyFieldLabel>
+              <TextField
+                readOnlyBox
+                aria-labelledby="email-label"
+                aria-readonly="true"
+              >
                 {isLoading ? "불러오는 중..." : (profile?.email ?? "")}
               </TextField>
             </div>

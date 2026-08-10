@@ -8,18 +8,12 @@ import type { MyProfile } from "@/types/userTypes";
 
 /**
  * 비밀번호 변경(Mutation).
- * 성공 시 세션이 종료되므로 me 캐시는 무효화합니다.
+ * me 캐시 제거는 호출부(logout/redirect)에서 처리합니다.
+ * 성공 직후 제거하면 ProfilePage UI가 redirect 전에 비게 됩니다.
  */
 export const useChangePassword = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: changePassword,
-    onSuccess: () => {
-      void queryClient.removeQueries({
-        queryKey: queryKeys.users.me(),
-      });
-    },
   });
 };
 
