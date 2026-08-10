@@ -137,7 +137,7 @@ export function ProductEditModal({
       price: result.data.price,
       url: result.data.url || undefined,
       // 새 이미지를 고르지 않았으면 기존 이미지를 유지합니다.
-      photo: imageFile ? (imagePreview ?? undefined) : product.photo,
+      photo: product.photo,
       categoryId: Number(result.data.categoryId),
       subCategoryId: Number(result.data.subCategoryId),
     };
