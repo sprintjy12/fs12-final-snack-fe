@@ -283,9 +283,12 @@ export async function getProducts(
     const leafIds = resolveApiLeafCategoryIdsForParent(params.categoryId);
     if (leafIds.length === 0) return [];
 
-    const batches = await Promise.all(
+    const results = await Promise.allSettled(
       leafIds.map((id) => fetchAllProductsForLeaf(id, params.sort)),
     );
+    const batches = results
+      .filter((r): r is PromiseFulfilledResult<Product[]> => r.status === "fulfilled")
+      .map((r) => r.value);
     const merged = sortProducts(dedupeProducts(batches.flat()), params.sort);
     if (params.pageSize !== undefined && params.pageSize > 0) {
       const page = params.page ?? 1;
