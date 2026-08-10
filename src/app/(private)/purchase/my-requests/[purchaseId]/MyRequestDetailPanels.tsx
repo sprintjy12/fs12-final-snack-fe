@@ -3,6 +3,33 @@
 import { useId, useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/ui";
+import type {
+  MyOrderRequestDetailData,
+  OrderDetailStatus,
+} from "@/types/orderTypes";
+
+const STATUS_LABEL: Record<OrderDetailStatus, string> = {
+  PENDING: "승인 대기",
+  REJECTED: "구매 반려",
+  APPROVED: "승인 완료",
+  CANCELLED: "요청 취소",
+};
+
+const formatDate = (iso: string | null | undefined) => {
+  if (!iso) {
+    return "-";
+  }
+
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}. ${month}. ${day}.`;
+};
 
 type AccordionSectionProps = {
   title: string;
@@ -78,11 +105,17 @@ function FieldBox({ children, className }: FieldBoxProps) {
   );
 }
 
+type MyRequestDetailPanelsProps = {
+  detail: MyOrderRequestDetailData;
+};
+
 /**
  * 내 구매 요청 상세 — 요청 정보 / 요청 결과(승인 정보).
  * 모바일·태블릿에서만 접힘/펼침.
  */
-export function MyRequestDetailPanels() {
+export function MyRequestDetailPanels({ detail }: MyRequestDetailPanelsProps) {
+  const isPending = detail.status === "PENDING";
+
   return (
     <section
       className="order-1 min-w-0 md:order-2"
@@ -91,23 +124,22 @@ export function MyRequestDetailPanels() {
       <div className="flex flex-col px-6 py-6 md:py-0 xl:px-0">
         <AccordionSection title="요청 정보">
           <p className="text-sm leading-[26px] text-snack-gray-400 xl:text-xl xl:leading-8">
-            2024. 07. 20.
+            {formatDate(detail.requestedAt)}
           </p>
           <div>
             <h3 className="text-sm leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
               요청인
             </h3>
             <FieldBox className="mt-4 flex h-[54px] items-center xl:h-16">
-              김스낵
+              {detail.requesterName || "-"}
             </FieldBox>
           </div>
           <div>
             <h3 className="text-sm leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
               요청 메시지
             </h3>
-            <FieldBox className="mt-4 min-h-[76px] py-3 xl:min-h-20 xl:py-3.5 xl:text-lg xl:leading-[26px]">
-              <span className="block">코카콜라 제로 인기가 많아요.</span>
-              <span className="block">많이 주문하면 좋을 것 같아요!</span>
+            <FieldBox className="mt-4 min-h-[76px] whitespace-pre-line py-3 xl:min-h-20 xl:py-3.5 xl:text-lg xl:leading-[26px]">
+              {detail.requestMessage || "-"}
             </FieldBox>
           </div>
         </AccordionSection>
@@ -116,30 +148,35 @@ export function MyRequestDetailPanels() {
       <div className="flex flex-col px-6 py-6 md:mt-0 md:py-6 xl:mt-4 xl:px-0 xl:py-0">
         <AccordionSection title="요청 결과" desktopTitle="승인 정보">
           <p className="text-sm leading-[26px] text-snack-gray-400 xl:text-xl xl:leading-8">
-            2024. 07. 24.
+            {formatDate(detail.approvedAt)}
           </p>
           <div>
             <h3 className="text-sm leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
               담당자
             </h3>
             <FieldBox className="mt-4 flex h-[54px] items-center xl:h-16">
-              김코드
+              {detail.processorName || "-"}
             </FieldBox>
           </div>
           <div>
             <h3 className="text-sm leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
               상태
             </h3>
-            <FieldBox className="mt-4 flex h-[54px] items-center font-medium text-snack-gray-300 xl:h-16">
-              구매 반려
+            <FieldBox
+              className={[
+                "mt-4 flex h-[54px] items-center font-medium xl:h-16",
+                isPending ? "text-snack-black-100" : "text-snack-gray-300",
+              ].join(" ")}
+            >
+              {STATUS_LABEL[detail.status]}
             </FieldBox>
           </div>
           <div>
             <h3 className="text-sm leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
               결과 메시지
             </h3>
-            <FieldBox className="mt-4 min-h-[52px] py-3 xl:min-h-20 xl:py-3.5 xl:text-lg xl:leading-[26px]">
-              다른 상품들도 더 추가하여 구매요청 부탁드립니다.
+            <FieldBox className="mt-4 min-h-[52px] whitespace-pre-line py-3 xl:min-h-20 xl:py-3.5 xl:text-lg xl:leading-[26px]">
+              {detail.responseMessage || "-"}
             </FieldBox>
           </div>
         </AccordionSection>

@@ -51,7 +51,9 @@ export const adminSignupFormSchema = z
         PASSWORD_SPECIAL_CHARACTER,
         "비밀번호에 특수문자를 1자 이상 포함해주세요.",
       ),
-    passwordConfirm: z.string().min(1, "비밀번호를 입력해주세요."),
+      passwordConfirm: z
+      .string()
+      .min(1, "비밀번호 확인을 입력해주세요."),
     companyName: z
       .string()
       .trim()

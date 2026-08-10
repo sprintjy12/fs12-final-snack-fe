@@ -19,7 +19,8 @@ type CartApiEnvelope<T> = {
  */
 
 export const getCart = async (): Promise<CartResponse> => {
-  const response = await apiClient.get<CartApiEnvelope<CartResponse>>("/api/cart");
+  const response =
+    await apiClient.get<CartApiEnvelope<CartResponse>>("/api/cart");
 
   return response.data.data;
 };
@@ -39,10 +40,9 @@ export const updateCartItem = async ({
   cartId,
   request,
 }: UpdateCartItemParams): Promise<CartItemRecord | null> => {
-  const response = await apiClient.patch<CartApiEnvelope<CartItemRecord | null>>(
-    `/api/cart/${cartId}`,
-    request,
-  );
+  const response = await apiClient.patch<
+    CartApiEnvelope<CartItemRecord | null>
+  >(`/api/cart/${cartId}`, request);
 
   return response.data.data;
 };
@@ -58,7 +58,9 @@ export const deleteSelectedCartItems = async (
   return response.data.data;
 };
 
-export const deleteCartItem = async (cartId: string): Promise<DeleteManyResult> => {
+export const deleteCartItem = async (
+  cartId: string,
+): Promise<DeleteManyResult> => {
   const response = await apiClient.delete<CartApiEnvelope<DeleteManyResult>>(
     `/api/cart/${cartId}`,
   );
@@ -67,10 +69,8 @@ export const deleteCartItem = async (cartId: string): Promise<DeleteManyResult> 
 };
 
 export const deleteCart = async (): Promise<DeleteManyResult> => {
-  const response = await apiClient.delete<CartApiEnvelope<DeleteManyResult>>(
-    "/api/cart",
-  );
+  const response =
+    await apiClient.delete<CartApiEnvelope<DeleteManyResult>>("/api/cart");
 
   return response.data.data;
 };
-
