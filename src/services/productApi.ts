@@ -343,6 +343,11 @@ export async function updateProduct(
     }
 
     const current = DUMMY_PRODUCTS[index];
+    const categoryMenuItem = findCategoryMenuItem(input.categoryId);
+    const subCategoryMenuItem = categoryMenuItem?.subCategories.find(
+    (sub) => String(sub.id) === String(input.subCategoryId),
+);
+
     const updated: Product = {
       ...current,
       name: input.name,
@@ -351,8 +356,17 @@ export async function updateProduct(
       photo: input.photo ?? current.photo,
       categoryId: input.categoryId,
       subCategoryId: input.subCategoryId,
-    };
-    DUMMY_PRODUCTS[index] = updated;
+      category: categoryMenuItem
+        ? { id: categoryMenuItem.id, name: categoryMenuItem.name }
+        : undefined,
+      subCategory: subCategoryMenuItem
+    ? {
+        id: subCategoryMenuItem.id,
+        name: subCategoryMenuItem.name,
+        categoryId: input.categoryId,
+      }
+    : undefined,
+};
     return updated;
   }
 
