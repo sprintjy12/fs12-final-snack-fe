@@ -177,8 +177,11 @@ export default function CartPage() {
         cartItemIds: requestItems.map((item) => item.id),
         requestMessage: message || undefined,
       });
-      const data = response.data;
-      savePurchaseRequestComplete({
+        const data = response.data;
+        if (!data.orderId) {
+          throw new Error("구매 요청 응답에 orderId가 없습니다.");
+        }
+        savePurchaseRequestComplete({
         name: data.firstProductName,
         extraCount: Math.max(0, data.itemCount - 1),
         totalCount: data.totalQuantity,
