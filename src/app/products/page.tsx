@@ -30,8 +30,15 @@ export default function ProductListPage() {
   const categoryId = parseRouteId(searchParams.get("categoryId"));
   const subCategoryId = parseRouteId(searchParams.get("subCategoryId"));
 
+  // API: BE limit 상한(30)까지 한 번에 받아 클라이언트에서 8개씩 더보기
   const listParams: ProductListParams = useMemo(
-    () => ({ sort, categoryId, subCategoryId }),
+    () => ({
+      sort,
+      categoryId,
+      subCategoryId,
+      page: 1,
+      pageSize: 30,
+    }),
     [sort, categoryId, subCategoryId],
   );
 
