@@ -192,16 +192,11 @@ export default function CartPage() {
       setRequestOpen(false);
       setRequestItems([]);
       router.push(`/purchase/requests/complete?orderId=${data.orderId}`);
-    } catch {
-      // API 실패 시에도 시안 플로우 유지 (로컬 요약으로 완료 화면)
-      savePurchaseRequestComplete(localSummary);
-      setRequestOpen(false);
-      setRequestItems([]);
-      showToast("구매 요청을 접수했어요. (미리보기)");
-      router.push("/purchase/requests/complete");
-    } finally {
-      setSubmittingRequest(false);
-    }
+} catch {
+  showToast("구매 요청에 실패했어요. 잠시 후 다시 시도해 주세요.");
+} finally {
+  setSubmittingRequest(false);
+}
   };
 
   if (isLoading) {
