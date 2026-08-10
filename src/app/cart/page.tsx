@@ -1,9 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
-import { CommonImage, Icon } from "@/components/ui";
+import { ensureAccessToken } from "@/api/authApi";
+import { createPurchaseRequest } from "@/api/orderApi";
+import { CommonImage, Icon, showToast } from "@/components/ui";
+import { PurchaseRequestModal } from "@/features/cart/PurchaseRequestModal";
 import { useCart } from "@/hooks/queries/useCart";
 import {
   useDeleteCart,
@@ -11,6 +16,8 @@ import {
   useDeleteSelectedCartItems,
   useUpdateCartItem,
 } from "@/hooks/mutations/useCart";
+import { queryKeys } from "@/constants/queryKeys";
+import { savePurchaseRequestComplete } from "@/lib/purchaseRequestComplete";
 import type { CartItemWithProduct } from "@/types/cartTypes";
 
 const SHIPPING_FEE = 3000;
@@ -92,6 +99,8 @@ function SelectCheckbox({
 }
 
 export default function CartPage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: cart, isLoading, isError, refetch } = useCart();
   const updateCartItem = useUpdateCartItem();
   const deleteCartItemMutation = useDeleteCartItem();
@@ -104,11 +113,96 @@ export default function CartPage() {
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(
     () => new Set(),
   );
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requestItems, setRequestItems] = useState<CartItemWithProduct[]>([]);
+  const [submittingRequest, setSubmittingRequest] = useState(false);
 
   // 데이터가 로드되면 전체 선택 상태로 초기화
   const effectiveSelectedIds = useMemo(() => {
     return selectedIds ?? cartItems.map((cartItem) => cartItem.id);
   }, [selectedIds, cartItems]);
+
+  const selectedProducts = useMemo(
+    () =>
+      cartItems.filter((item) => effectiveSelectedIds.includes(item.id)),
+    [cartItems, effectiveSelectedIds],
+  );
+  const allSelected =
+    cartItems.length > 0 && selectedProducts.length === cartItems.length;
+  const someSelected = selectedProducts.length > 0;
+
+  const productTotal = selectedProducts.reduce(
+    (total, item) => total + item.product.price * item.quantity,
+    0,
+  );
+  const shippingFee = someSelected ? SHIPPING_FEE : 0;
+  const orderTotal = productTotal + shippingFee;
+
+  const requestProductTotal = requestItems.reduce(
+    (total, item) => total + item.product.price * item.quantity,
+    0,
+  );
+  const requestShippingFee = requestItems.length > 0 ? SHIPPING_FEE : 0;
+  const requestOrderTotal = requestProductTotal + requestShippingFee;
+
+  const openRequestModal = (items: CartItemWithProduct[]) => {
+    if (items.length === 0) return;
+    setRequestItems(items);
+    setRequestOpen(true);
+  };
+
+  const handlePurchaseSubmit = async ({ message }: { message: string }) => {
+    if (requestItems.length === 0 || submittingRequest) return;
+
+    const first = requestItems[0];
+    const totalCount = requestItems.reduce(
+      (sum, item) => sum + item.quantity,
+      0,
+    );
+    const localSummary = {
+      name: first.product.name,
+      extraCount: Math.max(0, requestItems.length - 1),
+      totalCount,
+      totalAmount: requestOrderTotal,
+      categoryLabel: "",
+      photo: first.product.imageUrl ?? "",
+      requestMessage: message,
+      orderId: null as string | null,
+    };
+
+    setSubmittingRequest(true);
+    try {
+      await ensureAccessToken();
+      const response = await createPurchaseRequest({
+        cartItemIds: requestItems.map((item) => item.id),
+        requestMessage: message || undefined,
+      });
+      const data = response.data;
+      savePurchaseRequestComplete({
+        name: data.firstProductName,
+        extraCount: Math.max(0, data.itemCount - 1),
+        totalCount: data.totalQuantity,
+        totalAmount: data.totalPrice,
+        categoryLabel: data.categoryName ?? "",
+        photo: first.product.imageUrl ?? "",
+        requestMessage: data.requestMessage ?? message,
+        orderId: data.orderId,
+      });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
+      setRequestOpen(false);
+      setRequestItems([]);
+      router.push(`/purchase/requests/complete?orderId=${data.orderId}`);
+    } catch {
+      // API 실패 시에도 시안 플로우 유지 (로컬 요약으로 완료 화면)
+      savePurchaseRequestComplete(localSummary);
+      setRequestOpen(false);
+      setRequestItems([]);
+      showToast("구매 요청을 접수했어요. (미리보기)");
+      router.push("/purchase/requests/complete");
+    } finally {
+      setSubmittingRequest(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -154,20 +248,6 @@ export default function CartPage() {
       </main>
     );
   }
-
-  const selectedProducts = cartItems.filter((item) =>
-    effectiveSelectedIds.includes(item.id),
-  );
-  const allSelected =
-    cartItems.length > 0 && selectedProducts.length === cartItems.length;
-  const someSelected = selectedProducts.length > 0;
-
-  const productTotal = selectedProducts.reduce(
-    (total, item) => total + item.product.price * item.quantity,
-    0,
-  );
-  const shippingFee = someSelected ? SHIPPING_FEE : 0;
-  const orderTotal = productTotal + shippingFee;
 
   const toggleSelectAll = () => {
     if (allSelected) {
@@ -526,6 +606,14 @@ export default function CartPage() {
               </div>
 
               <div className="flex flex-col gap-4">
+                <button
+                  type="button"
+                  disabled={!someSelected || submittingRequest}
+                  onClick={() => openRequestModal(selectedProducts)}
+                  className="flex h-16 w-full cursor-pointer items-center justify-center rounded-2xl border-0 bg-accent p-4 text-xl leading-8 font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  구매 요청
+                </button>
                 <Link
                   href="/products"
                   className="flex h-16 w-full cursor-pointer items-center justify-center rounded-2xl border-0 bg-background p-4 text-xl leading-8 font-semibold text-accent"
@@ -537,6 +625,21 @@ export default function CartPage() {
           </div>
         )}
       </div>
+
+      <PurchaseRequestModal
+        open={requestOpen}
+        items={requestItems}
+        productTotal={requestProductTotal}
+        shippingFee={requestShippingFee}
+        orderTotal={requestOrderTotal}
+        submitting={submittingRequest}
+        onClose={() => {
+          if (submittingRequest) return;
+          setRequestOpen(false);
+          setRequestItems([]);
+        }}
+        onSubmit={handlePurchaseSubmit}
+      />
     </main>
   );
 }

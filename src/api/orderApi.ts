@@ -1,5 +1,7 @@
 import { apiClient } from "@/api/core/apiClient";
 import type {
+  CreatePurchaseRequestBody,
+  CreatePurchaseRequestResponse,
   GetMyOrderRequestsParams,
   GetOrderRequestsParams,
   GetOrdersParams,
@@ -95,6 +97,18 @@ export const getOrderRequestDetail = async (
 ): Promise<OrderRequestDetailResponse> => {
   const response = await apiClient.get<OrderRequestDetailResponse>(
     `/api/orders/requests/${orderId}`,
+  );
+
+  return response.data;
+};
+
+/** 장바구니 선택 품목으로 구매 요청 생성 */
+export const createPurchaseRequest = async (
+  body: CreatePurchaseRequestBody,
+): Promise<CreatePurchaseRequestResponse> => {
+  const response = await apiClient.post<CreatePurchaseRequestResponse>(
+    "/api/orders/requests",
+    body,
   );
 
   return response.data;
