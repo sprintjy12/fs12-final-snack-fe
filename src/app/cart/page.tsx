@@ -460,7 +460,8 @@ export default function CartPage() {
                           </strong>
                           <button
                             type="button"
-                            className="flex items-center justify-center rounded-full border-0 bg-accent px-8 py-3 text-lg leading-[26px] font-semibold text-surface"
+                            className="flex items-center justify-center rounded-full border-0 bg-accent px-8 py-3 text-lg leading-[26px] font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-40"
+                            disabled={submittingRequest}
                             onClick={() => openRequestModal([item])}
                           >
                             즉시 요청
