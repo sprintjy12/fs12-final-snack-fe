@@ -31,6 +31,7 @@ export const queryKeys = {
   budgets: {
     all: ["budgets"] as const,
     summary: () => ["budgets", "summary"] as const,
+    settings: () => ["budgets", "settings"] as const,
   },
   users: {
     all: ["users"] as const,
