@@ -86,6 +86,24 @@ export default function AdminPage() {
   const hasNextPage = currentPage < totalPages;
   const hasMembers = members.length > 0;
 
+  // 마지막 페이지에서 전원 탈퇴 등으로 totalPages가 줄면 유효 페이지로 보정
+  useEffect(() => {
+    if (isPending || !pagination) {
+      return;
+    }
+
+    if (pagination.totalPages <= 0) {
+      if (page !== 1) {
+        setPage(1);
+      }
+      return;
+    }
+
+    if (page > pagination.totalPages) {
+      setPage(pagination.totalPages);
+    }
+  }, [isPending, page, pagination]);
+
   const paginationItems = useMemo(
     () => buildPaginationItems(currentPage, totalPages),
     [currentPage, totalPages],
