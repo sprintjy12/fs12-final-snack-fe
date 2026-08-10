@@ -52,3 +52,8 @@ export interface CreateProductInput {
   categoryId: number | string;
   subCategoryId: number | string;
 }
+
+/** 상품 수정 요청 — Create + 대상 id */
+export interface UpdateProductInput extends CreateProductInput {
+  id: number | string;
+}
