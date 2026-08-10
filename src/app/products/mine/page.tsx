@@ -11,7 +11,6 @@ import {
   DeleteProductModal,
   type DeleteProductTarget,
 } from "./DeleteProductModal";
-import { ProductMineMenu } from "./ProductMineMenu";
 
 type MyProduct = {
   id: number;
@@ -79,7 +78,7 @@ const INITIAL_MY_PRODUCTS: MyProduct[] = [
 ];
 
 const DESKTOP_GRID =
-  "grid w-full grid-cols-[minmax(0,167px)_minmax(0,390px)_minmax(0,195px)_minmax(0,195px)_minmax(0,235px)_40px] items-center gap-x-6 px-10 min-[1520px]:gap-x-10 min-[1520px]:px-20";
+  "grid w-full grid-cols-[minmax(0,167px)_minmax(0,390px)_minmax(0,195px)_minmax(0,195px)_minmax(0,235px)] items-center gap-x-6 px-10 min-[1520px]:gap-x-10 min-[1520px]:px-20";
 
 const formatPrice = (price: number) => price.toLocaleString("ko-KR");
 
@@ -175,7 +174,7 @@ export default function MyProductsPage() {
           aria-label="상품 등록 목록"
           className={hasProducts ? undefined : "hidden"}
         >
-          {/* Desktop — Figma Card/상품등록 내역 lg (`1:10458`) + kebab (`1:3669`) */}
+          {/* Desktop — Figma Card/상품등록 내역 lg (`1:10458`) */}
           <div className="hidden xl:block">
             <div
               className={`${DESKTOP_GRID} h-20 rounded-full border border-snack-gray-200 bg-surface text-xl leading-8 font-medium text-snack-black-100`}
@@ -185,7 +184,6 @@ export default function MyProductsPage() {
               <span className="text-center">카테고리</span>
               <span className="text-center">가격</span>
               <span className="text-center">상품 링크</span>
-              <span className="sr-only">메뉴</span>
             </div>
 
             <ul className="mt-4">
@@ -242,26 +240,13 @@ export default function MyProductsPage() {
                       </span>
                       <Icon name="link" size="md" label="상품 링크 열기" />
                     </a>
-                    <div className="flex justify-end">
-                      <ProductMineMenu
-                        productName={product.name}
-                        size="md"
-                        onEdit={() => handleEdit(product.id)}
-                        onDelete={() =>
-                          setDeleteTarget({
-                            id: product.id,
-                            name: product.name,
-                          })
-                        }
-                      />
-                    </div>
                   </li>
                 );
               })}
             </ul>
           </div>
 
-          {/* Mobile / tablet — 카드 + kebab sm */}
+          {/* Mobile / tablet — 카드 */}
           <ul className="xl:hidden">
             {sortedProducts.map((product) => {
               const photoSrc = getProductPhotoSrc(product.photo);
@@ -291,26 +276,13 @@ export default function MyProductsPage() {
                       )}
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col justify-between">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-sm leading-6 font-semibold text-foreground-strong md:text-base md:leading-7">
-                            {product.name}
-                          </p>
-                          <p className="text-xs leading-[18px] text-foreground-muted md:text-sm md:leading-6">
-                            {product.categoryLabel}
-                          </p>
-                        </div>
-                        <ProductMineMenu
-                          productName={product.name}
-                          size="sm"
-                          onEdit={() => handleEdit(product.id)}
-                          onDelete={() =>
-                            setDeleteTarget({
-                              id: product.id,
-                              name: product.name,
-                            })
-                          }
-                        />
+                      <div className="min-w-0">
+                        <p className="text-sm leading-6 font-semibold text-foreground-strong md:text-base md:leading-7">
+                          {product.name}
+                        </p>
+                        <p className="text-xs leading-[18px] text-foreground-muted md:text-sm md:leading-6">
+                          {product.categoryLabel}
+                        </p>
                       </div>
                       <a
                         href={product.productUrl}
