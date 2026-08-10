@@ -44,16 +44,19 @@ function PurchaseRequestCompleteContent() {
   const orderId = searchParams.get("orderId") ?? "";
   const [summary, setSummary] = useState<CompleteSummary>(MOCK_SUMMARY);
   const [imageFailed, setImageFailed] = useState(false);
-  const [loadState, setLoadState] = useState<"idle" | "loading" | "ready">(
-    orderId ? "loading" : "idle",
-  );
+  const [loadState, setLoadState] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >(orderId ? "loading" : "idle");
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
+      // 이전 요청의 완료 화면을 남겨둔 채 다른 orderId로 재진입하면
+      // 세션 요약이 지금 조회하려는 주문과 다를 수 있으므로 일치할 때만 신뢰합니다.
       const session = readPurchaseRequestComplete();
-      if (session) {
+      if (session && (!orderId || session.orderId === orderId)) {
         if (!cancelled) {
           setSummary(session);
           setLoadState("ready");
@@ -89,9 +92,10 @@ function PurchaseRequestCompleteContent() {
           setLoadState("ready");
         }
       } catch {
+        // 실패를 목업 데이터로 가리면 존재하지 않는 주문을 실제 주문처럼
+        // 보여주게 되므로, 실패는 실패로 표시하고 재시도 수단을 줍니다.
         if (!cancelled) {
-          setSummary(MOCK_SUMMARY);
-          setLoadState("ready");
+          setLoadState("error");
         }
       }
     }
@@ -100,7 +104,12 @@ function PurchaseRequestCompleteContent() {
     return () => {
       cancelled = true;
     };
-  }, [orderId]);
+  }, [orderId, attempt]);
+
+  const handleRetry = () => {
+    setLoadState("loading");
+    setAttempt((current) => current + 1);
+  };
 
   useEffect(() => {
     setImageFailed(false);
@@ -131,6 +140,19 @@ function PurchaseRequestCompleteContent() {
           <p className="m-0 py-16 text-center text-foreground-muted">
             주문 정보를 불러오는 중…
           </p>
+        ) : loadState === "error" ? (
+          <div className="flex flex-col items-center gap-4 py-16 text-center">
+            <p className="m-0 text-foreground-muted">
+              주문 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+            </p>
+            <button
+              type="button"
+              onClick={handleRetry}
+              className="rounded-2xl bg-accent px-6 py-3 text-base font-semibold text-surface"
+            >
+              다시 시도
+            </button>
+          </div>
         ) : (
           <section
             className="flex w-full flex-col gap-8 border-y-2 border-border bg-surface-muted p-8 max-md:gap-4 max-md:px-0 max-md:py-6"
