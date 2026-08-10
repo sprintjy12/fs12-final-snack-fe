@@ -1,10 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { EmptyState, Icon } from "@/components/ui";
+import {
+  EmptyState,
+  Icon,
+  Pagination,
+  type PaginationItem,
+} from "@/components/ui";
 import { getProductPhotoSrc } from "@/lib/productMedia";
 
 import {
@@ -33,12 +37,14 @@ const SORT_OPTIONS: { value: SortValue; label: string }[] = [
   { value: "priceAsc", label: "가격 낮은순" },
 ];
 
-/** Figma Card/상품등록 내역 lg (`1:10458`) 더미 */
-const INITIAL_MY_PRODUCTS: MyProduct[] = [
+/** Figma 시안: 데스크톱 목록 6행 */
+const PAGE_SIZE = 6;
+
+const SEED_PRODUCTS: Omit<
+  MyProduct,
+  "id" | "registeredAt" | "registeredAtIso"
+>[] = [
   {
-    id: 1,
-    registeredAt: "2024. 07. 04",
-    registeredAtIso: "2024-07-04",
     name: "코카콜라 제로",
     categoryLabel: "청량・탄산음료",
     price: 1900,
@@ -46,9 +52,6 @@ const INITIAL_MY_PRODUCTS: MyProduct[] = [
     productUrl: "https://www.codeit.kr",
   },
   {
-    id: 2,
-    registeredAt: "2024. 07. 02",
-    registeredAtIso: "2024-07-02",
     name: "스프라이트",
     categoryLabel: "청량・탄산음료",
     price: 2000,
@@ -56,9 +59,6 @@ const INITIAL_MY_PRODUCTS: MyProduct[] = [
     productUrl: "https://www.codeit.kr",
   },
   {
-    id: 3,
-    registeredAt: "2024. 07. 01",
-    registeredAtIso: "2024-07-01",
     name: "환타 오렌지",
     categoryLabel: "청량・탄산음료",
     price: 2000,
@@ -66,9 +66,6 @@ const INITIAL_MY_PRODUCTS: MyProduct[] = [
     productUrl: "https://www.codeit.kr",
   },
   {
-    id: 4,
-    registeredAt: "2024. 06. 30",
-    registeredAtIso: "2024-06-30",
     name: "코카콜라",
     categoryLabel: "청량・탄산음료",
     price: 2000,
@@ -76,6 +73,26 @@ const INITIAL_MY_PRODUCTS: MyProduct[] = [
     productUrl: "https://www.codeit.kr",
   },
 ];
+
+/** Figma Card/상품등록 내역 lg (`1:10458`) — 페이지네이션 확인용 더미 */
+const INITIAL_MY_PRODUCTS: MyProduct[] = Array.from(
+  { length: 24 },
+  (_, index) => {
+    const seed = SEED_PRODUCTS[index % SEED_PRODUCTS.length];
+    const dayOffset = index;
+    const date = new Date(Date.UTC(2024, 6, 24));
+    date.setUTCDate(date.getUTCDate() - dayOffset);
+    const iso = date.toISOString().slice(0, 10);
+    const [year, month, day] = iso.split("-");
+    return {
+      id: index + 1,
+      registeredAt: `${year}. ${month}. ${day}`,
+      registeredAtIso: iso,
+      ...seed,
+      name: index < 4 ? seed.name : `${seed.name} ${Math.floor(index / 4) + 1}`,
+    };
+  },
+);
 
 const DESKTOP_GRID =
   "grid w-full grid-cols-[minmax(0,167px)_minmax(0,390px)_minmax(0,195px)_minmax(0,195px)_minmax(0,235px)] items-center gap-x-6 px-10 min-[1520px]:gap-x-10 min-[1520px]:px-20";
@@ -90,9 +107,26 @@ const formatUrlLabel = (url: string) => {
     : withoutProtocol;
 };
 
+const buildPaginationItems = (
+  currentPage: number,
+  totalPages: number,
+): PaginationItem[] => {
+  if (totalPages <= 0) {
+    return ["1"];
+  }
+
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => String(index + 1));
+  }
+
+  const items: PaginationItem[] = ["1", "2", "3", "4", "5", "more"];
+  items.push(String(totalPages));
+  return items;
+};
+
 export default function MyProductsPage() {
-  const router = useRouter();
   const [sort, setSort] = useState<SortValue>("latest");
+  const [page, setPage] = useState(1);
   const [products, setProducts] = useState<MyProduct[]>(INITIAL_MY_PRODUCTS);
   const [deleteTarget, setDeleteTarget] = useState<DeleteProductTarget | null>(
     null,
@@ -124,12 +158,27 @@ export default function MyProductsPage() {
     }
   }, [products, sort]);
 
+  const totalPages = Math.max(1, Math.ceil(sortedProducts.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedProducts = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return sortedProducts.slice(start, start + PAGE_SIZE);
+  }, [sortedProducts, currentPage]);
+
+  const paginationItems = useMemo(
+    () => buildPaginationItems(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
+
   const hasProducts = sortedProducts.length > 0;
 
-  const handleEdit = (productId: number) => {
-    // Figma 수정 모달은 상세 플로우. 등록 내역에서는 상세로 이동.
-    router.push(`/products/${productId}`);
-  };
+  useEffect(() => {
+    setPage(1);
+  }, [sort]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
 
   const handleDeleteConfirm = (product: DeleteProductTarget) => {
     setProducts((current) =>
@@ -187,7 +236,7 @@ export default function MyProductsPage() {
             </div>
 
             <ul className="mt-4">
-              {sortedProducts.map((product) => {
+              {pagedProducts.map((product) => {
                 const photoSrc = getProductPhotoSrc(product.photo);
                 const showImage =
                   Boolean(photoSrc) && !failedImageIds.has(product.id);
@@ -248,7 +297,7 @@ export default function MyProductsPage() {
 
           {/* Mobile / tablet — 카드 */}
           <ul className="xl:hidden">
-            {sortedProducts.map((product) => {
+            {pagedProducts.map((product) => {
               const photoSrc = getProductPhotoSrc(product.photo);
               const showImage =
                 Boolean(photoSrc) && !failedImageIds.has(product.id);
@@ -333,7 +382,26 @@ export default function MyProductsPage() {
               상품 등록하러 가기
             </Link>
           </div>
-        ) : null}
+        ) : (
+          <Pagination
+            aria-label="상품 등록 내역 페이지"
+            items={paginationItems}
+            currentPage={String(currentPage)}
+            previousDisabled={currentPage <= 1}
+            nextDisabled={currentPage >= totalPages}
+            onPrevious={() => setPage((current) => Math.max(1, current - 1))}
+            onNext={() =>
+              setPage((current) => Math.min(totalPages, current + 1))
+            }
+            onPageSelect={(selected) => {
+              const nextPage = Number(selected);
+              if (Number.isInteger(nextPage) && nextPage > 0) {
+                setPage(nextPage);
+              }
+            }}
+            className="mt-4 py-2 md:mt-8 md:py-0 xl:mt-10"
+          />
+        )}
       </div>
 
       <DeleteProductModal
