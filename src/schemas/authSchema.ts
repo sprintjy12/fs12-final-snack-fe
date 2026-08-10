@@ -158,3 +158,60 @@ export const invitationVerifyDataSchema = z.object({
   companyName: z.string().min(1),
   expiresAt: z.iso.datetime(),
 });
+
+/**
+ * 내 정보 조회 응답 data (BE findMyProfile).
+ * @see fs12-final-snack-be/src/repositories/userRepository.ts
+ */
+export const myProfileSchema = z.object({
+  id: z.string().min(1),
+  companyId: z.string().min(1),
+  name: z.string().min(1),
+  email: z.email(),
+  role: z.enum(["USER", "ADMIN", "SUPER_ADMIN"]),
+  status: z.string().min(1),
+  company: z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+  }),
+});
+
+/**
+ * 프로필 비밀번호 변경 폼.
+ * Figma는 비밀번호 + 비밀번호 확인만 있으나, BE changePasswordSchema는
+ * currentPassword + newPassword를 요구하므로 currentPassword를 포함한다.
+ * @see fs12-final-snack-be/src/schemas/userSchema.ts
+ */
+export const profilePasswordFormSchema = z
+  .object({
+    currentPassword: z.string().min(1, "현재 비밀번호를 입력해주세요."),
+    password: invitedSignupPasswordSchema,
+    passwordConfirm: z.string().min(1, "비밀번호 확인을 입력해주세요."),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "비밀번호가 일치하지 않습니다.",
+    path: ["passwordConfirm"],
+  })
+  .refine((data) => data.password !== data.currentPassword, {
+    message: "새 비밀번호는 현재 비밀번호와 달라야 합니다.",
+    path: ["password"],
+  });
+
+export type ProfilePasswordFormSchemaInput = z.input<
+  typeof profilePasswordFormSchema
+>;
+export type ProfilePasswordFormSchemaOutput = z.output<
+  typeof profilePasswordFormSchema
+>;
+
+/**
+ * 회사명 변경 (SUPER_ADMIN). BE changeCompanyNameSchema와 동일.
+ * @see fs12-final-snack-be/src/schemas/userSchema.ts
+ */
+export const changeCompanyNameFormSchema = z.object({
+  companyName: z
+    .string()
+    .trim()
+    .min(1, "회사명을 입력해주세요.")
+    .max(15, "회사명은 최대 15자까지 입력할 수 있습니다."),
+});
