@@ -249,7 +249,7 @@ export type CreatePurchaseRequestData = {
   requestMessage: string | null;
   requestedAt: string;
   firstProductName: string;
-  categoryName: string;
+  categoryName: string | null;
 };
 
 export type CreatePurchaseRequestResponse = {
