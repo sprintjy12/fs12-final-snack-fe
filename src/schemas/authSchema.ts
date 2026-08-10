@@ -1,0 +1,217 @@
+import { z } from "zod";
+
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MAX_LENGTH = 20;
+/** 영문·숫자·허용 특수문자만 허용 (한글/공백/이모지 불가). `-`는 문자클래스 끝에 둡니다. */
+const ALLOWED_PASSWORD_CHARACTERS =
+  /^[A-Za-z0-9!@#$%^&*()_+=[\]{};':"\\|,.<>/?`~-]+$/;
+const PASSWORD_SPECIAL_CHARACTER =
+  /[!@#$%^&*()_+=[\]{};':"\\|,.<>/?`~-]/;
+
+/** 하이픈·공백 제거 후 숫자만 남깁니다. */
+export const normalizeBusinessNumber = (value: string) =>
+  value.replace(/\D/g, "");
+
+/**
+ * 기업 담당자(최고 관리자) 회원가입 폼 스키마.
+ * email은 검증 후 소문자로 변환됩니다.
+ */
+export const adminSignupFormSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "이름을 입력해주세요.")
+      .max(8, "이름은 8자 이하로 입력해주세요."),
+    email: z
+      .string()
+      .trim()
+      .min(1, "이메일을 입력해주세요.")
+      .max(254, "이메일은 254자 이하로 입력해주세요.")
+      .email("올바른 이메일 형식이 아닙니다.")
+      .transform((value) => value.toLowerCase()),
+    password: z
+      .string()
+      .min(1, "비밀번호를 입력해주세요.")
+      .min(
+        PASSWORD_MIN_LENGTH,
+        `비밀번호는 ${PASSWORD_MIN_LENGTH}자 이상이어야 합니다.`,
+      )
+      .max(
+        PASSWORD_MAX_LENGTH,
+        `비밀번호는 ${PASSWORD_MAX_LENGTH}자 이하여야 합니다.`,
+      )
+      .regex(
+        ALLOWED_PASSWORD_CHARACTERS,
+        "비밀번호는 영문, 숫자, 특수문자만 사용할 수 있습니다.",
+      )
+      .regex(/[A-Za-z]/, "비밀번호에 영문을 1자 이상 포함해주세요.")
+      .regex(/[0-9]/, "비밀번호에 숫자를 1자 이상 포함해주세요.")
+      .regex(
+        PASSWORD_SPECIAL_CHARACTER,
+        "비밀번호에 특수문자를 1자 이상 포함해주세요.",
+      ),
+      passwordConfirm: z
+      .string()
+      .min(1, "비밀번호 확인을 입력해주세요."),
+    companyName: z
+      .string()
+      .trim()
+      .min(1, "회사명을 입력해주세요.")
+      .max(15, "회사명은 15자 이하로 입력해주세요."),
+    businessNumber: z
+      .string()
+      .transform(normalizeBusinessNumber)
+      .pipe(
+        z
+          .string()
+          .min(1, "사업자등록번호를 입력해주세요.")
+          .regex(
+            /^\d{10}$/,
+            "사업자등록번호는 하이픈 없이 숫자 10자리로 입력해주세요.",
+          ),
+      ),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "비밀번호가 일치하지 않습니다.",
+    path: ["passwordConfirm"],
+  });
+
+export type AdminSignupFormSchemaInput = z.input<
+  typeof adminSignupFormSchema
+>;
+export type AdminSignupFormSchemaOutput = z.output<
+  typeof adminSignupFormSchema
+>;
+
+/**
+ * 로그인 폼 스키마 (BE loginSchema와 맞춤).
+ * email은 검증 후 소문자로 변환됩니다.
+ */
+export const loginFormSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .min(1, "이메일을 입력해주세요.")
+    .max(254, "이메일은 254자 이하로 입력해주세요.")
+    .email("올바른 이메일 형식이 아닙니다.")
+    .transform((value) => value.toLowerCase()),
+  password: z
+    .string()
+    .min(1, "비밀번호를 입력해주세요.")
+    .max(
+      PASSWORD_MAX_LENGTH,
+      `비밀번호는 ${PASSWORD_MAX_LENGTH}자 이하여야 합니다.`,
+    ),
+});
+
+export type LoginFormSchemaInput = z.input<typeof loginFormSchema>;
+export type LoginFormSchemaOutput = z.output<typeof loginFormSchema>;
+
+/**
+ * 초대 회원가입 비밀번호 규칙 (BE invitedSignupSchema와 동일).
+ * @see fs12-final-snack-be/src/schemas/invitationSchema.ts
+ */
+const invitedSignupPasswordSchema = z
+  .string()
+  .min(1, "비밀번호를 입력해주세요.")
+  .min(PASSWORD_MIN_LENGTH, "비밀번호는 최소 8자 이상이어야 합니다.")
+  .max(PASSWORD_MAX_LENGTH, "비밀번호는 최대 20자까지 입력할 수 있습니다.")
+  .regex(/[A-Za-z]/, "비밀번호에는 영문이 포함되어야 합니다.")
+  .regex(/[0-9]/, "비밀번호에는 숫자가 포함되어야 합니다.")
+  .regex(/[^A-Za-z0-9]/, "비밀번호에는 특수문자가 포함되어야 합니다.")
+  .regex(
+    /^[\x21-\x7E]+$/,
+    "비밀번호에는 한글, 공백, 이모지를 사용할 수 없습니다.",
+  );
+
+/**
+ * 초대 회원가입 폼 스키마 (BE invitedSignupSchema + passwordConfirm).
+ */
+export const invitedSignupFormSchema = z
+  .object({
+    password: invitedSignupPasswordSchema,
+    passwordConfirm: z.string().min(1, "비밀번호 확인을 입력해주세요."),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "비밀번호가 일치하지 않습니다.",
+    path: ["passwordConfirm"],
+  });
+
+export type InvitedSignupFormSchemaInput = z.input<
+  typeof invitedSignupFormSchema
+>;
+export type InvitedSignupFormSchemaOutput = z.output<
+  typeof invitedSignupFormSchema
+>;
+
+/**
+ * 초대 토큰 검증 응답 data (BE verifyInvitation 반환값).
+ * expiresAt: Prisma Date → Express res.json(JSON.stringify) → ISO 8601 문자열
+ * @see fs12-final-snack-be/src/services/invitationService.ts
+ * @see fs12-final-snack-be/src/controllers/invitationController.ts
+ */
+export const invitationVerifyDataSchema = z.object({
+  name: z.string().min(1),
+  email: z.email(),
+  role: z.enum(["USER", "ADMIN"]),
+  companyName: z.string().min(1),
+  expiresAt: z.iso.datetime(),
+});
+
+/**
+ * 내 정보 조회 응답 data (BE findMyProfile).
+ * @see fs12-final-snack-be/src/repositories/userRepository.ts
+ */
+export const myProfileSchema = z.object({
+  id: z.string().min(1),
+  companyId: z.string().min(1),
+  name: z.string().min(1),
+  email: z.email(),
+  role: z.enum(["USER", "ADMIN", "SUPER_ADMIN"]),
+  status: z.string().min(1),
+  company: z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+  }),
+});
+
+/**
+ * 프로필 비밀번호 변경 폼.
+ * Figma는 비밀번호 + 비밀번호 확인만 있으나, BE changePasswordSchema는
+ * currentPassword + newPassword를 요구하므로 currentPassword를 포함한다.
+ * @see fs12-final-snack-be/src/schemas/userSchema.ts
+ */
+export const profilePasswordFormSchema = z
+  .object({
+    currentPassword: z.string().min(1, "현재 비밀번호를 입력해주세요."),
+    password: invitedSignupPasswordSchema,
+    passwordConfirm: z.string().min(1, "비밀번호 확인을 입력해주세요."),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "비밀번호가 일치하지 않습니다.",
+    path: ["passwordConfirm"],
+  })
+  .refine((data) => data.password !== data.currentPassword, {
+    message: "새 비밀번호는 현재 비밀번호와 달라야 합니다.",
+    path: ["password"],
+  });
+
+export type ProfilePasswordFormSchemaInput = z.input<
+  typeof profilePasswordFormSchema
+>;
+export type ProfilePasswordFormSchemaOutput = z.output<
+  typeof profilePasswordFormSchema
+>;
+
+/**
+ * 회사명 변경 (SUPER_ADMIN). BE changeCompanyNameSchema와 동일.
+ * @see fs12-final-snack-be/src/schemas/userSchema.ts
+ */
+export const changeCompanyNameFormSchema = z.object({
+  companyName: z
+    .string()
+    .trim()
+    .min(1, "회사명을 입력해주세요.")
+    .max(15, "회사명은 최대 15자까지 입력할 수 있습니다."),
+});

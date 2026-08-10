@@ -1,8 +1,10 @@
 "use client";
 
+import axios from "axios";
 import { useEffect, useId, useState, type FormEvent } from "react";
 import { z } from "zod";
 
+import { createInvitation, ensureAccessToken } from "@/api/authApi";
 import {
   Button,
   ModalShell,
@@ -10,13 +12,14 @@ import {
   TextField,
   showToast,
 } from "@/components/ui";
+import type { InvitationApiRole } from "@/types/authTypes";
 
 export type InviteMemberRole = "admin" | "member";
 
 export type InviteMemberModalProps = {
   open: boolean;
   onClose: () => void;
-  /** 등록/초대 성공 시 호출. API 연동 전 샘플용 */
+  /** 초대 성공 시 호출 (목록 갱신 등) */
   onSubmit?: (values: {
     name: string;
     email: string;
@@ -29,13 +32,24 @@ const ROLE_OPTIONS = [
   { value: "member" as const, label: "일반" },
 ];
 
+const ROLE_TO_API: Record<InviteMemberRole, InvitationApiRole> = {
+  admin: "ADMIN",
+  member: "USER",
+};
+
 const inviteMemberSchema = z.object({
-  name: z.string().trim().min(1, "이름을 입력해 주세요."),
+  name: z
+    .string()
+    .trim()
+    .min(1, "이름을 입력해 주세요.")
+    .max(8, "이름은 최대 8자까지 입력할 수 있습니다."),
   email: z
     .string()
     .trim()
     .min(1, "이메일을 입력해 주세요.")
-    .email("올바른 이메일을 입력해 주세요."),
+    .max(254, "이메일은 최대 254자까지 입력할 수 있습니다.")
+    .email("올바른 이메일을 입력해 주세요.")
+    .transform((value) => value.toLowerCase()),
   role: z.enum(["admin", "member"]),
 });
 
@@ -60,9 +74,25 @@ function getInviteToastMessage(
   return [nameMessage, emailMessage].filter(Boolean).join(" ");
 }
 
+function getInviteApiErrorMessage(error: unknown) {
+  if (axios.isAxiosError(error)) {
+    const message = error.response?.data?.message;
+    if (typeof message === "string" && message.trim()) {
+      return message;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return "회원 초대에 실패했습니다. 잠시 후 다시 시도해주세요.";
+}
+
 /**
  * 회원 초대 폼 모달.
  * ModalShell 위에 시안 폼을 올린 도메인 모달입니다. (확인용 Modal과 분리)
+ * API: POST /api/invitations
  */
 export function InviteMemberModal({
   open,
@@ -75,17 +105,22 @@ export function InviteMemberModal({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<InviteMemberRole>("admin");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setName("");
       setEmail("");
       setRole("admin");
+      setIsSubmitting(false);
     }
   }, [open]);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) {
+      return;
+    }
 
     const result = inviteMemberSchema.safeParse({ name, email, role });
 
@@ -94,10 +129,34 @@ export function InviteMemberModal({
       return;
     }
 
-    // TODO: 회원 초대 API 연동
-    onSubmit?.(result.data);
+    setIsSubmitting(true);
+
+    try {
+      await ensureAccessToken();
+      await createInvitation({
+        name: result.data.name,
+        email: result.data.email,
+        role: ROLE_TO_API[result.data.role],
+      });
+    } catch (error) {
+      showToast(getInviteApiErrorMessage(error));
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      onSubmit?.({
+        name: result.data.name,
+        email: result.data.email,
+        role: result.data.role,
+      });
+    } catch {
+      // onSubmit 실패는 API 실패로 취급하지 않음
+    }
+
     showToast("회원 초대를 완료했어요.");
     onClose();
+    setIsSubmitting(false);
   };
 
   return (
@@ -132,6 +191,7 @@ export function InviteMemberModal({
               onChange={(event) => setName(event.target.value)}
               placeholder="이름을 입력해주세요"
               autoComplete="name"
+              disabled={isSubmitting}
             />
           </label>
 
@@ -145,6 +205,7 @@ export function InviteMemberModal({
               onChange={(event) => setEmail(event.target.value)}
               placeholder="이메일을 입력해주세요"
               autoComplete="email"
+              disabled={isSubmitting}
             />
           </label>
 
@@ -171,14 +232,24 @@ export function InviteMemberModal({
             variant="secondary"
             width="modal"
             className="flex-1"
+            disabled={isSubmitting}
             onClick={onClose}
           >
             취소
           </Button>
-          <Button type="submit" width="modal" className="flex-1">
+          <Button
+            type="submit"
+            width="modal"
+            className="flex-1"
+            disabled={isSubmitting}
+          >
             {/* Mobile/Tablet: 초대하기 / Desktop: 등록하기 */}
-            <span className="xl:hidden">초대하기</span>
-            <span className="hidden xl:inline">등록하기</span>
+            <span className="xl:hidden">
+              {isSubmitting ? "초대 중..." : "초대하기"}
+            </span>
+            <span className="hidden xl:inline">
+              {isSubmitting ? "등록 중..." : "등록하기"}
+            </span>
           </Button>
         </div>
       </form>

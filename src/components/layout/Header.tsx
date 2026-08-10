@@ -2,11 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { MobileSidebar } from "@/components/layout/MobileSidebar";
 import { Icon } from "@/components/ui";
+import {
+  CATEGORY_MENU_ORDERED,
+  findCategoryMenuItem,
+} from "@/constants/categoryConstants";
+import { useCategories } from "@/hooks/queries/useProducts";
+import { parseRouteId } from "@/lib/parseOptionalId";
+import { isProductApiMock } from "@/services/productApi";
 
 export type HeaderNavItem = {
   href: string;
@@ -28,7 +35,49 @@ const DEFAULT_NAV_ITEMS = [
   { href: "/admin", label: "관리" },
 ] as const satisfies readonly HeaderNavItem[];
 
+function buildProductsHref(
+  categoryId?: number | string,
+  subCategoryId?: number | string,
+) {
+  const params = new URLSearchParams();
+  if (categoryId !== undefined) {
+    params.set("categoryId", String(categoryId));
+  }
+  if (subCategoryId !== undefined) {
+    params.set("subCategoryId", String(subCategoryId));
+  }
+  const query = params.toString();
+  return query ? `/products?${query}` : "/products";
+}
+
+function isProductListPath(pathname: string) {
+  return pathname === "/products" || pathname === "/products/";
+}
+
+/** 리스트·상세 — mock 숫자 id / BE uuid 모두 */
+function isProductArea(pathname: string) {
+  if (isProductListPath(pathname)) return true;
+  if (
+    pathname.startsWith("/products/mine") ||
+    pathname.startsWith("/products/new")
+  ) {
+    return false;
+  }
+  return /^\/products\/[^/]+/.test(pathname);
+}
+
+function categoryRouteId(
+  category: { id: number | string; apiId: string },
+  useApiIds: boolean,
+) {
+  return useApiIds ? category.apiId : category.id;
+}
+
 function isNavItemActive(href: string, pathname: string) {
+  if (href === "/products") {
+    return isProductArea(pathname);
+  }
+
   if (href === "/purchase/history") {
     return (
       pathname === "/purchase/history" ||
@@ -84,18 +133,28 @@ function getActiveNavHref(
 }
 
 export function Header({
-  cartCount = 2,
+  cartCount = 0,
   navItems = DEFAULT_NAV_ITEMS,
   onLogout,
 }: HeaderProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const showCartBadge = cartCount > 0;
   const activeHref = getActiveNavHref(navItems, pathname);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const categoryId = parseRouteId(searchParams.get("categoryId"));
+  const subCategoryId = parseRouteId(searchParams.get("subCategoryId"));
+  const showCategoryBar = isProductArea(pathname);
+  const useApiIds = !isProductApiMock();
+  const { data: categoryMenu = CATEGORY_MENU_ORDERED } = useCategories();
+
+  const activeCategory = findCategoryMenuItem(categoryId);
+  const subCategories = activeCategory?.subCategories ?? [];
+
   return (
     <>
-      <header className="border-b border-solid border-border bg-surface-muted">
+      <header className="sticky top-0 z-[100] border-b border-border bg-surface-muted">
         <div className="mx-auto flex h-[54px] w-full max-w-[1920px] items-center justify-between px-6 md:h-16 xl:h-[88px] xl:px-[120px]">
           <div className="flex items-center gap-6 xl:gap-16">
             <button
@@ -176,22 +235,103 @@ export function Header({
               ) : null}
             </Link>
 
-            <Link href="/profile" aria-label="프로필" className="xl:px-4">
+            <Link
+              href="/profile"
+              aria-label="프로필"
+              aria-current={pathname.startsWith("/profile") ? "page" : undefined}
+              className="xl:px-4"
+            >
               <Icon name="profile" size="sm" className="xl:hidden" />
-              <span className="hidden text-xl leading-8 font-bold text-snack-gray-300 xl:inline">
+              <span
+                className={[
+                  "hidden text-xl leading-8 font-bold xl:inline",
+                  pathname.startsWith("/profile")
+                    ? "text-accent"
+                    : "text-snack-gray-300",
+                ].join(" ")}
+              >
                 Profile
               </span>
             </Link>
 
-            <button
-              type="button"
-              onClick={onLogout}
-              className="hidden cursor-pointer bg-transparent text-xl leading-8 font-bold text-snack-gray-300 xl:block xl:px-4"
-            >
-              Logout
-            </button>
+            {onLogout ? (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="hidden cursor-pointer bg-transparent text-xl leading-8 font-bold text-snack-gray-300 xl:block xl:px-4"
+              >
+                Logout
+              </button>
+            ) : null}
           </div>
         </div>
+
+        {showCategoryBar ? (
+          <div className="border-t border-border bg-surface-muted">
+            <div
+              className="mx-auto flex h-[52px] max-w-[1920px] items-center gap-3 overflow-x-auto px-6 xl:h-16 xl:px-[120px]"
+              aria-label="상품 카테고리"
+            >
+              {categoryMenu.map((category) => {
+                const routeId = categoryRouteId(category, useApiIds);
+                const isActive =
+                  categoryId !== undefined &&
+                  (category.id === categoryId ||
+                    category.apiId === categoryId);
+
+                return (
+                  <Link
+                    key={String(category.apiId)}
+                    href={buildProductsHref(routeId)}
+                    className={[
+                      "flex h-full shrink-0 items-center whitespace-nowrap px-4 py-3.5 text-lg leading-[26px]",
+                      isActive
+                        ? "border-b-2 border-accent px-2.5 font-bold text-accent"
+                        : "font-medium text-snack-gray-400",
+                    ].join(" ")}
+                  >
+                    {category.name}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {subCategories.length > 0 ? (
+              <div
+                className="mx-auto flex h-[52px] max-w-[1920px] items-center gap-3 overflow-x-auto border-t border-border px-6 xl:h-16 xl:px-[120px]"
+                aria-label="상품 소분류"
+              >
+                {subCategories.map((sub) => {
+                  const parentRouteId =
+                    categoryId ??
+                    (activeCategory
+                      ? categoryRouteId(activeCategory, useApiIds)
+                      : undefined);
+                  const subRouteId = useApiIds ? sub.apiId : sub.id;
+                  const isActive =
+                    subCategoryId !== undefined &&
+                    (sub.id === subCategoryId ||
+                      sub.apiId === subCategoryId);
+
+                  return (
+                    <Link
+                      key={`${sub.categoryId}-${sub.id}`}
+                      href={buildProductsHref(parentRouteId, subRouteId)}
+                      className={[
+                        "flex h-full shrink-0 items-center whitespace-nowrap px-4 py-3.5 text-base leading-[26px]",
+                        isActive
+                          ? "px-2.5 font-semibold text-accent"
+                          : "font-medium text-snack-gray-400",
+                      ].join(" ")}
+                    >
+                      {sub.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       <MobileSidebar

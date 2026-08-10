@@ -17,6 +17,10 @@ const commonImages = {
     sm: { src: "/images/common/logo-text-sm.svg", width: 80, height: 54 },
     md: { src: "/images/common/logo-text-md.svg", width: 126, height: 88 },
   },
+  "logo-text-white": {
+    sm: { src: "/images/common/logo-text-white.svg", width: 126, height: 32 },
+    md: { src: "/images/common/logo-text-white.svg", width: 126, height: 32 },
+  },
   "logo-landing": {
     sm: { src: "/images/common/logo-landing-sm.svg", width: 200, height: 48 },
     md: { src: "/images/common/logo-landing-md.svg", width: 504, height: 128 },

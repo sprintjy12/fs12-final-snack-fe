@@ -39,10 +39,44 @@ export type GetOrdersParams = {
   sort?: OrderListSort;
 };
 
-export type OrderDetailStatus = "APPROVED" | "REJECTED" | "PENDING";
+/** GET /api/orders/my-requests 목록 한 줄 */
+export type MyOrderRequestListItem = {
+  id: string;
+  type: OrderListType;
+  status: OrderDetailStatus;
+  approvedAt: string | null;
+  totalPrice: number;
+  totalQuantity: number;
+  requesterName: string;
+  processorName: string | null;
+  createdAt: string;
+  firstProductName: string;
+  itemCount: number;
+};
+
+export type MyOrderRequestListResponse = {
+  success: boolean;
+  message: string;
+  data: MyOrderRequestListItem[];
+  pagination: OrderListPagination;
+};
+
+export type GetMyOrderRequestsParams = {
+  page?: number;
+  limit?: number;
+  sort?: OrderListSort;
+};
+
+export type OrderDetailStatus =
+  | "APPROVED"
+  | "REJECTED"
+  | "PENDING"
+  | "CANCELLED";
 
 /** GET /api/orders/:id 품목 한 줄 */
 export type OrderDetailItem = {
+  /** 장바구니 다시 담기 등에 사용. 일부 응답에는 없을 수 있음 */
+  productId?: string;
   productName: string;
   imageUrl: string;
   categoryName: string;
@@ -50,6 +84,31 @@ export type OrderDetailItem = {
   unitPrice: number;
   subtotal: number;
   discounted?: boolean;
+};
+
+/** GET /api/orders/my-requests/:id data */
+export type MyOrderRequestDetailData = {
+  orderId: string;
+  type: OrderListType;
+  status: OrderDetailStatus;
+  productAmount: number;
+  shippingFee: number;
+  totalPrice: number;
+  itemCount: number;
+  totalQuantity: number;
+  requestMessage: string | null;
+  responseMessage: string | null;
+  requestedAt: string;
+  approvedAt: string | null;
+  requesterName: string | null;
+  processorName: string | null;
+  items: OrderDetailItem[];
+};
+
+export type MyOrderRequestDetailResponse = {
+  success: boolean;
+  message: string;
+  data: MyOrderRequestDetailData;
 };
 
 /** GET /api/orders/:id data */
@@ -170,4 +229,31 @@ export type ProcessOrderResponse = {
   success: boolean;
   message: string;
   data: ProcessOrderResult;
+};
+
+/** POST /api/orders/requests body */
+export type CreatePurchaseRequestBody = {
+  cartItemIds: string[];
+  requestMessage?: string;
+};
+
+/** POST /api/orders/requests data — 완료 페이지 요약 */
+export type CreatePurchaseRequestData = {
+  orderId: string;
+  status: OrderDetailStatus;
+  productAmount: number;
+  shippingFee: number;
+  totalPrice: number;
+  totalQuantity: number;
+  itemCount: number;
+  requestMessage: string | null;
+  requestedAt: string;
+  firstProductName: string;
+  categoryName: string | null;
+};
+
+export type CreatePurchaseRequestResponse = {
+  success: boolean;
+  message: string;
+  data: CreatePurchaseRequestData;
 };

@@ -1,4 +1,5 @@
 import type { Category, ProductListParams, SubCategory } from "@/types/productTypes";
+import { getRuntimeCategoryMenu } from "@/lib/categoryMenuRegistry";
 import { isUuid } from "@/lib/parseOptionalId";
 
 export const SORT_OPTIONS: {
@@ -156,11 +157,22 @@ function sameId(a: number | string, b: number | string) {
   return String(a) === String(b);
 }
 
+/** API 트리가 있으면 우선, 없으면 mock 정적 메뉴 */
+export function getActiveCategoryMenu(): CategoryMenuItem[] {
+  return getRuntimeCategoryMenu() ?? CATEGORY_MENU;
+}
+
+export function getActiveCategoryMenuOrdered(): CategoryMenuItem[] {
+  const runtime = getRuntimeCategoryMenu();
+  if (runtime) return runtime;
+  return CATEGORY_MENU_ORDERED;
+}
+
 export function findCategoryMenuItem(
   categoryId: number | string | undefined,
 ): CategoryMenuItem | undefined {
   if (categoryId === undefined) return undefined;
-  return CATEGORY_MENU.find(
+  return getActiveCategoryMenu().find(
     (item) => sameId(item.id, categoryId) || item.apiId === categoryId,
   );
 }
@@ -171,13 +183,23 @@ export function findSubCategoryMenuItem(
 ): CategoryMenuSubItem | undefined {
   if (subCategoryId === undefined) return undefined;
   const parent = findCategoryMenuItem(categoryId);
+  // 잘못된/미존재 부모 id는 전체 메뉴 폴백 금지
+  if (categoryId !== undefined && !parent) {
+    return undefined;
+  }
+  if (
+    categoryId === undefined &&
+    !(typeof subCategoryId === "string" && isUuid(subCategoryId))
+  ) {
+    return undefined;
+  }
+  const menu = getActiveCategoryMenu();
   const pools = parent
     ? parent.subCategories
-    : CATEGORY_MENU.flatMap((c) => c.subCategories);
+    : menu.flatMap((c) => c.subCategories);
   const matches = pools.filter(
     (sub) => sameId(sub.id, subCategoryId) || sub.apiId === subCategoryId,
   );
-  // parent 없이 숫자 id만 오면 대분류마다 1,2…가 겹침 → 유일한 경우만 채택
   return matches.length === 1 ? matches[0] : undefined;
 }
 

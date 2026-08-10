@@ -5,6 +5,15 @@ import {
   isAccessTokenValid,
   setAccessToken,
 } from "@/lib/authStorage";
+import { invitationVerifyDataSchema } from "@/schemas/authSchema";
+import type {
+  CreateInvitationPayload,
+  CreateInvitationResult,
+  InvitationVerifyData,
+  InvitedSignupPayload,
+  LoginPayload,
+  SuperAdminSignupPayload,
+} from "@/types/authTypes";
 
 type LoginResponse = {
   message: string;
@@ -19,6 +28,50 @@ type LoginResponse = {
       status: string;
     };
   };
+};
+
+/** 로그인 JSON에서 비어 있지 않은 accessToken만 꺼냅니다. */
+const getAccessTokenFromLoginBody = (body: unknown): string | null => {
+  if (!body || typeof body !== "object") {
+    return null;
+  }
+
+  if (!("data" in body)) {
+    return null;
+  }
+
+  const { data } = body as { data: unknown };
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  if (!("accessToken" in data)) {
+    return null;
+  }
+
+  const { accessToken } = data as { accessToken: unknown };
+  if (typeof accessToken !== "string" || accessToken.trim() === "") {
+    return null;
+  }
+
+  return accessToken;
+};
+
+const getMessageFromBody = (body: unknown): string | undefined => {
+  if (!body || typeof body !== "object") {
+    return undefined;
+  }
+
+  if (!("message" in body)) {
+    return undefined;
+  }
+
+  const { message } = body as { message: unknown };
+  if (typeof message !== "string" || message.trim() === "") {
+    return undefined;
+  }
+
+  return message;
 };
 
 /**
@@ -41,21 +94,138 @@ export const ensureAccessToken = async () => {
     method: "POST",
   });
 
+  const body: unknown = await response.json().catch(() => null);
+
   if (!response.ok) {
-    throw new Error("로그인이 필요합니다. .env의 DEV_LOGIN_EMAIL/PASSWORD를 확인하세요.");
+    throw new Error(
+      getMessageFromBody(body) ??
+        "로그인이 필요합니다. .env의 DEV_LOGIN_EMAIL/PASSWORD와 백엔드 서버를 확인하세요.",
+    );
   }
 
-  const body = (await response.json()) as LoginResponse;
-  const token = body.data.accessToken;
+  const token = getAccessTokenFromLoginBody(body);
+  if (!token) {
+    throw new Error("로그인 응답에 accessToken이 없습니다.");
+  }
+
   setAccessToken(token);
   return token;
 };
 
-export const login = async (payload: {
-  email: string;
-  password: string;
-}) => {
+export const login = async (payload: LoginPayload) => {
   const response = await apiClient.post<LoginResponse>("/api/auth/login", payload);
-  setAccessToken(response.data.data.accessToken);
+  const token = getAccessTokenFromLoginBody(response.data);
+  if (!token) {
+    throw new Error("로그인 응답에 accessToken이 없습니다.");
+  }
+
+  setAccessToken(token);
   return response.data;
+};
+
+type SuperAdminSignupResponse = {
+  message: string;
+  data: {
+    company: {
+      id: string;
+      name: string;
+      businessNumber: string;
+      createdAt: string;
+    };
+    user: {
+      id: string;
+      companyId: string;
+      name: string;
+      email: string;
+      role: string;
+      status: string;
+      createdAt: string;
+    };
+  };
+};
+
+/** 기업 담당자(최고 관리자) 회원가입 — POST /api/auth/super-admin/signup */
+export const signupSuperAdmin = async (payload: SuperAdminSignupPayload) => {
+  const response = await apiClient.post<SuperAdminSignupResponse>(
+    "/api/auth/super-admin/signup",
+    payload,
+  );
+
+  return response.data;
+};
+
+type VerifyInvitationResponse = {
+  message: string;
+  data: InvitationVerifyData;
+};
+
+type InvitedSignupResponse = {
+  message: string;
+  data: {
+    id: string;
+    companyId: string;
+    name: string;
+    email: string;
+    role: string;
+    status: string;
+    createdAt: string;
+  };
+};
+
+/** 초대 토큰 검증 — GET /api/invitations/verify */
+export const verifyInvitation = async (
+  token: string,
+): Promise<InvitationVerifyData> => {
+  const response = await apiClient.get<VerifyInvitationResponse>(
+    "/api/invitations/verify",
+    { params: { token } },
+  );
+
+  const parsed = invitationVerifyDataSchema.safeParse(response.data.data);
+  if (!parsed.success) {
+    throw new Error("초대 정보 응답 형식이 올바르지 않습니다.");
+  }
+
+  return parsed.data;
+};
+
+/** 초대 회원가입 — POST /api/invitations/signup */
+export const signupInvitedUser = async (payload: InvitedSignupPayload) => {
+  const response = await apiClient.post<InvitedSignupResponse>(
+    "/api/invitations/signup",
+    payload,
+  );
+
+  return response.data;
+};
+
+type CreateInvitationResponse = {
+  message: string;
+  data: CreateInvitationResult;
+};
+
+/** 회원 초대 생성 — POST /api/invitations (SUPER_ADMIN) */
+export const createInvitation = async (payload: CreateInvitationPayload) => {
+  const response = await apiClient.post<CreateInvitationResponse>(
+    "/api/invitations",
+    payload,
+  );
+
+  return response.data.data;
+};
+
+/**
+ * 로그아웃 — POST /api/auth/logout
+ * BE가 refreshToken DB 삭제 + refreshToken 쿠키 clearCookie 처리.
+ * access token은 응답과 무관하게 항상 제거합니다.
+ * @see fs12-final-snack-be/src/controllers/authController.ts
+ */
+export const logout = async () => {
+  try {
+    await apiClient.post("/api/auth/logout");
+  } catch {
+    // 이미 폐기된 refreshToken 등이어도 클라이언트 정리는 계속합니다.
+  } finally {
+    clearAccessToken();
+  }
 };

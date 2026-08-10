@@ -166,7 +166,7 @@ export function MobileSidebar({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 xl:hidden" role="presentation">
+    <div className="fixed inset-0 z-[101] xl:hidden" role="presentation">
       {/* 딤 오버레이 — 클릭 닫기용. AT에는 숨기고, 닫기는 X 버튼/Escape만 안내 */}
       <button
         type="button"
@@ -218,18 +218,20 @@ export function MobileSidebar({
               </li>
             );
           })}
-          <li>
-            <button
-              type="button"
-              onClick={() => {
-                onLogout?.();
-                onClose();
-              }}
-              className="flex w-full cursor-pointer items-center bg-transparent px-5 py-6 text-left text-base leading-[26px] font-medium text-foreground-strong"
-            >
-              로그아웃
-            </button>
-          </li>
+          {onLogout ? (
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  onLogout();
+                  onClose();
+                }}
+                className="flex w-full cursor-pointer items-center bg-transparent px-5 py-6 text-left text-base leading-[26px] font-medium text-foreground-strong"
+              >
+                로그아웃
+              </button>
+            </li>
+          ) : null}
         </ul>
       </nav>
     </div>,
