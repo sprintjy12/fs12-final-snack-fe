@@ -32,6 +32,10 @@ export const queryKeys = {
     all: ["budgets"] as const,
     summary: () => ["budgets", "summary"] as const,
   },
+  users: {
+    all: ["users"] as const,
+    me: () => ["users", "me"] as const,
+  },
   //userId 가져올 수 있으면 수정 필요
   cart: {
     all: ["cart"] as const,

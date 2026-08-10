@@ -5,19 +5,19 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
 
-import {
-  changeCompanyName,
-  changePassword,
-  getMyProfile,
-} from "@/api/userApi";
+import { logout } from "@/api/authApi";
 import { Button, Icon, TextField, useToast } from "@/components/ui";
+import {
+  useChangeCompanyName,
+  useChangePassword,
+} from "@/hooks/mutations/useUsers";
+import { useMyProfile } from "@/hooks/queries/useMyProfile";
 import { clearAccessToken, getAccessToken } from "@/lib/authStorage";
 import {
   changeCompanyNameFormSchema,
   profilePasswordFormSchema,
 } from "@/schemas/authSchema";
 import type {
-  MyProfile,
   ProfileForm,
   ProfileFormErrors,
   UserRole,
@@ -152,6 +152,10 @@ const applyProfileApiError = (
     return { fieldErrors: { password: message } };
   }
 
+  if (code === "PASSWORD_CHANGE_CONFLICT") {
+    return { fieldErrors: {}, message };
+  }
+
   return { fieldErrors: {}, message };
 };
 
@@ -251,13 +255,21 @@ const PasswordField = ({
  * - 관리자 — node 1:12370 (권한: 관리자)
  * - 최고관리자 — node 1:6196 (권한: 최고 관리자, 기업명 수정 가능)
  * API: GET /api/users/me, PATCH /api/users/me/password, PATCH /api/users/me/company
+ *
+ * 데이터 흐름: Component → TanStack Query Hook → userApi → apiClient → BE
  */
 const ProfilePage = () => {
   const router = useRouter();
   const { showToast } = useToast();
+  const {
+    data: profile,
+    isLoading,
+    isError,
+    error: profileError,
+  } = useMyProfile();
+  const changePasswordMutation = useChangePassword();
+  const changeCompanyNameMutation = useChangeCompanyName();
 
-  const [profile, setProfile] = useState<MyProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [form, setForm] = useState<ProfileForm>(INITIAL_FORM);
   const [errors, setErrors] = useState<ProfileFormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -289,51 +301,39 @@ const ProfilePage = () => {
     (!passwordTouched || passwordAllFilled);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadProfile = async () => {
-      if (!getAccessToken()) {
-        showToast("로그인이 필요합니다.");
-        router.replace("/login");
-        return;
-      }
-
-      setIsLoading(true);
-
-      try {
-        const data = await getMyProfile();
-        if (cancelled) {
-          return;
-        }
-
-        setProfile(data);
-        setForm({
-          ...INITIAL_FORM,
-          companyName: data.company.name,
-        });
-      } catch (error) {
-        if (!cancelled) {
-          showToast(
-            getApiErrorMessage(error, "내 정보를 불러오지 못했습니다."),
-          );
-          if (axios.isAxiosError(error) && error.response?.status === 401) {
-            clearAccessToken();
-            router.replace("/login");
-          }
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void loadProfile();
-
-    return () => {
-      cancelled = true;
-    };
+    if (!getAccessToken()) {
+      showToast("로그인이 필요합니다.");
+      router.replace("/login");
+    }
   }, [router, showToast]);
+
+  useEffect(() => {
+    if (!profile) {
+      return;
+    }
+
+    setForm({
+      ...INITIAL_FORM,
+      companyName: profile.company.name,
+    });
+  }, [profile]);
+
+  useEffect(() => {
+    if (!isError || !profileError) {
+      return;
+    }
+
+    showToast(
+      getApiErrorMessage(profileError, "내 정보를 불러오지 못했습니다."),
+    );
+    if (
+      axios.isAxiosError(profileError) &&
+      profileError.response?.status === 401
+    ) {
+      clearAccessToken();
+      router.replace("/login");
+    }
+  }, [isError, profileError, router, showToast]);
 
   const updateField = (key: keyof ProfileForm) => (value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -396,34 +396,41 @@ const ProfilePage = () => {
     setErrors({});
     setIsSubmitting(true);
 
-    try {
-      if (parsedCompanyName) {
-        const company = await changeCompanyName({
-          companyName: parsedCompanyName,
-        });
-        setProfile((prev) =>
-          prev
-            ? {
-                ...prev,
-                company: { ...prev.company, name: company.name },
-              }
-            : prev,
-        );
-        setForm((prev) => ({ ...prev, companyName: company.name }));
-        showToast("회사명이 변경되었습니다.");
-      }
+    // 회사명→비밀번호 순서면 회사명만 반영된 채 비밀번호가 실패할 수 있어
+    // 비밀번호를 먼저 호출합니다. (비밀번호 변경 후에도 access JWT는 만료 전까지 유효)
+    let passwordChanged = false;
+    let passwordSuccessMessage =
+      "비밀번호가 변경되었습니다. 다시 로그인해주세요.";
+    let companyErrorAfterPassword: unknown = null;
 
+    try {
       if (parsedPassword) {
-        const result = await changePassword({
+        const result = await changePasswordMutation.mutateAsync({
           currentPassword: parsedPassword.currentPassword,
           newPassword: parsedPassword.password,
         });
-        clearAccessToken();
-        showToast(
-          result.message || "비밀번호가 변경되었습니다. 다시 로그인해주세요.",
-        );
-        router.replace("/login");
-        return;
+        passwordChanged = true;
+        if (result.message?.trim()) {
+          passwordSuccessMessage = result.message;
+        }
+      }
+
+      if (parsedCompanyName) {
+        try {
+          const company = await changeCompanyNameMutation.mutateAsync({
+            companyName: parsedCompanyName,
+          });
+          setForm((prev) => ({ ...prev, companyName: company.name }));
+          if (!passwordChanged) {
+            showToast("회사명이 변경되었습니다.");
+          }
+        } catch (error) {
+          if (passwordChanged) {
+            companyErrorAfterPassword = error;
+          } else {
+            throw error;
+          }
+        }
       }
     } catch (error) {
       const { fieldErrors, message } = applyProfileApiError(error);
@@ -434,6 +441,25 @@ const ProfilePage = () => {
       }
     } finally {
       setIsSubmitting(false);
+    }
+
+    // 비밀번호 변경 성공 후에는 logout API 결과와 무관하게 세션 정리 + 로그인 이동
+    if (passwordChanged) {
+      try {
+        await logout();
+      } catch {
+        // refresh 쿠키 정리는 best-effort
+      }
+      clearAccessToken();
+      showToast(passwordSuccessMessage);
+      if (companyErrorAfterPassword) {
+        const { message } = applyProfileApiError(companyErrorAfterPassword);
+        showToast(
+          message ??
+            "회사명 변경에 실패했습니다. 다시 로그인한 뒤 시도해주세요.",
+        );
+      }
+      router.replace("/login");
     }
   };
 
