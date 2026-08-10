@@ -13,10 +13,11 @@ import {
   WithdrawMemberModal,
   type WithdrawMemberTarget,
 } from "@/app/(private)/admin/WithdrawMemberModal";
-import { Pagination } from "@/components/ui";
+import { Pagination, type PaginationItem } from "@/components/ui";
+import type { UserApiRole, UserListItem } from "@/types/userTypes";
 
 export type AdminMember = {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: MemberRole;
@@ -24,9 +25,24 @@ export type AdminMember = {
 
 type AdminMemberListProps = {
   members: AdminMember[];
+  paginationItems: PaginationItem[];
+  currentPage: string;
+  previousDisabled: boolean;
+  nextDisabled: boolean;
+  onPrevious: () => void;
+  onNext: () => void;
+  onPageSelect: (page: string) => void;
 };
 
-const paginationItems = ["1", "2", "3", "more", "9"] as const;
+export const mapUserRoleToMemberRole = (role: UserApiRole): MemberRole =>
+  role === "USER" ? "member" : "admin";
+
+export const mapUserToAdminMember = (user: UserListItem): AdminMember => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: mapUserRoleToMemberRole(user.role),
+});
 
 function RoleChip({ role, size }: { role: MemberRole; size: "sm" | "md" }) {
   const isAdmin = role === "admin";
@@ -70,7 +86,16 @@ function MemberAvatar({
   );
 }
 
-export function AdminMemberList({ members }: AdminMemberListProps) {
+export function AdminMemberList({
+  members,
+  paginationItems,
+  currentPage,
+  previousDisabled,
+  nextDisabled,
+  onPrevious,
+  onNext,
+  onPageSelect,
+}: AdminMemberListProps) {
   const [roleTarget, setRoleTarget] = useState<ChangeMemberRoleTarget | null>(
     null,
   );
@@ -96,18 +121,8 @@ export function AdminMemberList({ members }: AdminMemberListProps) {
   return (
     <>
       <ul className="mt-2 xl:mt-4" aria-label="회원 목록">
-        {members.map((member, index) => (
-          <li
-            key={member.id}
-            className={[
-              "relative border-b border-border",
-              // Tablet 시안 8명 / Mobile·Desktop 시안 6명
-              // TODO: API 연동 시 페이지네이션으로 전체 접근 가능하게 처리
-              index >= 6 ? "hidden md:list-item xl:hidden" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          >
+        {members.map((member) => (
+          <li key={member.id} className="relative border-b border-border">
             {/* Mobile / Tablet 카드 */}
             <div className="flex items-center gap-3 py-5 xl:hidden">
               <MemberAvatar role={member.role} size="sm" />
@@ -177,7 +192,12 @@ export function AdminMemberList({ members }: AdminMemberListProps) {
       <Pagination
         aria-label="회원 목록 페이지"
         items={paginationItems}
-        previousDisabled
+        currentPage={currentPage}
+        previousDisabled={previousDisabled}
+        nextDisabled={nextDisabled}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        onPageSelect={onPageSelect}
         className="mt-4 py-2 md:mt-8 xl:mt-10"
       />
 

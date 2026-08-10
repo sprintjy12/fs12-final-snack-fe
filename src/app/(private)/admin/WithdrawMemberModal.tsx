@@ -7,7 +7,7 @@ import {
 } from "@/components/ui";
 
 export type WithdrawMemberTarget = {
-  id: number;
+  id: string;
   name: string;
   email: string;
 };

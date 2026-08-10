@@ -13,7 +13,7 @@ import {
 export type MemberRole = "admin" | "member";
 
 export type ChangeMemberRoleTarget = {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: MemberRole;
@@ -23,7 +23,7 @@ export type ChangeMemberRoleModalProps = {
   open: boolean;
   member: ChangeMemberRoleTarget | null;
   onClose: () => void;
-  onSubmit?: (values: { id: number; role: MemberRole }) => void;
+  onSubmit?: (values: { id: string; role: MemberRole }) => void;
 };
 
 const ROLE_OPTIONS = [
