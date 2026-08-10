@@ -211,7 +211,7 @@ async function fetchAllProductsForLeaf(
   leafId: string,
   sort: ProductListParams["sort"],
 ): Promise<Product[]> {
-  const pageSize = 100;
+  const pageSize = 30;
   let page = 1;
   const all: Product[] = [];
 
