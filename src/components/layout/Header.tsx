@@ -235,9 +235,21 @@ export function Header({
               ) : null}
             </Link>
 
-            <Link href="/profile" aria-label="프로필" className="xl:px-4">
+            <Link
+              href="/profile"
+              aria-label="프로필"
+              aria-current={pathname.startsWith("/profile") ? "page" : undefined}
+              className="xl:px-4"
+            >
               <Icon name="profile" size="sm" className="xl:hidden" />
-              <span className="hidden text-xl leading-8 font-bold text-snack-gray-300 xl:inline">
+              <span
+                className={[
+                  "hidden text-xl leading-8 font-bold xl:inline",
+                  pathname.startsWith("/profile")
+                    ? "text-accent"
+                    : "text-snack-gray-300",
+                ].join(" ")}
+              >
                 Profile
               </span>
             </Link>
