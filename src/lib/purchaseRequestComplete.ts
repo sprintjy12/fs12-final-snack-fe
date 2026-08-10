@@ -25,17 +25,24 @@ export function savePurchaseRequestComplete(
   }
 }
 
-export function readPurchaseRequestComplete(): PurchaseRequestCompleteSummary | null {
-  try {
-    const raw = sessionStorage.getItem(PURCHASE_REQUEST_COMPLETE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as PurchaseRequestCompleteSummary;
-    if (!parsed?.name || typeof parsed.totalCount !== "number") return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
+import { z } from "zod";
+
+export const PURCHASE_REQUEST_COMPLETE_KEY = "snack.purchaseRequestComplete";
+
+const purchaseRequestCompleteSchema = z.object({
+  name: z.string(),
+  extraCount: z.number(),
+  totalCount: z.number(),
+  totalAmount: z.number(),
+  categoryLabel: z.string(),
+  photo: z.string(),
+  requestMessage: z.string(),
+  orderId: z.string().nullable(),
+});
+
+export type PurchaseRequestCompleteSummary = z.infer<
+  typeof purchaseRequestCompleteSchema
+>;
 
 export function clearPurchaseRequestComplete() {
   try {
