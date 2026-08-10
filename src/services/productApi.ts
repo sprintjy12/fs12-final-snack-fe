@@ -1,29 +1,33 @@
 import {
+  CATEGORY_MENU_ORDERED,
   TEMP_CATEGORIES,
   findCategoryMenuItem,
   resolveApiLeafCategoryId,
   resolveApiLeafCategoryIdsForParent,
   resolveApiParentCategoryId,
+  type CategoryMenuItem,
 } from "@/constants/categoryConstants";
 import { DUMMY_PRODUCTS } from "@/features/products/dummyProducts";
+import { setRuntimeCategoryMenu } from "@/lib/categoryMenuRegistry";
 import { isUuid } from "@/lib/parseOptionalId";
 import { apiFetch } from "@/services/api";
-import type {
-  Category,
-  Product,
-  ProductListParams,
-} from "@/types/productTypes";
+import type { Category, Product, ProductListParams } from "@/types/productTypes";
 
 /** 기본 true. 실 API: .env에 NEXT_PUBLIC_USE_MOCK=false */
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
-
-/** BE limit 상한 */
-const BE_MAX_LIMIT = 30;
 
 type BeCategory = {
   id: string;
   name: string;
   parentId: string | null;
+  parent?: { id: string; name: string } | null;
+};
+
+type BeCategoryTreeNode = {
+  id: string;
+  name: string;
+  parentId: string | null;
+  children?: BeCategoryTreeNode[];
 };
 
 type BeProduct = {
@@ -34,38 +38,23 @@ type BeProduct = {
   productUrl: string | null;
   categoryId: string;
   purchaseCount: number;
-  createdAt?: string;
   category?: BeCategory | null;
-};
-
-type BePagination = {
-  page?: number;
-  limit?: number;
-  total?: number;
-  totalPages?: number;
-  /** 일부 API 변형 */
-  hasNext?: boolean;
-  hasNextPage?: boolean;
-  nextCursor?: string | null;
 };
 
 type BeListResponse = {
   message?: string;
   data: BeProduct[];
-  pagination?: BePagination;
+  pagination?: unknown;
 };
-
-type BeProductPage = {
-  products: Product[];
-  pagination?: BePagination;
-};
-
-/** leaf 전체 수집 시 무한 루프 방지. 초과하면 부분 목록 대신 실패 */
-const LEAF_FETCH_MAX_PAGES = 200;
 
 type BeDetailResponse = {
   message?: string;
   data: BeProduct;
+};
+
+type BeCategoriesResponse = {
+  message?: string;
+  data: BeCategoryTreeNode[];
 };
 
 /**
@@ -74,7 +63,11 @@ type BeDetailResponse = {
  */
 function mapBeProduct(product: BeProduct): Product {
   const leaf = product.category;
-  const parentId = leaf?.parentId ?? null;
+  const parentId = leaf?.parentId ?? leaf?.parent?.id ?? null;
+  const parentName =
+    leaf?.parent?.name ??
+    (parentId ? findCategoryMenuItem(parentId)?.name : undefined) ??
+    "";
 
   const subCategory: Product["subCategory"] = leaf
     ? {
@@ -95,15 +88,73 @@ function mapBeProduct(product: BeProduct): Product {
     category: parentId
       ? {
           id: parentId,
-          name: findCategoryMenuItem(parentId)?.name ?? "",
+          name: parentName || leaf?.name || "",
         }
       : leaf
         ? { id: leaf.id, name: leaf.name }
         : undefined,
     subCategory,
     purchaseCount: product.purchaseCount,
-    createdAt: product.createdAt,
   };
+}
+
+function buildMenuFromBe(nodes: BeCategoryTreeNode[]): CategoryMenuItem[] {
+  return nodes.map((parent) => ({
+    id: parent.id,
+    apiId: parent.id,
+    name: parent.name,
+    subCategories: (parent.children ?? []).map((child) => ({
+      id: child.id,
+      apiId: child.id,
+      name: child.name,
+      categoryId: parent.id,
+    })),
+  }));
+}
+
+function filterMockProducts(params: ProductListParams = {}): Product[] {
+  let items = [...DUMMY_PRODUCTS];
+
+  if (params.categoryId !== undefined) {
+    items = items.filter(
+      (product) => String(product.categoryId) === String(params.categoryId),
+    );
+  }
+
+  if (params.subCategoryId !== undefined) {
+    items = items.filter((product) => {
+      const sameSub =
+        String(product.subCategoryId) === String(params.subCategoryId);
+      if (params.categoryId === undefined) return sameSub;
+      return (
+        sameSub && String(product.categoryId) === String(params.categoryId)
+      );
+    });
+  }
+
+  items.sort((a, b) => {
+    switch (params.sort) {
+      case "popular":
+        return (b.purchaseCount ?? 0) - (a.purchaseCount ?? 0);
+      case "priceAsc":
+        return a.price - b.price;
+      case "priceDesc":
+        return b.price - a.price;
+      case "latest":
+      default:
+        return Number(b.id) - Number(a.id);
+    }
+  });
+
+  const page = params.page ?? 1;
+  const pageSize = params.pageSize;
+
+  if (pageSize !== undefined && pageSize > 0) {
+    const start = (page - 1) * pageSize;
+    return items.slice(start, start + pageSize);
+  }
+
+  return items;
 }
 
 function sortProducts(
@@ -120,35 +171,11 @@ function sortProducts(
       case "priceDesc":
         return b.price - a.price;
       case "latest":
-      default: {
-        // BE latest = createdAt desc. UUID 비교는 사용하지 않음
-        const aTime = a.createdAt ? Date.parse(a.createdAt) : NaN;
-        const bTime = b.createdAt ? Date.parse(b.createdAt) : NaN;
-        if (Number.isFinite(aTime) || Number.isFinite(bTime)) {
-          return (Number.isFinite(bTime) ? bTime : 0) -
-            (Number.isFinite(aTime) ? aTime : 0);
-        }
-        // mock: createdAt 없으면 number id 내림차순
-        const aKey = String(a.id);
-        const bKey = String(b.id);
-        if (/^\d+$/.test(aKey) && /^\d+$/.test(bKey)) {
-          return Number(bKey) - Number(aKey);
-        }
-        return 0;
-      }
+      default:
+        return String(b.id).localeCompare(String(a.id));
     }
   });
   return next;
-}
-
-function paginateProducts(
-  items: Product[],
-  page = 1,
-  pageSize?: number,
-): Product[] {
-  if (pageSize === undefined) return items;
-  const start = (page - 1) * pageSize;
-  return items.slice(start, start + pageSize);
 }
 
 function dedupeProducts(items: Product[]): Product[] {
@@ -161,184 +188,121 @@ function dedupeProducts(items: Product[]): Product[] {
   });
 }
 
-/** mock/API 공통: page·pageSize 정규화 (BE limit 상한 포함) */
-function normalizePagination(params: ProductListParams = {}): {
-  page: number;
-  pageSize: number;
-} {
-  const rawPage = params.page;
-  const rawSize = params.pageSize;
-
-  const page =
-    typeof rawPage === "number" && Number.isFinite(rawPage)
-      ? Math.max(1, Math.floor(rawPage))
-      : 1;
-
-  const pageSize =
-    typeof rawSize === "number" && Number.isFinite(rawSize) && rawSize > 0
-      ? Math.min(Math.floor(rawSize), BE_MAX_LIMIT)
-      : BE_MAX_LIMIT;
-
-  return { page, pageSize };
-}
-
-function filterMockProducts(params: ProductListParams = {}): Product[] {
-  let items = [...DUMMY_PRODUCTS];
-
-  if (params.categoryId !== undefined) {
-    items = items.filter(
-      (product) => String(product.categoryId) === String(params.categoryId),
-    );
-  }
-
-  // 소분류 id는 대분류마다 1부터 다시 쓰이므로 categoryId와 함께 매칭
-  if (params.subCategoryId !== undefined) {
-    items = items.filter((product) => {
-      const sameSub =
-        String(product.subCategoryId) === String(params.subCategoryId);
-      if (params.categoryId === undefined) return sameSub;
-      return (
-        sameSub && String(product.categoryId) === String(params.categoryId)
-      );
-    });
-  }
-
-  const { page, pageSize } = normalizePagination(params);
-  items = sortProducts(items, params.sort);
-  return paginateProducts(items, page, pageSize);
-}
-
-async function fetchBeProductPage(options: {
+async function fetchBeProductPage(params: {
   categoryId?: string;
   sort?: ProductListParams["sort"];
-  page: number;
-  pageSize: number;
-}): Promise<BeProductPage> {
+  page?: number;
+  pageSize?: number;
+}): Promise<Product[]> {
   const search = new URLSearchParams();
-  if (options.categoryId) search.set("categoryId", options.categoryId);
-  if (options.sort) search.set("sort", options.sort);
-  search.set("page", String(options.page));
-  search.set("limit", String(options.pageSize));
+  if (params.categoryId) search.set("categoryId", params.categoryId);
+  if (params.sort) search.set("sort", params.sort);
+  if (params.page !== undefined) search.set("page", String(params.page));
+  search.set("limit", String(params.pageSize ?? 30));
 
   const query = search.toString();
   const response = await apiFetch<BeListResponse>(
     `/api/products${query ? `?${query}` : ""}`,
   );
-  return {
-    products: (response.data ?? []).map(mapBeProduct),
-    pagination: response.pagination,
-  };
+  return (response.data ?? []).map(mapBeProduct);
 }
 
-/** BE 페이지 메타로 다음 페이지 존재 여부 판별. 메타 없으면 청크 길이로 추정 */
-function hasMoreProductPages(
-  page: number,
-  pageSize: number,
-  chunkLength: number,
-  pagination?: BePagination,
-): boolean {
-  if (pagination) {
-    if (typeof pagination.hasNext === "boolean") return pagination.hasNext;
-    if (typeof pagination.hasNextPage === "boolean") {
-      return pagination.hasNextPage;
-    }
-    if (
-      typeof pagination.totalPages === "number" &&
-      Number.isFinite(pagination.totalPages)
-    ) {
-      return page < pagination.totalPages;
-    }
-    if (pagination.nextCursor) return true;
-    if (pagination.nextCursor === null || pagination.nextCursor === "") {
-      return false;
-    }
-  }
-  // 메타 없을 때만 length 휴리스틱 (마지막 페이지는 limit 미만)
-  return chunkLength >= pageSize;
-}
-
-/** leaf 한 개의 상품을 BE limit 단위로 모두 수집 */
 async function fetchAllProductsForLeaf(
   leafId: string,
-  sort?: ProductListParams["sort"],
+  sort: ProductListParams["sort"],
 ): Promise<Product[]> {
-  const collected: Product[] = [];
+  const pageSize = 100;
   let page = 1;
+  const all: Product[] = [];
 
-  while (true) {
-    if (page > LEAF_FETCH_MAX_PAGES) {
-      throw new Error(
-        `Product fetch exceeded safety limit (${LEAF_FETCH_MAX_PAGES} pages) for category ${leafId}`,
-      );
-    }
-
-    const { products, pagination } = await fetchBeProductPage({
+  for (;;) {
+    const batch = await fetchBeProductPage({
       categoryId: leafId,
       sort,
       page,
-      pageSize: BE_MAX_LIMIT,
+      pageSize,
     });
-    collected.push(...products);
-
-    if (
-      !hasMoreProductPages(page, BE_MAX_LIMIT, products.length, pagination)
-    ) {
-      break;
-    }
+    all.push(...batch);
+    if (batch.length < pageSize) break;
     page += 1;
+    if (page > 20) break;
   }
 
-  return collected;
+  return all;
+}
+
+/** API 모드에서 목차/필터용 카테고리 트리를 로드해 레지스트리에 캐시 */
+export async function ensureCategoryMenu(): Promise<CategoryMenuItem[]> {
+  if (USE_MOCK) {
+    setRuntimeCategoryMenu(null);
+    return CATEGORY_MENU_ORDERED;
+  }
+
+  try {
+    const response = await apiFetch<BeCategoriesResponse>("/api/categories");
+    const menu = buildMenuFromBe(response.data ?? []);
+    setRuntimeCategoryMenu(menu);
+    return menu;
+  } catch {
+    // BE 미기동/구버전이면 정적 메뉴로라도 GNB 유지
+    setRuntimeCategoryMenu(null);
+    return CATEGORY_MENU_ORDERED;
+  }
 }
 
 export async function getProducts(
   params: ProductListParams = {},
 ): Promise<Product[]> {
-  const { page, pageSize } = normalizePagination(params);
-
   if (USE_MOCK) {
-    return filterMockProducts({ ...params, page, pageSize });
+    return filterMockProducts(params);
+  }
+
+  // 대분류 leaf 목록 해석을 위해 메뉴를 먼저 맞춤
+  if (params.categoryId !== undefined || params.subCategoryId !== undefined) {
+    await ensureCategoryMenu();
   }
 
   const leafApiId = resolveApiLeafCategoryId(params);
   const parentApiId = resolveApiParentCategoryId(params.categoryId);
   const subSelected = params.subCategoryId !== undefined;
 
-  // 소분류를 골랐는데 leaf uuid가 없으면 대분류 전체로 떨어지지 않게 빈 목록
   if (subSelected && !leafApiId) {
     return [];
   }
 
-  // 소분류(leaf) 선택: 서버 페이지네이션 그대로 사용
   if (leafApiId) {
-    const { products } = await fetchBeProductPage({
+    return fetchBeProductPage({
       categoryId: leafApiId,
       sort: params.sort,
-      page,
-      pageSize,
+      page: params.page,
+      pageSize: params.pageSize ?? 30,
     });
-    return products;
   }
 
-  // 대분류만 선택: 하위 leaf들을 조회·병합한 뒤 정렬/페이지네이션
   if (parentApiId) {
     const leafIds = resolveApiLeafCategoryIdsForParent(params.categoryId);
     if (leafIds.length === 0) return [];
 
-    const batches = await Promise.all(
+    const results = await Promise.allSettled(
       leafIds.map((id) => fetchAllProductsForLeaf(id, params.sort)),
     );
+    const batches = results
+      .filter((r): r is PromiseFulfilledResult<Product[]> => r.status === "fulfilled")
+      .map((r) => r.value);
     const merged = sortProducts(dedupeProducts(batches.flat()), params.sort);
-    return paginateProducts(merged, page, pageSize);
+    if (params.pageSize !== undefined && params.pageSize > 0) {
+      const page = params.page ?? 1;
+      const start = (page - 1) * params.pageSize;
+      return merged.slice(start, start + params.pageSize);
+    }
+    return merged;
   }
 
-  // 필터 없음: 서버 페이지네이션
-  const { products } = await fetchBeProductPage({
+  return fetchBeProductPage({
     sort: params.sort,
-    page,
-    pageSize,
+    page: params.page,
+    pageSize: params.pageSize ?? 30,
   });
-  return products;
 }
 
 export async function getProduct(id: number | string): Promise<Product> {
@@ -351,13 +315,22 @@ export async function getProduct(id: number | string): Promise<Product> {
     return product;
   }
 
+  // 부모 이름 매핑용
+  await ensureCategoryMenu().catch(() => CATEGORY_MENU_ORDERED);
+
   const response = await apiFetch<BeDetailResponse>(`/api/products/${id}`);
   return mapBeProduct(response.data);
 }
 
-export async function getCategories(): Promise<Category[]> {
-  // TODO: BE /api/categories 연동 시 서버 트리로 교체
-  return TEMP_CATEGORIES;
+export async function getCategories(): Promise<CategoryMenuItem[]> {
+  return ensureCategoryMenu();
+}
+
+/** 평면 대분류만 필요할 때 */
+export async function getCategoryList(): Promise<Category[]> {
+  if (USE_MOCK) return TEMP_CATEGORIES;
+  const menu = await ensureCategoryMenu();
+  return menu.map(({ id, name }) => ({ id, name }));
 }
 
 export function isProductApiMock() {
