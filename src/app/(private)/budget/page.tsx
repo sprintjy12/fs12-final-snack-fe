@@ -1,12 +1,17 @@
 "use client";
 
+import { isAxiosError } from "axios";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
 
 import { Button, TextField, showToast } from "@/components/ui";
+import { useUpdateBudgetSettings } from "@/hooks/mutations/useUpdateBudgetSettings";
+import { useBudgetSettings } from "@/hooks/queries/useBudgetSettings";
+import type { UpdateBudgetSettingsBody } from "@/types/budgetTypes";
 
-const MAX_SAFE_BUDGET = BigInt(Number.MAX_SAFE_INTEGER);
+/** BE INT32 상한과 동일 */
+const MAX_BUDGET = 2_147_483_647;
 
 /** Number 변환 없이 문자열로 천 단위 구분을 적용해 큰 수의 정밀도를 유지합니다. */
 function formatBudgetValue(value: string) {
@@ -20,27 +25,60 @@ function formatBudgetValue(value: string) {
   return normalized.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
+function formatBudgetAmount(amount: number | null | undefined) {
+  if (amount === null || amount === undefined) {
+    return "";
+  }
+  return formatBudgetValue(String(amount));
+}
+
 function toBudgetDigits(value: string) {
   return value.replaceAll(",", "").trim();
 }
 
-const createBudgetFieldSchema = (label: string) =>
-  z
-    .string()
-    .trim()
-    .min(1, `${label}을 입력해 주세요.`)
-    .refine(
-      (value) => /^\d+$/.test(toBudgetDigits(value)),
-      `${label}은 숫자만 입력할 수 있어요.`,
-    )
-    .refine((value) => {
-      const digits = toBudgetDigits(value);
-      return BigInt(digits) <= MAX_SAFE_BUDGET;
-    }, `${label}이 너무 커요. 다시 입력해 주세요.`);
+const startingBudgetSchema = z
+  .string()
+  .trim()
+  .min(1, "매달 시작 예산을 입력해 주세요.")
+  .refine(
+    (value) => /^\d+$/.test(toBudgetDigits(value)),
+    "매달 시작 예산은 숫자만 입력할 수 있어요.",
+  )
+  .refine((value) => {
+    const amount = Number(toBudgetDigits(value));
+    return Number.isInteger(amount) && amount >= 0;
+  }, "예산은 0원 이상이어야 합니다.")
+  .refine((value) => {
+    const amount = Number(toBudgetDigits(value));
+    return amount <= MAX_BUDGET;
+  }, "예산이 너무 커요. 다시 입력해 주세요.");
+
+/** 빈 값이면 기본값 따름(null). 값이 있으면 0 이상 정수. */
+const monthlyBudgetSchema = z
+  .string()
+  .trim()
+  .refine(
+    (value) => value === "" || /^\d+$/.test(toBudgetDigits(value)),
+    "이번 달 예산은 숫자만 입력할 수 있어요.",
+  )
+  .refine((value) => {
+    if (value === "") {
+      return true;
+    }
+    const amount = Number(toBudgetDigits(value));
+    return Number.isInteger(amount) && amount >= 0;
+  }, "예산은 0원 이상이어야 합니다.")
+  .refine((value) => {
+    if (value === "") {
+      return true;
+    }
+    const amount = Number(toBudgetDigits(value));
+    return amount <= MAX_BUDGET;
+  }, "예산이 너무 커요. 다시 입력해 주세요.");
 
 const budgetFormSchema = z.object({
-  monthlyBudget: createBudgetFieldSchema("이번 달 예산"),
-  startingBudget: createBudgetFieldSchema("매달 시작 예산"),
+  monthlyBudget: monthlyBudgetSchema,
+  startingBudget: startingBudgetSchema,
 });
 
 function getBudgetToastMessage(
@@ -50,27 +88,72 @@ function getBudgetToastMessage(
   const monthlyMessage = fieldErrors.monthlyBudget?.[0];
   const startingMessage = fieldErrors.startingBudget?.[0];
 
-  // 문구 매칭 대신 too_small(빈 값) 코드로 구분합니다.
-  const isMonthlyMissing = error.issues.some(
-    (issue) => issue.path[0] === "monthlyBudget" && issue.code === "too_small",
-  );
-  const isStartingMissing = error.issues.some(
-    (issue) => issue.path[0] === "startingBudget" && issue.code === "too_small",
-  );
-
-  if (isMonthlyMissing && isStartingMissing) {
-    return "이번 달 예산, 매달 시작 예산을 입력해 주세요.";
-  }
-
   return [monthlyMessage, startingMessage].filter(Boolean).join(" ");
 }
 
+function buildUpdateBody(params: {
+  monthlyBudget: string;
+  startingBudget: string;
+  initialMonthly: number | null;
+  initialStarting: number;
+}): UpdateBudgetSettingsBody | null {
+  const body: UpdateBudgetSettingsBody = {};
+  const startingAmount = Number(toBudgetDigits(params.startingBudget));
+  const monthlyDigits = toBudgetDigits(params.monthlyBudget);
+
+  if (startingAmount !== params.initialStarting) {
+    body.defaultMonthlyBudget = startingAmount;
+  }
+
+  if (monthlyDigits === "") {
+    // 이미 기본값 따름(null)이면 변경 없음
+    if (params.initialMonthly !== null) {
+      body.monthlyBudget = null;
+    }
+  } else {
+    const monthlyAmount = Number(monthlyDigits);
+    if (monthlyAmount !== params.initialMonthly) {
+      body.monthlyBudget = monthlyAmount;
+    }
+  }
+
+  return Object.keys(body).length > 0 ? body : null;
+}
+
 export default function BudgetPage() {
-  const [monthlyBudget, setMonthlyBudget] = useState("3,500,000");
-  const [startingBudget, setStartingBudget] = useState("3,000,000");
+  const [monthlyBudget, setMonthlyBudget] = useState("");
+  const [startingBudget, setStartingBudget] = useState("");
+  const [initialMonthly, setInitialMonthly] = useState<number | null>(null);
+  const [initialStarting, setInitialStarting] = useState<number | null>(null);
+  const [isFormReady, setIsFormReady] = useState(false);
+
+  const { data, isPending, isError, error } = useBudgetSettings();
+  const updateMutation = useUpdateBudgetSettings();
+
+  useEffect(() => {
+    const settings = data?.data;
+    if (!settings || isFormReady) {
+      return;
+    }
+
+    setMonthlyBudget(formatBudgetAmount(settings.currentMonth.amount));
+    setStartingBudget(formatBudgetAmount(settings.defaultMonthlyBudget));
+    setInitialMonthly(settings.currentMonth.amount);
+    setInitialStarting(settings.defaultMonthlyBudget);
+    setIsFormReady(true);
+  }, [data?.data, isFormReady]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (updateMutation.isPending) {
+      return;
+    }
+
+    if (initialStarting === null) {
+      showToast("예산 설정을 불러온 뒤 다시 시도해 주세요.");
+      return;
+    }
 
     const result = budgetFormSchema.safeParse({
       monthlyBudget,
@@ -82,13 +165,50 @@ export default function BudgetPage() {
       return;
     }
 
-    // TODO: 예산 수정 API 연동
-    // 정밀도 유지를 위해 숫자 문자열로 전달하거나, 도메인 검증 후 변환합니다.
-    // const payload = {
-    //   monthlyBudget: toBudgetDigits(result.data.monthlyBudget),
-    //   startingBudget: toBudgetDigits(result.data.startingBudget),
-    // };
-    showToast("예산이 변경되었습니다.");
+    const body = buildUpdateBody({
+      monthlyBudget: result.data.monthlyBudget,
+      startingBudget: result.data.startingBudget,
+      initialMonthly,
+      initialStarting,
+    });
+
+    if (!body) {
+      showToast("변경할 예산 값을 하나 이상 보내주세요.");
+      return;
+    }
+
+    updateMutation.mutate(body, {
+      onSuccess: (response) => {
+        const settings = response.data;
+        if (settings) {
+          setMonthlyBudget(formatBudgetAmount(settings.currentMonth.amount));
+          setStartingBudget(formatBudgetAmount(settings.defaultMonthlyBudget));
+          setInitialMonthly(settings.currentMonth.amount);
+          setInitialStarting(settings.defaultMonthlyBudget);
+        } else if (typeof body.defaultMonthlyBudget === "number") {
+          setInitialStarting(body.defaultMonthlyBudget);
+          if (body.monthlyBudget === null) {
+            setInitialMonthly(null);
+          } else if (typeof body.monthlyBudget === "number") {
+            setInitialMonthly(body.monthlyBudget);
+          }
+        } else if (body.monthlyBudget === null) {
+          setInitialMonthly(null);
+        } else if (typeof body.monthlyBudget === "number") {
+          setInitialMonthly(body.monthlyBudget);
+        }
+        showToast(response.message || "예산이 변경되었습니다.");
+      },
+      onError: (mutationError) => {
+        const message = isAxiosError(mutationError)
+          ? ((mutationError.response?.data as { message?: string } | undefined)
+              ?.message ?? mutationError.message)
+          : mutationError instanceof Error
+            ? mutationError.message
+            : "예산 수정에 실패했습니다.";
+        showToast(message);
+      },
+    });
   };
 
   return (
@@ -120,49 +240,70 @@ export default function BudgetPage() {
           예산 관리
         </h1>
 
-        <form
-          onSubmit={handleSubmit}
-          className="mt-10 flex w-full flex-col items-stretch md:mt-16"
-          noValidate
-        >
-          <div className="flex flex-col gap-4 border-y border-snack-gray-200 py-4 md:gap-8 md:py-8">
-            <label className="flex flex-col gap-2 md:gap-4">
-              <span className="text-sm leading-6 font-medium text-foreground-strong md:text-xl md:leading-8">
-                이번 달 예산
-              </span>
-              <TextField
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                value={monthlyBudget}
-                onChange={(event) =>
-                  setMonthlyBudget(formatBudgetValue(event.target.value))
-                }
-                className="text-snack-gray-400 md:h-16 md:text-xl md:leading-8 xl:h-16"
-              />
-            </label>
+        {isPending ? (
+          <p className="mt-10 text-center text-foreground-muted md:mt-16">
+            예산 설정을 불러오는 중…
+          </p>
+        ) : null}
 
-            <label className="flex flex-col gap-2 md:gap-4">
-              <span className="text-sm leading-6 font-medium text-foreground-strong md:text-xl md:leading-8">
-                매달 시작 예산
-              </span>
-              <TextField
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                value={startingBudget}
-                onChange={(event) =>
-                  setStartingBudget(formatBudgetValue(event.target.value))
-                }
-                className="text-snack-gray-400 md:h-16 md:text-xl md:leading-8 xl:h-16"
-              />
-            </label>
-          </div>
+        {isError ? (
+          <p className="mt-10 text-center text-snack-state-100 md:mt-16">
+            {error instanceof Error
+              ? error.message
+              : "예산 설정을 불러오지 못했습니다."}
+          </p>
+        ) : null}
 
-          <Button type="submit" width="full" className="mt-8 md:mt-14">
-            수정하기
-          </Button>
-        </form>
+        {!isPending && !isError && isFormReady ? (
+          <form
+            onSubmit={handleSubmit}
+            className="mt-10 flex w-full flex-col items-stretch md:mt-16"
+            noValidate
+          >
+            <div className="flex flex-col gap-4 border-y border-snack-gray-200 py-4 md:gap-8 md:py-8">
+              <label className="flex flex-col gap-2 md:gap-4">
+                <span className="text-sm leading-6 font-medium text-foreground-strong md:text-xl md:leading-8">
+                  이번 달 예산
+                </span>
+                <TextField
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={monthlyBudget}
+                  onChange={(event) =>
+                    setMonthlyBudget(formatBudgetValue(event.target.value))
+                  }
+                  className="text-snack-gray-400 md:h-16 md:text-xl md:leading-8 xl:h-16"
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 md:gap-4">
+                <span className="text-sm leading-6 font-medium text-foreground-strong md:text-xl md:leading-8">
+                  매달 시작 예산
+                </span>
+                <TextField
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={startingBudget}
+                  onChange={(event) =>
+                    setStartingBudget(formatBudgetValue(event.target.value))
+                  }
+                  className="text-snack-gray-400 md:h-16 md:text-xl md:leading-8 xl:h-16"
+                />
+              </label>
+            </div>
+
+            <Button
+              type="submit"
+              width="full"
+              className="mt-8 md:mt-14"
+              disabled={updateMutation.isPending}
+            >
+              {updateMutation.isPending ? "수정 중…" : "수정하기"}
+            </Button>
+          </form>
+        ) : null}
       </div>
     </main>
   );

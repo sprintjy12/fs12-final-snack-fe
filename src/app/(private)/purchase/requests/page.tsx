@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useState, type ChangeEvent } from "react";
+import axios from "axios";
 
 import { PurchaseRequestsList } from "@/app/(private)/purchase/requests/PurchaseRequestsList";
 import {
@@ -13,6 +14,19 @@ import { useOrderRequests } from "@/hooks/queries/useOrderRequests";
 import type { OrderRequestListSort } from "@/types/orderTypes";
 
 const PAGE_SIZE = 10;
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (axios.isAxiosError(error)) {
+    const message = error.response?.data?.message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
+};
 
 /** 시안용 페이지 번호 배열을 API totalPages 기준으로 만듭니다. */
 const buildPaginationItems = (
@@ -100,9 +114,7 @@ export default function PurchaseRequestsPage() {
 
         {isError ? (
           <p className="px-6 py-16 text-center text-snack-state-100 xl:px-0">
-            {error instanceof Error
-              ? error.message
-              : "구매 요청을 불러오지 못했습니다."}
+            {getErrorMessage(error, "구매 요청을 불러오지 못했습니다.")}
           </p>
         ) : null}
 

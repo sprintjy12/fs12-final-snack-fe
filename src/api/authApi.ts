@@ -5,6 +5,10 @@ import {
   isAccessTokenValid,
   setAccessToken,
 } from "@/lib/authStorage";
+import type {
+  LoginPayload,
+  SuperAdminSignupPayload,
+} from "@/types/authTypes";
 
 type LoginResponse = {
   message: string;
@@ -103,10 +107,7 @@ export const ensureAccessToken = async () => {
   return token;
 };
 
-export const login = async (payload: {
-  email: string;
-  password: string;
-}) => {
+export const login = async (payload: LoginPayload) => {
   const response = await apiClient.post<LoginResponse>("/api/auth/login", payload);
   const token = getAccessTokenFromLoginBody(response.data);
   if (!token) {
@@ -114,5 +115,36 @@ export const login = async (payload: {
   }
 
   setAccessToken(token);
+  return response.data;
+};
+
+type SuperAdminSignupResponse = {
+  message: string;
+  data: {
+    company: {
+      id: string;
+      name: string;
+      businessNumber: string;
+      createdAt: string;
+    };
+    user: {
+      id: string;
+      companyId: string;
+      name: string;
+      email: string;
+      role: string;
+      status: string;
+      createdAt: string;
+    };
+  };
+};
+
+/** 기업 담당자(최고 관리자) 회원가입 — POST /api/auth/super-admin/signup */
+export const signupSuperAdmin = async (payload: SuperAdminSignupPayload) => {
+  const response = await apiClient.post<SuperAdminSignupResponse>(
+    "/api/auth/super-admin/signup",
+    payload,
+  );
+
   return response.data;
 };
