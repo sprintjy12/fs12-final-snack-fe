@@ -177,8 +177,11 @@ export default function CartPage() {
         cartItemIds: requestItems.map((item) => item.id),
         requestMessage: message || undefined,
       });
-      const data = response.data;
-      savePurchaseRequestComplete({
+        const data = response.data;
+        if (!data.orderId) {
+          throw new Error("구매 요청 응답에 orderId가 없습니다.");
+        }
+        savePurchaseRequestComplete({
         name: data.firstProductName,
         extraCount: Math.max(0, data.itemCount - 1),
         totalCount: data.totalQuantity,
@@ -458,6 +461,14 @@ export default function CartPage() {
                           <strong className="text-center text-2xl leading-8 font-bold text-foreground-strong">
                             {formatPrice(lineTotal)}
                           </strong>
+                          <button
+                            type="button"
+                            className="flex items-center justify-center rounded-full border-0 bg-accent px-8 py-3 text-lg leading-[26px] font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-40"
+                            disabled={submittingRequest}
+                            onClick={() => openRequestModal([item])}
+                          >
+                            즉시 요청
+                          </button>
                         </div>
 
                         <div className="flex min-w-0 flex-col items-center justify-center gap-2 border-b border-snack-gray-300 px-2.5 py-6">
@@ -542,14 +553,14 @@ export default function CartPage() {
               <div className="mt-4 flex flex-wrap gap-3 sm:gap-4">
                 <button
                   type="button"
-                  className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-[20px] border border-border bg-transparent px-4 py-2 text-base leading-[26px] text-foreground-strong hover:border-snack-gray-400 hover:text-snack-black-100 disabled:cursor-not-allowed disabled:opacity-45"
+                  className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-snack-gray-200 bg-surface-muted px-[18px] py-3 text-lg leading-[26px] text-snack-gray-500 hover:border-snack-gray-400 hover:text-snack-black-100 disabled:cursor-not-allowed disabled:opacity-45"
                   onClick={handleClearAll}
                 >
                   전체 상품 삭제
                 </button>
                 <button
                   type="button"
-                  className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-[20px] border border-border bg-transparent px-4 py-2 text-base leading-[26px] text-foreground-strong hover:border-snack-gray-400 hover:text-snack-black-100 disabled:cursor-not-allowed disabled:opacity-45"
+                  className="inline-flex min-h-10 cursor-pointer items-center justify-center rounded-full border border-snack-gray-200 bg-surface-muted px-[18px] py-3 text-lg leading-[26px] text-snack-gray-500 hover:border-snack-gray-400 hover:text-snack-black-100 disabled:cursor-not-allowed disabled:opacity-45"
                   disabled={!someSelected}
                   onClick={handleRemoveSelected}
                 >
