@@ -260,11 +260,13 @@ const InvitedSignupPageContent = () => {
 
     const loadInvitation = async () => {
       if (!token) {
+        setIsVerifying(false);
         showToast("초대 링크가 올바르지 않습니다.");
         router.replace("/login");
         return;
       }
 
+      setInvitation(null);
       setIsVerifying(true);
 
       try {

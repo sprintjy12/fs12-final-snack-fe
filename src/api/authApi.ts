@@ -5,6 +5,7 @@ import {
   isAccessTokenValid,
   setAccessToken,
 } from "@/lib/authStorage";
+import { invitationVerifyDataSchema } from "@/schemas/authSchema";
 import type {
   CreateInvitationPayload,
   CreateInvitationResult,
@@ -172,13 +173,20 @@ type InvitedSignupResponse = {
 };
 
 /** 초대 토큰 검증 — GET /api/invitations/verify */
-export const verifyInvitation = async (token: string) => {
+export const verifyInvitation = async (
+  token: string,
+): Promise<InvitationVerifyData> => {
   const response = await apiClient.get<VerifyInvitationResponse>(
     "/api/invitations/verify",
     { params: { token } },
   );
 
-  return response.data.data;
+  const parsed = invitationVerifyDataSchema.safeParse(response.data.data);
+  if (!parsed.success) {
+    throw new Error("초대 정보 응답 형식이 올바르지 않습니다.");
+  }
+
+  return parsed.data;
 };
 
 /** 초대 회원가입 — POST /api/invitations/signup */

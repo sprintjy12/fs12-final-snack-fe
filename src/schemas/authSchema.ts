@@ -51,7 +51,7 @@ export const adminSignupFormSchema = z
         PASSWORD_SPECIAL_CHARACTER,
         "비밀번호에 특수문자를 1자 이상 포함해주세요.",
       ),
-    passwordConfirm: z.string().min(1, "비밀번호를 입력해주세요."),
+    passwordConfirm: z.string().min(1, "비밀번호 확인을 입력해주세요."),
     companyName: z
       .string()
       .trim()
@@ -129,7 +129,7 @@ const invitedSignupPasswordSchema = z
 export const invitedSignupFormSchema = z
   .object({
     password: invitedSignupPasswordSchema,
-    passwordConfirm: z.string().min(1, "비밀번호를 입력해주세요."),
+    passwordConfirm: z.string().min(1, "비밀번호 확인을 입력해주세요."),
   })
   .refine((data) => data.password === data.passwordConfirm, {
     message: "비밀번호가 일치하지 않습니다.",
@@ -142,3 +142,17 @@ export type InvitedSignupFormSchemaInput = z.input<
 export type InvitedSignupFormSchemaOutput = z.output<
   typeof invitedSignupFormSchema
 >;
+
+/**
+ * 초대 토큰 검증 응답 data (BE verifyInvitation 반환값).
+ * @see fs12-final-snack-be/src/services/invitationService.ts
+ * @see fs12-final-snack-be/src/controllers/invitationController.ts
+ */
+export const invitationVerifyDataSchema = z.object({
+  name: z.string(),
+  email: z.string(),
+  role: z.enum(["USER", "ADMIN"]),
+  companyName: z.string(),
+  /** Express JSON 직렬화 후 ISO 문자열 */
+  expiresAt: z.string(),
+});

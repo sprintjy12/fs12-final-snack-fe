@@ -138,19 +138,25 @@ export function InviteMemberModal({
         email: result.data.email,
         role: ROLE_TO_API[result.data.role],
       });
+    } catch (error) {
+      showToast(getInviteApiErrorMessage(error));
+      setIsSubmitting(false);
+      return;
+    }
 
+    try {
       onSubmit?.({
         name: result.data.name,
         email: result.data.email,
         role: result.data.role,
       });
-      showToast("회원 초대를 완료했어요.");
-      onClose();
-    } catch (error) {
-      showToast(getInviteApiErrorMessage(error));
-    } finally {
-      setIsSubmitting(false);
+    } catch {
+      // onSubmit 실패는 API 실패로 취급하지 않음
     }
+
+    showToast("회원 초대를 완료했어요.");
+    onClose();
+    setIsSubmitting(false);
   };
 
   return (

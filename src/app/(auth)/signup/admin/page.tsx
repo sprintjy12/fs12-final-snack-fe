@@ -54,6 +54,40 @@ const getAdminSignupFormErrors = (
   return next;
 };
 
+/**
+ * BE zodValidate는 400 시 fieldErrors를 `errors`로 반환합니다.
+ * passwordConfirm은 API payload 필드가 아니므로 매핑하지 않습니다.
+ * @see fs12-final-snack-be/src/middlewares/zodValidate.ts
+ */
+const mapApiFieldErrors = (
+  fieldErrors: Record<string, unknown>,
+): AdminSignupErrors => {
+  const next: AdminSignupErrors = {};
+
+  for (const [key, value] of Object.entries(fieldErrors)) {
+    if (
+      key !== "name" &&
+      key !== "email" &&
+      key !== "password" &&
+      key !== "companyName" &&
+      key !== "businessNumber"
+    ) {
+      continue;
+    }
+
+    if (Array.isArray(value) && typeof value[0] === "string" && value[0]) {
+      next[key] = value[0];
+      continue;
+    }
+
+    if (typeof value === "string" && value) {
+      next[key] = value;
+    }
+  }
+
+  return next;
+};
+
 const applySignupApiError = (
   error: unknown,
 ): {
@@ -74,6 +108,7 @@ const applySignupApiError = (
     | {
         message?: unknown;
         code?: unknown;
+        errors?: Record<string, unknown>;
       }
     | undefined;
 
@@ -81,6 +116,17 @@ const applySignupApiError = (
     typeof data?.message === "string" && data.message.trim()
       ? data.message
       : "회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.";
+
+  if (
+    error.response?.status === 400 &&
+    data?.errors &&
+    typeof data.errors === "object"
+  ) {
+    const fieldErrors = mapApiFieldErrors(data.errors);
+    if (Object.keys(fieldErrors).length > 0) {
+      return { fieldErrors };
+    }
+  }
 
   if (error.response?.status === 409) {
     if (data?.code === "AUTH_DUPLICATE_EMAIL") {

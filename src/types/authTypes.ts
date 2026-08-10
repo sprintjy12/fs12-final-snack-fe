@@ -51,16 +51,16 @@ export type InvitedSignupPayload = {
   password: string;
 };
 
+/** BE InvitationRole — USER | ADMIN */
+export type InvitationApiRole = "USER" | "ADMIN";
+
 export type InvitationVerifyData = {
   name: string;
   email: string;
-  role: string;
+  role: InvitationApiRole;
   companyName: string;
   expiresAt: string;
 };
-
-/** BE InvitationRole — USER | ADMIN */
-export type InvitationApiRole = "USER" | "ADMIN";
 
 export type CreateInvitationPayload = {
   name: string;
