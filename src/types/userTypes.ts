@@ -33,3 +33,24 @@ export type GetUsersParams = {
 export type WithdrawUserResponse = {
   message: string;
 };
+
+/** PATCH /api/users/:userId/role — SUPER_ADMIN으로 변경 불가 */
+export type UpdateUserRoleApiRole = "USER" | "ADMIN";
+
+export type UpdateUserRolePayload = {
+  role: UpdateUserRoleApiRole;
+};
+
+export type UpdateUserRoleResult = {
+  id: string;
+  companyId: string;
+  name: string;
+  email: string;
+  role: UserApiRole;
+  status: string;
+};
+
+export type UpdateUserRoleResponse = {
+  message: string;
+  data: UpdateUserRoleResult;
+};

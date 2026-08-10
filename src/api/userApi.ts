@@ -1,6 +1,8 @@
 import { apiClient } from "@/api/core/apiClient";
 import type {
   GetUsersParams,
+  UpdateUserRolePayload,
+  UpdateUserRoleResponse,
   UserListResponse,
   WithdrawUserResponse,
 } from "@/types/userTypes";
@@ -31,6 +33,19 @@ export const withdrawUser = async (
 ): Promise<WithdrawUserResponse> => {
   const response = await apiClient.delete<WithdrawUserResponse>(
     `/api/users/${userId}`,
+  );
+
+  return response.data;
+};
+
+/** 회원 권한 변경 — PATCH /api/users/:userId/role */
+export const updateUserRole = async (
+  userId: string,
+  payload: UpdateUserRolePayload,
+): Promise<UpdateUserRoleResponse> => {
+  const response = await apiClient.patch<UpdateUserRoleResponse>(
+    `/api/users/${userId}/role`,
+    payload,
   );
 
   return response.data;
