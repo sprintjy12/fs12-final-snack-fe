@@ -171,7 +171,7 @@ export default function ProductDetailPage() {
                 className={styles.breadcrumbSep}
               />
             </li>
-            {product.category ? (
+            {product.category?.name ? (
               <li className={styles.breadcrumbItem}>
                 <Link
                   href={`/products?categoryId=${product.categoryId}`}
@@ -186,8 +186,24 @@ export default function ProductDetailPage() {
                 />
               </li>
             ) : null}
+            {product.subCategory?.name &&
+            product.subCategory.name !== product.category?.name ? (
+              <li className={styles.breadcrumbItem}>
+                <Link
+                  href={`/products?categoryId=${product.categoryId}&subCategoryId=${product.subCategoryId}`}
+                  className={styles.breadcrumbLink}
+                >
+                  {product.subCategory.name}
+                </Link>
+                <Icon
+                  name="chevron-right"
+                  size="sm"
+                  className={styles.breadcrumbSep}
+                />
+              </li>
+            ) : null}
             <li className={styles.breadcrumbItem} aria-current="page">
-              {categoryLabel ?? product.name}
+              {product.name}
             </li>
           </ol>
         </nav>
