@@ -259,10 +259,12 @@ export default function PurchaseRequestDetailPage() {
               </strong>
             </div>
 
-            <PurchaseRequestDecisionActions
-              requestId={requestId}
-              approveDisabled={isBudgetExceeded}
-            />
+            {detail.status === "PENDING" ? (
+              <PurchaseRequestDecisionActions
+                requestId={requestId}
+                approveDisabled={isBudgetExceeded}
+              />
+            ) : null}
           </section>
         </div>
       ) : null}
