@@ -1,3 +1,4 @@
+import { apiClient } from "@/api/core/apiClient";
 import {
   CATEGORY_MENU_ORDERED,
   TEMP_CATEGORIES,
@@ -13,6 +14,7 @@ import { isUuid } from "@/lib/parseOptionalId";
 import { apiFetch } from "@/services/api";
 import type {
   Category,
+  CreateProductInput,
   Product,
   ProductListParams,
   UpdateProductInput,
@@ -400,6 +402,62 @@ export async function updateProduct(
   );
 
   return mapBeProduct(response.data);
+}
+
+/**
+ * 상품 등록.
+ * mock: DUMMY_PRODUCTS에 push / API: POST /api/products
+ */
+export async function createProduct(
+  input: CreateProductInput,
+): Promise<Product> {
+  if (USE_MOCK) {
+    const categoryMenuItem = findCategoryMenuItem(input.categoryId);
+    const subCategoryMenuItem = categoryMenuItem?.subCategories.find(
+      (sub) => String(sub.id) === String(input.subCategoryId),
+    );
+    const created: Product = {
+      id: Date.now(),
+      name: input.name,
+      price: input.price,
+      url: input.url ?? "",
+      photo: input.photo ?? "",
+      categoryId: input.categoryId,
+      subCategoryId: input.subCategoryId,
+      category: categoryMenuItem
+        ? { id: categoryMenuItem.id, name: categoryMenuItem.name }
+        : undefined,
+      subCategory: subCategoryMenuItem
+        ? {
+            id: subCategoryMenuItem.id,
+            name: subCategoryMenuItem.name,
+            categoryId: input.categoryId,
+          }
+        : undefined,
+      purchaseCount: 0,
+      createdAt: new Date().toISOString(),
+    };
+    DUMMY_PRODUCTS.unshift(created);
+    return created;
+  }
+
+  await ensureCategoryMenu().catch(() => CATEGORY_MENU_ORDERED);
+
+  const leafApiId =
+    resolveApiLeafCategoryId({
+      categoryId: input.categoryId,
+      subCategoryId: input.subCategoryId,
+    }) ?? String(input.subCategoryId);
+
+  const response = await apiClient.post<BeDetailResponse>("/api/products", {
+    name: input.name,
+    price: input.price,
+    categoryId: leafApiId,
+    productUrl: input.url,
+    imageUrl: input.photo,
+  });
+
+  return mapBeProduct(response.data.data);
 }
 
 export async function getCategories(): Promise<CategoryMenuItem[]> {
