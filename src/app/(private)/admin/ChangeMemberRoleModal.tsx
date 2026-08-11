@@ -1,5 +1,6 @@
 "use client";
 
+import { isAxiosError } from "axios";
 import { useEffect, useId, useState, type FormEvent } from "react";
 
 import {
@@ -9,11 +10,13 @@ import {
   TextField,
   showToast,
 } from "@/components/ui";
+import { useUpdateUserRole } from "@/hooks/mutations/useUpdateUserRole";
+import type { UpdateUserRoleApiRole } from "@/types/userTypes";
 
 export type MemberRole = "admin" | "member";
 
 export type ChangeMemberRoleTarget = {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: MemberRole;
@@ -23,7 +26,7 @@ export type ChangeMemberRoleModalProps = {
   open: boolean;
   member: ChangeMemberRoleTarget | null;
   onClose: () => void;
-  onSubmit?: (values: { id: number; role: MemberRole }) => void;
+  onSubmit?: (values: { id: string; role: MemberRole }) => void;
 };
 
 const ROLE_OPTIONS = [
@@ -31,9 +34,15 @@ const ROLE_OPTIONS = [
   { value: "member" as const, label: "일반" },
 ];
 
+const ROLE_TO_API: Record<MemberRole, UpdateUserRoleApiRole> = {
+  admin: "ADMIN",
+  member: "USER",
+};
+
 /**
  * 회원 권한 변경 폼 모달.
  * 이름/이메일은 읽기 전용, 권한만 변경합니다. (ModalShell 사용)
+ * API: PATCH /api/users/:userId/role
  */
 export function ChangeMemberRoleModal({
   open,
@@ -43,6 +52,7 @@ export function ChangeMemberRoleModal({
 }: ChangeMemberRoleModalProps) {
   const titleId = useId();
   const roleLabelId = useId();
+  const updateRoleMutation = useUpdateUserRole();
 
   const [role, setRole] = useState<MemberRole>("admin");
 
@@ -54,23 +64,49 @@ export function ChangeMemberRoleModal({
     setRole(member.role);
   }, [open, member]);
 
+  const handleClose = () => {
+    if (updateRoleMutation.isPending) {
+      return;
+    }
+    onClose();
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!member) {
+    if (!member || updateRoleMutation.isPending) {
       return;
     }
 
-    // TODO: 권한 변경 API 연동
-    onSubmit?.({ id: member.id, role });
-    showToast("권한이 변경되었습니다.");
-    onClose();
+    updateRoleMutation.mutate(
+      {
+        userId: member.id,
+        payload: { role: ROLE_TO_API[role] },
+      },
+      {
+        onSuccess: () => {
+          onSubmit?.({ id: member.id, role });
+          showToast("권한이 변경되었습니다.");
+          onClose();
+        },
+        onError: (error) => {
+          const message = isAxiosError(error)
+            ? ((error.response?.data as { message?: string } | undefined)
+                ?.message ?? error.message)
+            : error instanceof Error
+              ? error.message
+              : "권한 변경에 실패했습니다.";
+          showToast(message);
+        },
+      },
+    );
   };
 
   return (
     <ModalShell
       open={open && Boolean(member)}
-      onClose={onClose}
+      onClose={handleClose}
+      closeOnOverlayClick={!updateRoleMutation.isPending}
       aria-labelledby={titleId}
       className="flex max-w-[375px] flex-col gap-10 p-6 md:max-w-[375px] md:rounded-[32px] xl:max-w-[688px] xl:gap-14 xl:px-6 xl:pt-8 xl:pb-10"
     >
@@ -131,12 +167,18 @@ export function ChangeMemberRoleModal({
           variant="secondary"
           width="modal"
           className="flex-1"
-          onClick={onClose}
+          disabled={updateRoleMutation.isPending}
+          onClick={handleClose}
         >
           취소
         </Button>
-        <Button type="submit" width="modal" className="flex-1">
-          변경하기
+        <Button
+          type="submit"
+          width="modal"
+          className="flex-1"
+          disabled={updateRoleMutation.isPending}
+        >
+          {updateRoleMutation.isPending ? "변경 중…" : "변경하기"}
         </Button>
       </form>
     </ModalShell>

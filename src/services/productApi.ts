@@ -15,6 +15,7 @@ import type {
   Category,
   Product,
   ProductListParams,
+  UpdateProductInput,
 } from "@/types/productTypes";
 
 /** 기본 true. 실 API: .env에 NEXT_PUBLIC_USE_MOCK=false */
@@ -325,6 +326,75 @@ export async function getProduct(id: number | string): Promise<Product> {
   await ensureCategoryMenu().catch(() => CATEGORY_MENU_ORDERED);
 
   const response = await apiFetch<BeDetailResponse>(`/api/products/${id}`);
+  return mapBeProduct(response.data);
+}
+
+/**
+ * 상품 수정.
+ * mock: DUMMY_PRODUCTS 갱신 / API: PATCH /api/products/:id
+ */
+export async function updateProduct(
+  input: UpdateProductInput,
+): Promise<Product> {
+  if (USE_MOCK) {
+    const index = DUMMY_PRODUCTS.findIndex(
+      (item) => String(item.id) === String(input.id),
+    );
+    if (index < 0) {
+      throw new Error(`Product not found: ${input.id}`);
+    }
+
+    const current = DUMMY_PRODUCTS[index];
+    const categoryMenuItem = findCategoryMenuItem(input.categoryId);
+    const subCategoryMenuItem = categoryMenuItem?.subCategories.find(
+      (sub) => String(sub.id) === String(input.subCategoryId),
+    );
+
+    const updated: Product = {
+      ...current,
+      name: input.name,
+      price: input.price,
+      url: input.url ?? current.url,
+      photo: input.photo ?? current.photo,
+      categoryId: input.categoryId,
+      subCategoryId: input.subCategoryId,
+      category: categoryMenuItem
+        ? { id: categoryMenuItem.id, name: categoryMenuItem.name }
+        : undefined,
+      subCategory: subCategoryMenuItem
+        ? {
+            id: subCategoryMenuItem.id,
+            name: subCategoryMenuItem.name,
+            categoryId: input.categoryId,
+          }
+        : undefined,
+    };
+    return updated;
+  }
+
+  await ensureCategoryMenu().catch(() => CATEGORY_MENU_ORDERED);
+
+  const leafApiId =
+    resolveApiLeafCategoryId({
+      categoryId: input.categoryId,
+      subCategoryId: input.subCategoryId,
+    }) ?? String(input.subCategoryId);
+
+  const response = await apiFetch<BeDetailResponse>(
+    `/api/products/${input.id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: input.name,
+        price: input.price,
+        categoryId: leafApiId,
+        productUrl: input.url,
+        imageUrl: input.photo,
+      }),
+      credentials: "include",
+    },
+  );
+
   return mapBeProduct(response.data);
 }
 

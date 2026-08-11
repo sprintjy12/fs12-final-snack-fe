@@ -213,3 +213,19 @@ export const createInvitation = async (payload: CreateInvitationPayload) => {
 
   return response.data.data;
 };
+
+/**
+ * 로그아웃 — POST /api/auth/logout
+ * BE가 refreshToken DB 삭제 + refreshToken 쿠키 clearCookie 처리.
+ * access token은 응답과 무관하게 항상 제거합니다.
+ * @see fs12-final-snack-be/src/controllers/authController.ts
+ */
+export const logout = async () => {
+  try {
+    await apiClient.post("/api/auth/logout");
+  } catch {
+    // 이미 폐기된 refreshToken 등이어도 클라이언트 정리는 계속합니다.
+  } finally {
+    clearAccessToken();
+  }
+};

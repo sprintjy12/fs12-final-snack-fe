@@ -230,3 +230,30 @@ export type ProcessOrderResponse = {
   message: string;
   data: ProcessOrderResult;
 };
+
+/** POST /api/orders/requests body */
+export type CreatePurchaseRequestBody = {
+  cartItemIds: string[];
+  requestMessage?: string;
+};
+
+/** POST /api/orders/requests data — 완료 페이지 요약 */
+export type CreatePurchaseRequestData = {
+  orderId: string;
+  status: OrderDetailStatus;
+  productAmount: number;
+  shippingFee: number;
+  totalPrice: number;
+  totalQuantity: number;
+  itemCount: number;
+  requestMessage: string | null;
+  requestedAt: string;
+  firstProductName: string;
+  categoryName: string | null;
+};
+
+export type CreatePurchaseRequestResponse = {
+  success: boolean;
+  message: string;
+  data: CreatePurchaseRequestData;
+};
