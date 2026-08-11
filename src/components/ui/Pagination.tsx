@@ -56,10 +56,10 @@ export function Pagination({
       </button>
 
       <div className="flex items-center gap-1">
-        {items.map((page) =>
+        {items.map((page, index) =>
           page === "more" ? (
             <span
-              key={page}
+              key={`more-${index}`}
               aria-hidden="true"
               className="flex size-[34px] items-center justify-center text-snack-gray-300 xl:size-12"
             >
@@ -67,7 +67,7 @@ export function Pagination({
             </span>
           ) : (
             <button
-              key={page}
+              key={`${page}-${index}`}
               type="button"
               aria-current={page === currentPage ? "page" : undefined}
               onClick={() => onPageSelect?.(page)}
