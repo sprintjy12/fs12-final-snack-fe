@@ -148,7 +148,7 @@ export default function ProductDetailPage() {
   };
 
   const handleProductDeleted = () => {
-    router.push("/products/mine");
+    router.push("/products");
   };
 
   if (!id) {
