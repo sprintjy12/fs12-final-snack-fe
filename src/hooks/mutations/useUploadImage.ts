@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { ensureAccessToken } from "@/api/authApi";
 import { getPresignedUrl } from "@/api/uploadApi";
+import { toPublicImageUrl } from "@/lib/productMedia";
 import type { UploadImageResult } from "@/types/uploadTypes";
 
 const ALLOWED_IMAGE_MIME_TYPES = [
@@ -38,9 +39,9 @@ const imageFileSchema = z
  *
  * 흐름
  * 1) 클라이언트에서 MIME·크기 검증 (accept는 UI 힌트일 뿐)
- * 2) 백엔드에 Presigned URL 발급 요청 (Axios + Bearer 토큰)
- * 3) 받은 uploadUrl로 파일 PUT (fetch)
- * 4) 성공 시 S3 Object Key 반환
+ * 2) 백엔드에 Presigned URL 발급 요청 (fileName, contentType, fileSize)
+ * 3) 받은 uploadUrl로 파일 PUT (fetch, Authorization 없이)
+ * 4) 성공 시 공개 URL(url) + Object Key 반환 → 상품 등록 imageUrl에 사용
  *
  * fetch를 쓰는 이유:
  * Presigned URL은 우리 API가 아니라 S3 등 외부 주소입니다.
@@ -63,6 +64,7 @@ export const useUploadImage = () =>
       const { uploadUrl, key } = await getPresignedUrl({
         fileName: validFile.name,
         contentType: validFile.type,
+        fileSize: validFile.size,
       });
 
       const uploadResponse = await fetch(uploadUrl, {
@@ -79,6 +81,9 @@ export const useUploadImage = () =>
         );
       }
 
-      return { key };
+      return {
+        key,
+        url: toPublicImageUrl(key, uploadUrl),
+      };
     },
   });

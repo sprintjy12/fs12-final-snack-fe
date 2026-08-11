@@ -25,6 +25,17 @@ export type ProductRegisterModalProps = {
 const CATEGORY_PLACEHOLDER = "대분류";
 const SUB_CATEGORY_PLACEHOLDER = "소분류";
 
+function normalizeHttpUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+}
+
 const productRegisterSchema = z.object({
   name: z.string().trim().min(1, "상품명을 입력해 주세요."),
   categoryId: z.string().min(1, "카테고리를 선택해 주세요."),
@@ -36,12 +47,13 @@ const productRegisterSchema = z.object({
     .refine((value) => /^\d+$/.test(value), "가격은 숫자만 입력해 주세요.")
     .transform((value) => Number(value))
     .refine((value) => value > 0, "가격은 0보다 커야 해요."),
-  url: z
+  productUrl: z
     .string()
     .trim()
-    .optional()
+    .min(1, "제품 링크를 입력해 주세요.")
+    .transform(normalizeHttpUrl)
     .refine(
-      (value) => !value || z.string().url().safeParse(value).success,
+      (value) => z.string().url().safeParse(value).success,
       "올바른 URL을 입력해 주세요.",
     ),
 });
@@ -51,7 +63,7 @@ type FieldErrors = {
   categoryId?: string;
   subCategoryId?: string;
   price?: string;
-  url?: string;
+  productUrl?: string;
   image?: string;
 };
 
@@ -80,7 +92,7 @@ function getFieldErrorsFromZod(
     categoryId: fieldErrors.categoryId?.[0],
     subCategoryId: fieldErrors.subCategoryId?.[0],
     price: fieldErrors.price?.[0],
-    url: fieldErrors.url?.[0],
+    productUrl: fieldErrors.productUrl?.[0],
   };
 }
 
@@ -92,6 +104,7 @@ function getRegisterToastMessage(errors: FieldErrors) {
       ["subCategoryId", "소분류"],
       ["price", "가격"],
       ["image", "이미지"],
+      ["productUrl", "제품 링크"],
     ] as const
   )
     .filter(([key]) => Boolean(errors[key]))
@@ -107,7 +120,7 @@ function getRegisterToastMessage(errors: FieldErrors) {
     errors.subCategoryId ??
     errors.price ??
     errors.image ??
-    errors.url ??
+    errors.productUrl ??
     "입력값을 확인해 주세요."
   );
 }
@@ -134,7 +147,7 @@ export function ProductRegisterModal({
   const [categoryId, setCategoryId] = useState("");
   const [subCategoryId, setSubCategoryId] = useState("");
   const [price, setPrice] = useState("");
-  const [url, setUrl] = useState("");
+  const [productUrl, setProductUrl] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -147,7 +160,7 @@ export function ProductRegisterModal({
     setCategoryId("");
     setSubCategoryId("");
     setPrice("");
-    setUrl("");
+    setProductUrl("");
     setImageFile(null);
     setImagePreview(null);
     setFieldErrors({});
@@ -223,7 +236,7 @@ export function ProductRegisterModal({
       categoryId,
       subCategoryId,
       price,
-      url,
+      productUrl,
     });
 
     const errors: FieldErrors = result.success
@@ -246,13 +259,14 @@ export function ProductRegisterModal({
       await ensureAccessToken();
 
       const uploaded = await uploadImageMutation.mutateAsync(imageFile);
-      const photo = uploaded.key;
 
       const input: CreateProductInput = {
         name: result.data.name,
         price: result.data.price,
-        url: result.data.url || undefined,
-        photo,
+        // 모달에 재고 입력이 없어 API 필수값(≥1)은 기본 1로 보냅니다.
+        stock: 1,
+        productUrl: result.data.productUrl,
+        imageUrl: uploaded.url,
         categoryId: result.data.categoryId,
         subCategoryId: result.data.subCategoryId,
       };
@@ -449,18 +463,21 @@ export function ProductRegisterModal({
             <div className="flex w-full flex-col gap-1">
               <TextField
                 type="text"
-                value={url}
-                error={Boolean(fieldErrors.url)}
+                value={productUrl}
+                error={Boolean(fieldErrors.productUrl)}
                 aria-describedby={
-                  fieldErrors.url ? "product-url-error" : undefined
+                  fieldErrors.productUrl ? "product-url-error" : undefined
                 }
                 onChange={(event) => {
-                  setUrl(event.target.value);
-                  clearFieldError("url");
+                  setProductUrl(event.target.value);
+                  clearFieldError("productUrl");
                 }}
-                placeholder="링크를 입력해주세요."
+                placeholder="https://example.com/product"
               />
-              <FieldError id="product-url-error" message={fieldErrors.url} />
+              <FieldError
+                id="product-url-error"
+                message={fieldErrors.productUrl}
+              />
             </div>
           </div>
         </div>

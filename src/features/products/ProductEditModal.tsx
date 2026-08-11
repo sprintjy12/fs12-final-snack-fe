@@ -135,11 +135,11 @@ export function ProductEditModal({
       id: product.id,
       name: result.data.name,
       price: result.data.price,
-      url: result.data.url || undefined,
+      productUrl: result.data.url || undefined,
       // 새 이미지를 고르지 않았으면 기존 이미지를 유지합니다.
-      photo: product.photo,
-      categoryId: Number(result.data.categoryId),
-      subCategoryId: Number(result.data.subCategoryId),
+      imageUrl: product.photo,
+      categoryId: result.data.categoryId,
+      subCategoryId: result.data.subCategoryId,
     };
 
     setSubmitting(true);

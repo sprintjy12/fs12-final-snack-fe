@@ -84,16 +84,30 @@ export type MyProductListResponse = {
   pagination: MyProductListPagination;
 };
 
+/** POST /api/products 요청 본문 (FE는 대·소분류를 받아 leaf categoryId로 변환) */
 export interface CreateProductInput {
   name: string;
   price: number;
-  url?: string;
-  photo?: string;
+  /** 대분류 (메뉴 UI용). API에는 leaf UUID만 전송 */
   categoryId: number | string;
+  /** 소분류 — API categoryId로 사용 */
   subCategoryId: number | string;
+  /** 공개 이미지 URL (S3 업로드 후) */
+  imageUrl: string;
+  /** 재고 (≥ 1) */
+  stock: number;
+  /** 상품 페이지 URL */
+  productUrl: string;
 }
 
-/** 상품 수정 요청 — Create + 대상 id */
-export interface UpdateProductInput extends CreateProductInput {
+/** 상품 수정 요청 */
+export interface UpdateProductInput {
   id: number | string;
+  name: string;
+  price: number;
+  categoryId: number | string;
+  subCategoryId: number | string;
+  imageUrl?: string;
+  productUrl?: string;
+  stock?: number;
 }

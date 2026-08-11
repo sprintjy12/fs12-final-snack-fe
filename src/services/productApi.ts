@@ -360,8 +360,8 @@ export async function updateProduct(
       ...current,
       name: input.name,
       price: input.price,
-      url: input.url ?? current.url,
-      photo: input.photo ?? current.photo,
+      url: input.productUrl ?? current.url,
+      photo: input.imageUrl ?? current.photo,
       categoryId: input.categoryId,
       subCategoryId: input.subCategoryId,
       category: categoryMenuItem
@@ -394,8 +394,11 @@ export async function updateProduct(
         name: input.name,
         price: input.price,
         categoryId: leafApiId,
-        productUrl: input.url,
-        imageUrl: input.photo,
+        ...(input.productUrl !== undefined
+          ? { productUrl: input.productUrl }
+          : {}),
+        ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
+        ...(input.stock !== undefined ? { stock: input.stock } : {}),
       }),
       credentials: "include",
     },
@@ -420,8 +423,8 @@ export async function createProduct(
       id: Date.now(),
       name: input.name,
       price: input.price,
-      url: input.url ?? "",
-      photo: input.photo ?? "",
+      url: input.productUrl,
+      photo: input.imageUrl,
       categoryId: input.categoryId,
       subCategoryId: input.subCategoryId,
       category: categoryMenuItem
@@ -453,8 +456,9 @@ export async function createProduct(
     name: input.name,
     price: input.price,
     categoryId: leafApiId,
-    productUrl: input.url,
-    imageUrl: input.photo,
+    imageUrl: input.imageUrl,
+    stock: input.stock,
+    productUrl: input.productUrl,
   });
 
   return mapBeProduct(response.data.data);
