@@ -35,6 +35,7 @@ export const queryKeys = {
   },
   users: {
     all: ["users"] as const,
+    list: (params: object) => ["users", "list", params] as const,
     me: () => ["users", "me"] as const,
   },
   //userId 가져올 수 있으면 수정 필요
