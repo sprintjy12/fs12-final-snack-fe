@@ -5,6 +5,7 @@ import axios from "axios";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
+import { ForbiddenPage } from "@/components/auth/ForbiddenPage";
 import { Button } from "@/components/ui";
 import {
   canAccessPath,
@@ -23,7 +24,7 @@ type RouteGuardProps = {
  * path 정책(accessControl) 기준 인증·인가 가드.
  * - 비보호/면제 경로: 통과
  * - 보호 + 비로그인: /login
- * - 보호 + 권한 없음: /products
+ * - 보호 + 권한 없음: URL 유지 + ForbiddenPage (GNB는 layout AppHeader)
  * - users/me 401: 세션·캐시 정리 후 /login
  * - users/me 일반 오류(5xx/네트워크): redirect 없이 재시도 UI
  * profile 로딩 중에는 children을 렌더하지 않아 권한 페이지 flash를 막습니다.
@@ -62,27 +63,15 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
       void clearClientSession(queryClient).then(() => {
         router.replace("/login");
       });
-      return;
     }
 
-    // 5xx/네트워크 등 일반 오류: /products로 보내지 않음 (fallback UI)
-    if (isError) {
-      return;
-    }
-
-    const role = profile?.role;
-    if (!role || !canAccessPath(pathname, role)) {
-      router.replace("/products");
-    }
+    // 권한 없음·5xx/네트워크 오류: URL 유지, 아래 render에서 fallback UI
   }, [
     exemptPath,
     protectedPath,
     hasToken,
     isPending,
-    isError,
     isUnauthorized,
-    profile?.role,
-    pathname,
     router,
     queryClient,
   ]);
@@ -126,7 +115,7 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
 
   const role = profile?.role;
   if (!role || !canAccessPath(pathname, role)) {
-    return null;
+    return <ForbiddenPage />;
   }
 
   return children;
