@@ -194,8 +194,12 @@ export default function CartPage() {
       setRequestOpen(false);
       setRequestItems([]);
       router.push(`/purchase/requests/complete?orderId=${data.orderId}`);
-    } catch {
-      showToast("구매 요청에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "구매 요청에 실패했어요. 잠시 후 다시 시도해 주세요.";
+      showToast(message);
     } finally {
       setSubmittingRequest(false);
     }

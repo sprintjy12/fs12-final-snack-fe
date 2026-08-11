@@ -13,7 +13,7 @@ import {
 } from "@/constants/categoryConstants";
 import { useCategories } from "@/hooks/queries/useProducts";
 import { parseRouteId } from "@/lib/parseOptionalId";
-import { isProductApiMock } from "@/services/productApi";
+import { isProductApiMock } from "@/api/productApi";
 
 export type HeaderNavItem = {
   href: string;
