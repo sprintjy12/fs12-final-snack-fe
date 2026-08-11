@@ -30,6 +30,7 @@ export {
   type PaginationItem,
   type PaginationProps,
 } from "./Pagination";
+export { buildPaginationItems } from "./buildPaginationItems";
 export {
   Select,
   type SelectOption,
