@@ -9,7 +9,7 @@ export type PaginationProps = {
   items: readonly PaginationItem[];
   /** 현재 페이지 표시용 (문자열, items의 숫자 항목과 비교) */
   currentPage?: string;
-  /** true면 4·5 페이지 버튼을 xl 미만에서 숨김 (구매 목록 시안) */
+  /** true면 값이 4·5인 버튼을 xl 미만에서 숨김 (구매 목록 시안). 현재 페이지는 항상 표시 */
   collapseMiddlePages?: boolean;
   className?: string;
   previousDisabled?: boolean;
@@ -56,10 +56,10 @@ export function Pagination({
       </button>
 
       <div className="flex items-center gap-1">
-        {items.map((page) =>
+        {items.map((page, index) =>
           page === "more" ? (
             <span
-              key={page}
+              key={`more-${index}`}
               aria-hidden="true"
               className="flex size-[34px] items-center justify-center text-snack-gray-300 xl:size-12"
             >
@@ -67,7 +67,7 @@ export function Pagination({
             </span>
           ) : (
             <button
-              key={page}
+              key={`${page}-${index}`}
               type="button"
               aria-current={page === currentPage ? "page" : undefined}
               onClick={() => onPageSelect?.(page)}
@@ -76,7 +76,9 @@ export function Pagination({
                 page === currentPage
                   ? "font-semibold text-foreground-strong"
                   : "font-medium text-snack-gray-300 xl:font-normal",
-                collapseMiddlePages && (page === "4" || page === "5")
+                collapseMiddlePages &&
+                page !== currentPage &&
+                (page === "4" || page === "5")
                   ? "hidden xl:flex"
                   : "",
               ]

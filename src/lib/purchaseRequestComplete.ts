@@ -18,6 +18,7 @@ export type PurchaseRequestCompleteSummary = z.infer<
   typeof purchaseRequestCompleteSchema
 >;
 
+/** 완료 요약 정보를 sessionStorage에 저장 */
 export function savePurchaseRequestComplete(
   summary: PurchaseRequestCompleteSummary,
 ) {
@@ -31,12 +32,14 @@ export function savePurchaseRequestComplete(
   }
 }
 
-export function readPurchaseRequestComplete(): PurchaseRequestCompleteSummary | null {
+/**
+ * sessionStorage에서 완료 요약 정보를 읽어와 zod로 검증.
+ * 값이 없거나 형식이 깨져 있으면 null 반환 (완료 페이지는 mock으로 폴백).
+ */
+export function getPurchaseRequestComplete(): PurchaseRequestCompleteSummary | null {
   try {
     const raw = sessionStorage.getItem(PURCHASE_REQUEST_COMPLETE_KEY);
-    if (!raw) {
-      return null;
-    }
+    if (!raw) return null;
 
     const parsed = purchaseRequestCompleteSchema.safeParse(JSON.parse(raw));
     return parsed.success ? parsed.data : null;
@@ -45,6 +48,7 @@ export function readPurchaseRequestComplete(): PurchaseRequestCompleteSummary | 
   }
 }
 
+/** 완료 요약 정보를 sessionStorage에서 제거 */
 export function clearPurchaseRequestComplete() {
   try {
     sessionStorage.removeItem(PURCHASE_REQUEST_COMPLETE_KEY);
