@@ -109,8 +109,7 @@ export default function HomePage() {
                 bubble.positionClass,
               ].join(" ")}
             >
-              <p className="m-0 w-auto rounded-full bg-accent px-3 py-2 text-center text-[clamp(0.625rem,2.3vw,1.375rem)] leading-[1.3] font-bold break-keep whitespace-nowrap text-surface xl:px-7 xl:py-[18px]">
-                {bubble.text}
+              <p className="m-0 w-auto rounded-full bg-accent px-3 py-2 text-center text-[clamp(0.625rem,2.3vw,1.375rem)] leading-[1.3] font-bold break-keep text-surface sm:whitespace-nowrap xl:px-7 xl:py-[18px]">
               </p>
               <span
                 aria-hidden="true"
