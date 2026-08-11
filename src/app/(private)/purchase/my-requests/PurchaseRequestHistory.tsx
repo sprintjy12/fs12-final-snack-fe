@@ -12,7 +12,7 @@ import {
   EmptyState,
   Icon,
   Pagination,
-  type PaginationItem,
+  buildPaginationItems,
 } from "@/components/ui";
 import { useMyOrderRequests } from "@/hooks/queries/useMyOrderRequests";
 import type {
@@ -69,23 +69,6 @@ const getRequestStatus = (item: MyOrderRequestListItem): MyRequestStatus => {
     default:
       return "pending";
   }
-};
-
-const buildPaginationItems = (
-  currentPage: number,
-  totalPages: number,
-): PaginationItem[] => {
-  if (totalPages <= 0) {
-    return ["1"];
-  }
-
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => String(index + 1));
-  }
-
-  const items: PaginationItem[] = ["1", "2", "3", "4", "5", "more"];
-  items.push(String(totalPages));
-  return items;
 };
 
 function CancelRequestButton({

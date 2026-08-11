@@ -39,10 +39,48 @@ export interface ProductListParams {
   pageSize?: number;
 }
 
-export interface MyProductListParams {
-  sort?: "latest" | "priceAsc" | "priceDesc";
+/** GET /api/products/me — 전체 상품 목록과 동일 sort */
+export type MyProductSort =
+  | "latest"
+  | "priceAsc"
+  | "priceDesc"
+  | "popular";
+
+export type GetMyProductsParams = {
   page?: number;
-}
+  /** 기본 8, 최대 30 */
+  limit?: number;
+  sort?: MyProductSort;
+};
+
+/** GET /api/products/me 목록 한 줄 (+ category) */
+export type MyProductListItem = {
+  id: string;
+  name: string;
+  price: number;
+  imageUrl: string | null;
+  productUrl: string | null;
+  createdAt: string;
+  category?: {
+    id: string;
+    name: string;
+    parentId?: string | null;
+    parent?: { id: string; name: string } | null;
+  } | null;
+};
+
+export type MyProductListPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+export type MyProductListResponse = {
+  message: string;
+  data: MyProductListItem[];
+  pagination: MyProductListPagination;
+};
 
 export interface CreateProductInput {
   name: string;

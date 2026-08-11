@@ -3,7 +3,7 @@
 import { CommonImage, Modal, showToast } from "@/components/ui";
 
 export type DeleteProductTarget = {
-  id: number;
+  id: string;
   name: string;
 };
 
