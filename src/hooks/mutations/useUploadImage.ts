@@ -38,15 +38,13 @@ const imageFileSchema = z
  * 이미지 파일을 Presigned URL 방식으로 S3에 업로드합니다.
  *
  * 흐름
- * 1) 클라이언트에서 MIME·크기 검증 (accept는 UI 힌트일 뿐)
- * 2) 백엔드에 Presigned URL 발급 요청 (fileName, contentType, fileSize)
- * 3) 받은 uploadUrl로 파일 PUT (fetch, Authorization 없이)
- * 4) 성공 시 공개 URL(url) + Object Key 반환 → 상품 등록 imageUrl에 사용
+ * 1) 클라이언트에서 MIME·크기 검증
+ * 2) 백엔드에 Presigned URL 발급 (fileName, contentType, fileSize)
+ * 3) 받은 uploadUrl로 브라우저가 S3에 직접 PUT
+ * 4) 공개 URL(url) + Object Key 반환 → 상품 등록 imageUrl에 사용
  *
- * fetch를 쓰는 이유:
- * Presigned URL은 우리 API가 아니라 S3 등 외부 주소입니다.
- * 공통 Axios(apiClient)의 baseURL·Authorization 인터셉터가 붙으면
- * 서명된 URL 요청이 깨질 수 있어, 업로드 PUT만 fetch로 분리합니다.
+ * S3 버킷 CORS에 FE origin(AllowedOrigins)과 PUT이 열려 있어야 합니다.
+ * Axios를 쓰면 baseURL·Authorization이 붙어 서명이 깨질 수 있어 fetch만 사용합니다.
  */
 export const useUploadImage = () =>
   useMutation({
@@ -67,11 +65,10 @@ export const useUploadImage = () =>
         fileSize: validFile.size,
       });
 
+      // SignedHeaders가 content-length;host 인 경우 Content-Type을 넣으면
+      // preflight/서명과 어긋날 수 있어 body만 전송합니다.
       const uploadResponse = await fetch(uploadUrl, {
         method: "PUT",
-        headers: {
-          "Content-Type": validFile.type,
-        },
         body: validFile,
       });
 

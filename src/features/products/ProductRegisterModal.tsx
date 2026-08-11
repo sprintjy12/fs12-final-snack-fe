@@ -272,8 +272,8 @@ export function ProductRegisterModal({
       };
 
       const created = await createProduct(input);
-      onCreated?.(created);
       showToast("상품을 등록했어요.");
+      onCreated?.(created);
       onClose();
     } catch (error) {
       const message =

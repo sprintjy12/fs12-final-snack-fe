@@ -14,7 +14,7 @@ import {
 } from "@/features/products";
 import { useProducts } from "@/hooks/queries/useProducts";
 import { parseRouteId } from "@/lib/parseOptionalId";
-import type { ProductListParams } from "@/types/productTypes";
+import type { Product, ProductListParams } from "@/types/productTypes";
 
 import styles from "./products.module.css";
 
@@ -101,10 +101,11 @@ export default function ProductListPage() {
     }, 250);
   };
 
-  const handleProductCreated = () => {
+  const handleProductCreated = (product: Product) => {
     void queryClient.invalidateQueries({
       queryKey: queryKeys.products.all,
     });
+    router.push(`/products/${product.id}`);
   };
 
   return (
