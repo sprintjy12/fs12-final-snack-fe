@@ -465,11 +465,12 @@
   }
 
   .gallery {
-    padding: 32px 40px;
+    max-width: none;
+    padding: 24px 16px;
   }
 
   .image {
-    max-height: 280px;
+    max-height: 240px;
   }
 
   .breadcrumb {
@@ -497,6 +498,19 @@
     line-height: 26px;
   }
 
+  .metaRow {
+    gap: 8px 16px;
+  }
+
+  .metaLabel {
+    flex: 0 0 auto;
+    min-width: 4.5rem;
+  }
+
+  .metaMuted::before {
+    display: none;
+  }
+
   .actions {
     flex-direction: column;
     gap: 16px;
@@ -509,6 +523,11 @@
 
   .addCart {
     width: 100%;
+    min-width: 0;
     font-size: 1.125rem;
+  }
+
+  .skeletonCta {
+    min-width: 0;
   }
 }

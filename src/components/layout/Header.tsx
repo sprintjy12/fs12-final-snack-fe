@@ -3,13 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useState } from "react";
 
+import { MobileSidebar } from "@/components/layout/MobileSidebar";
 import { Icon } from "@/components/ui";
 import {
   CATEGORY_MENU_ORDERED,
   findCategoryMenuItem,
 } from "@/constants/categoryConstants";
-import { useCategories } from "@/hooks/useProducts";
+import { useCategories } from "@/hooks/queries/useProducts";
 import { parseRouteId } from "@/lib/parseOptionalId";
 import { isProductApiMock } from "@/services/productApi";
 
@@ -24,17 +26,9 @@ export type HeaderProps = {
   onLogout?: () => void;
 };
 
-/** Figma 일반 유저 상단바 (기본) — Gnb main-badge `1:9245` */
-export const USER_NAV_ITEMS = [
+const DEFAULT_NAV_ITEMS = [
   { href: "/products", label: "상품 리스트" },
-  { href: "/purchase/requests?view=history", label: "구매 요청 내역" },
-  { href: "/products/mine", label: "상품 등록 내역" },
-] as const satisfies readonly HeaderNavItem[];
-
-/** Figma 관리자 상단바 — 역할 연동 시 `navItems={ADMIN_NAV_ITEMS}`로 전달 */
-export const ADMIN_NAV_ITEMS = [
-  { href: "/products", label: "상품 리스트" },
-  { href: "/purchase/requests?view=history", label: "구매 요청 내역" },
+  { href: "/purchase/my-requests", label: "구매 요청 내역" },
   { href: "/purchase/requests", label: "구매 요청 관리" },
   { href: "/purchase/history", label: "구매 내역 확인" },
   { href: "/products/mine", label: "상품 등록 내역" },
@@ -60,7 +54,7 @@ function isProductListPath(pathname: string) {
   return pathname === "/products" || pathname === "/products/";
 }
 
-/** 리스트·상세 — Figma: gnb + Tab/menu (mock 숫자 id / BE uuid 모두) */
+/** 리스트·상세 — mock 숫자 id / BE uuid 모두 */
 function isProductArea(pathname: string) {
   if (isProductListPath(pathname)) return true;
   if (
@@ -79,11 +73,7 @@ function categoryRouteId(
   return useApiIds ? category.apiId : category.id;
 }
 
-function isNavItemActive(
-  href: string,
-  pathname: string,
-  view: string | null,
-) {
+function isNavItemActive(href: string, pathname: string) {
   if (href === "/products") {
     return isProductArea(pathname);
   }
@@ -95,20 +85,18 @@ function isNavItemActive(
     );
   }
 
-  if (href === "/purchase/requests?view=history") {
-    return pathname === "/purchase/requests" && view === "history";
+  if (href === "/purchase/my-requests") {
+    return (
+      pathname === "/purchase/my-requests" ||
+      pathname.startsWith("/purchase/my-requests/")
+    );
   }
 
   if (href === "/purchase/requests") {
-    if (pathname.startsWith("/purchase/requests/")) {
-      return true;
-    }
-
-    if (pathname === "/purchase/requests") {
-      return true;
-    }
-
-    return false;
+    return (
+      pathname === "/purchase/requests" ||
+      pathname.startsWith("/purchase/requests/")
+    );
   }
 
   if (href === "/admin") {
@@ -127,10 +115,9 @@ function isNavItemActive(
 function getActiveNavHref(
   navItems: readonly HeaderNavItem[],
   pathname: string,
-  view: string | null,
 ) {
   const matchedItems = navItems.filter((navItem) =>
-    isNavItemActive(navItem.href, pathname, view),
+    isNavItemActive(navItem.href, pathname),
   );
 
   if (matchedItems.length === 0) {
@@ -147,14 +134,14 @@ function getActiveNavHref(
 
 export function Header({
   cartCount = 0,
-  navItems = USER_NAV_ITEMS,
+  navItems = DEFAULT_NAV_ITEMS,
   onLogout,
 }: HeaderProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const view = searchParams.get("view");
   const showCartBadge = cartCount > 0;
-  const activeHref = getActiveNavHref(navItems, pathname, view);
+  const activeHref = getActiveNavHref(navItems, pathname);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const categoryId = parseRouteId(searchParams.get("categoryId"));
   const subCategoryId = parseRouteId(searchParams.get("subCategoryId"));
@@ -166,172 +153,194 @@ export function Header({
   const subCategories = activeCategory?.subCategories ?? [];
 
   return (
-    <header className="sticky top-0 z-[100] border-b border-border bg-surface-muted">
-      {/* Figma Gnb main-badge lg `1:9245` */}
-      <div className="mx-auto flex h-[54px] max-w-[1680px] items-center justify-between px-6 md:h-16 xl:h-[88px] xl:px-0">
-        <div className="flex items-center gap-6 xl:gap-16">
-          <button
-            type="button"
-            aria-label="메뉴 열기"
-            className="flex size-6 items-center justify-center text-snack-gray-400 xl:hidden"
-          >
-            <Icon name="menu" size="sm" />
-          </button>
-
-          <Link href="/" aria-label="Snack 홈" className="shrink-0">
-            <picture>
-              <source
-                media="(min-width: 1280px)"
-                srcSet="/images/common/logo-text-md.svg"
-              />
-              <Image
-                src="/images/common/logo-text-sm.svg"
-                alt="Snack"
-                width={80}
-                height={54}
-                priority
-                className="block h-[54px] w-20 xl:h-[88px] xl:w-[126px]"
-              />
-            </picture>
-          </Link>
-
-          <nav className="hidden xl:block" aria-label="주요 메뉴">
-            <ul className="flex items-center gap-10">
-              {navItems.map((navigation) => {
-                const active = navigation.href === activeHref;
-
-                return (
-                  <li key={`${navigation.href}-${navigation.label}`}>
-                    <Link
-                      href={navigation.href}
-                      aria-current={active ? "page" : undefined}
-                      className={[
-                        "flex h-[88px] items-center whitespace-nowrap px-4 text-xl leading-8 font-bold",
-                        active ? "text-accent" : "text-snack-gray-400",
-                      ].join(" ")}
-                    >
-                      {navigation.label}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-4 xl:gap-12">
-          <Link
-            href="/cart"
-            aria-label={
-              showCartBadge
-                ? `장바구니, 상품 ${cartCount}개`
-                : "장바구니"
-            }
-            className="relative flex items-center text-snack-gray-300 xl:gap-2 xl:px-4"
-          >
-            <Icon
-              name="cart"
-              size="sm"
-              variant="outlined"
-              className="xl:hidden"
-            />
-            <span
-              className={[
-                "hidden text-xl leading-8 font-bold xl:inline",
-                showCartBadge ? "text-accent" : "text-snack-gray-300",
-              ].join(" ")}
+    <>
+      <header className="sticky top-0 z-[100] border-b border-border bg-surface-muted">
+        <div className="mx-auto flex h-[54px] w-full max-w-[1920px] items-center justify-between px-6 md:h-16 xl:h-[88px] xl:px-[120px]">
+          <div className="flex items-center gap-6 xl:gap-16">
+            <button
+              type="button"
+              aria-label="메뉴 열기"
+              aria-expanded={sidebarOpen}
+              aria-controls="mobile-sidebar"
+              onClick={() => setSidebarOpen(true)}
+              className="flex size-6 cursor-pointer items-center justify-center text-snack-gray-400 xl:hidden"
             >
-              Cart
-            </span>
-            {showCartBadge ? (
-              <span className="absolute -top-1.5 -right-1.5 flex min-w-3.5 items-center justify-center rounded-full bg-accent px-1 text-[10px] leading-3.5 font-semibold text-surface xl:static xl:min-w-0 xl:rounded-[32px] xl:px-3.5 xl:text-xl xl:leading-8 xl:font-bold">
-                {cartCount}
-              </span>
-            ) : null}
-          </Link>
+              <Icon name="menu" size="sm" />
+            </button>
 
-          <Link href="/profile" aria-label="프로필" className="xl:px-4">
-            <Icon name="profile" size="sm" className="xl:hidden" />
-            <span className="hidden text-xl leading-8 font-bold text-snack-gray-300 xl:inline">
-              Profile
-            </span>
-          </Link>
+            <Link href="/" aria-label="Snack 홈" className="shrink-0">
+              <picture>
+                <source
+                  media="(min-width: 1280px)"
+                  srcSet="/images/common/logo-text-md.svg"
+                />
+                <Image
+                  src="/images/common/logo-text-sm.svg"
+                  alt="Snack"
+                  width={80}
+                  height={54}
+                  priority
+                  className="block h-[54px] w-20 xl:h-[88px] xl:w-[126px]"
+                />
+              </picture>
+            </Link>
 
-          <button
-            type="button"
-            onClick={onLogout}
-            className="hidden cursor-pointer bg-transparent text-xl leading-8 font-bold text-snack-gray-300 xl:block xl:px-4"
-          >
-            Logout
-          </button>
-        </div>
-      </div>
+            <nav className="hidden xl:block" aria-label="주요 메뉴">
+              <ul className="flex items-center gap-10">
+                {navItems.map((navigation) => {
+                  const active = navigation.href === activeHref;
 
-      {/* Figma Tab/menu_01 + Tab/menu_02 (`1:11362`, `1:11361`) */}
-      {showCategoryBar ? (
-        <div className="border-t border-border bg-surface-muted">
-          <div
-            className="mx-auto flex h-[52px] max-w-[1680px] items-center gap-3 overflow-x-auto px-6 xl:h-16 xl:px-0"
-            aria-label="상품 카테고리"
-          >
-            {categoryMenu.map((category) => {
-              const routeId = categoryRouteId(category, useApiIds);
-              const isActive =
-                categoryId !== undefined &&
-                (category.id === categoryId || category.apiId === categoryId);
-
-              return (
-                <Link
-                  key={String(category.apiId)}
-                  href={buildProductsHref(routeId)}
-                  className={[
-                    "flex h-full shrink-0 items-center whitespace-nowrap px-4 py-3.5 text-lg leading-[26px]",
-                    isActive
-                      ? "border-b-2 border-accent px-2.5 font-bold text-accent"
-                      : "font-medium text-snack-gray-400",
-                  ].join(" ")}
-                >
-                  {category.name}
-                </Link>
-              );
-            })}
+                  return (
+                    <li key={`${navigation.href}-${navigation.label}`}>
+                      <Link
+                        href={navigation.href}
+                        aria-current={active ? "page" : undefined}
+                        className={[
+                          "flex h-[88px] items-center whitespace-nowrap px-4 text-xl leading-8 font-bold",
+                          active ? "text-accent" : "text-snack-gray-400",
+                        ].join(" ")}
+                      >
+                        {navigation.label}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
           </div>
 
-          {subCategories.length > 0 ? (
-            <div
-              className="mx-auto flex h-[52px] max-w-[1680px] items-center gap-3 overflow-x-auto border-t border-border px-6 xl:h-16 xl:px-0"
-              aria-label="상품 소분류"
+          <div className="flex items-center gap-4 xl:gap-12">
+            <Link
+              href="/cart"
+              aria-label={
+                showCartBadge
+                  ? `장바구니, 상품 ${cartCount}개`
+                  : "장바구니"
+              }
+              className="relative flex items-center text-snack-gray-400 xl:gap-2 xl:px-4"
             >
-              {subCategories.map((sub) => {
-                const parentRouteId =
-                  categoryId ??
-                  (activeCategory
-                    ? categoryRouteId(activeCategory, useApiIds)
-                    : undefined);
-                const subRouteId = useApiIds ? sub.apiId : sub.id;
+              <Icon
+                name="cart"
+                size="sm"
+                variant="outlined"
+                className="xl:hidden"
+              />
+              <span className="hidden text-xl leading-8 font-bold text-snack-gray-300 xl:inline">
+                Cart
+              </span>
+              {showCartBadge ? (
+                <span className="absolute -top-1.5 -right-1.5 flex min-w-3.5 items-center justify-center rounded-full bg-accent px-1 text-[10px] leading-3.5 font-semibold text-surface xl:static xl:min-w-0 xl:px-3.5 xl:text-xl xl:leading-8 xl:font-bold">
+                  {cartCount}
+                </span>
+              ) : null}
+            </Link>
+
+            <Link
+              href="/profile"
+              aria-label="프로필"
+              aria-current={pathname.startsWith("/profile") ? "page" : undefined}
+              className="xl:px-4"
+            >
+              <Icon name="profile" size="sm" className="xl:hidden" />
+              <span
+                className={[
+                  "hidden text-xl leading-8 font-bold xl:inline",
+                  pathname.startsWith("/profile")
+                    ? "text-accent"
+                    : "text-snack-gray-300",
+                ].join(" ")}
+              >
+                Profile
+              </span>
+            </Link>
+
+            {onLogout ? (
+              <button
+                type="button"
+                onClick={onLogout}
+                className="hidden cursor-pointer bg-transparent text-xl leading-8 font-bold text-snack-gray-300 xl:block xl:px-4"
+              >
+                Logout
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        {showCategoryBar ? (
+          <div className="border-t border-border bg-surface-muted">
+            <div
+              className="mx-auto flex h-[52px] max-w-[1920px] items-center gap-3 overflow-x-auto px-6 xl:h-16 xl:px-[120px]"
+              aria-label="상품 카테고리"
+            >
+              {categoryMenu.map((category) => {
+                const routeId = categoryRouteId(category, useApiIds);
                 const isActive =
-                  subCategoryId !== undefined &&
-                  (sub.id === subCategoryId || sub.apiId === subCategoryId);
+                  categoryId !== undefined &&
+                  (category.id === categoryId ||
+                    category.apiId === categoryId);
 
                 return (
                   <Link
-                    key={`${sub.categoryId}-${sub.id}`}
-                    href={buildProductsHref(parentRouteId, subRouteId)}
+                    key={String(category.apiId)}
+                    href={buildProductsHref(routeId)}
                     className={[
-                      "flex h-full shrink-0 items-center whitespace-nowrap px-4 py-3.5 text-base leading-[26px]",
+                      "flex h-full shrink-0 items-center whitespace-nowrap px-4 py-3.5 text-lg leading-[26px]",
                       isActive
-                        ? "px-2.5 font-semibold text-accent"
+                        ? "border-b-2 border-accent px-2.5 font-bold text-accent"
                         : "font-medium text-snack-gray-400",
                     ].join(" ")}
                   >
-                    {sub.name}
+                    {category.name}
                   </Link>
                 );
               })}
             </div>
-          ) : null}
-        </div>
-      ) : null}
-    </header>
+
+            {subCategories.length > 0 ? (
+              <div
+                className="mx-auto flex h-[52px] max-w-[1920px] items-center gap-3 overflow-x-auto border-t border-border px-6 xl:h-16 xl:px-[120px]"
+                aria-label="상품 소분류"
+              >
+                {subCategories.map((sub) => {
+                  const parentRouteId =
+                    categoryId ??
+                    (activeCategory
+                      ? categoryRouteId(activeCategory, useApiIds)
+                      : undefined);
+                  const subRouteId = useApiIds ? sub.apiId : sub.id;
+                  const isActive =
+                    subCategoryId !== undefined &&
+                    (sub.id === subCategoryId ||
+                      sub.apiId === subCategoryId);
+
+                  return (
+                    <Link
+                      key={`${sub.categoryId}-${sub.id}`}
+                      href={buildProductsHref(parentRouteId, subRouteId)}
+                      className={[
+                        "flex h-full shrink-0 items-center whitespace-nowrap px-4 py-3.5 text-base leading-[26px]",
+                        isActive
+                          ? "px-2.5 font-semibold text-accent"
+                          : "font-medium text-snack-gray-400",
+                      ].join(" ")}
+                    >
+                      {sub.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </header>
+
+      <MobileSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        navItems={navItems}
+        activeHref={activeHref}
+        onLogout={onLogout}
+      />
+    </>
   );
 }

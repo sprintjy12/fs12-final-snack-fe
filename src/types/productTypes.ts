@@ -1,4 +1,4 @@
-// 상품파트 공통 타입. 백엔드 응답 스키마에 맞춥니다.
+// 상품파트 공통 타입. mock=number, BE=uuid string 모두 허용합니다.
 
 export interface Category {
   id: number | string;
@@ -27,6 +27,8 @@ export interface Product {
   subCategory?: SubCategory;
   /** 시안 뱃지용. API에 없으면 생략 */
   purchaseCount?: number;
+  /** BE 등록 시각 (ISO). latest 정렬용 */
+  createdAt?: string;
 }
 
 export interface ProductListParams {
@@ -47,6 +49,11 @@ export interface CreateProductInput {
   price: number;
   url?: string;
   photo?: string;
-  categoryId: number;
-  subCategoryId: number;
+  categoryId: number | string;
+  subCategoryId: number | string;
+}
+
+/** 상품 수정 요청 — Create + 대상 id */
+export interface UpdateProductInput extends CreateProductInput {
+  id: number | string;
 }

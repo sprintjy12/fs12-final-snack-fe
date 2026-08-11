@@ -1,51 +1,153 @@
+"use client";
+
 import Image from "next/image";
+import Link from "next/link";
+import { useMemo, useState, type ChangeEvent } from "react";
 
-import { Icon } from "@/components/ui";
+import {
+  EmptyState,
+  Icon,
+  Pagination,
+  type PaginationItem,
+} from "@/components/ui";
+import { useBudgetSummary } from "@/hooks/queries/useBudgetSummary";
+import { useOrders } from "@/hooks/queries/useOrders";
+import type { BudgetSummaryData } from "@/types/budgetTypes";
+import type { OrderListItem, OrderListSort } from "@/types/orderTypes";
 
-const summaryCards = [
-  {
-    title: "이번 달 지출액",
-    description: "지난 달: 2,000,000원",
-    amount: "126,000원",
-  },
-  {
-    title: "이번 달 남은 예산",
-    description: "지난 달보다 50,000원 더 많아요",
-    amount: "150,000원",
-  },
-  {
-    title: "올해 총 지출액",
-    description: "지난 해보다 1,000,000원 더 지출했어요",
-    amount: "23,000,000원",
-  },
-] as const;
+const PAGE_SIZE = 10;
 
-const purchaseHistory = Array.from({ length: 6 }, (_, index) => ({
-  id: index + 1,
-  approvedAt: "2024. 07. 04",
-  requestedAt: "2024. 07. 03",
-  productName: "코카콜라 제로 외 1건",
-  quantity: 4,
-  amount: "21,000",
-  requester: "김스낵",
-  manager: "김코드",
-  purchaseType: "즉시 구매",
-}));
+const formatDate = (iso: string) => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
 
-const paginationItems = ["1", "2", "3", "4", "5", "more", "9"] as const;
-
-type PurchaseHistoryPageProps = {
-  searchParams: Promise<{
-    empty?: string;
-  }>;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}. ${month}. ${day}`;
 };
 
-export default async function PurchaseHistoryPage({
-  searchParams,
-}: PurchaseHistoryPageProps) {
-  const { empty } = await searchParams;
-  const visiblePurchaseHistory = empty === "true" ? [] : purchaseHistory;
-  const hasPurchaseHistory = visiblePurchaseHistory.length > 0;
+const formatPrice = (price: number) => `${price.toLocaleString("ko-KR")}`;
+
+const formatWon = (price: number) => `${formatPrice(price)}원`;
+
+const buildSummaryCards = (summary: BudgetSummaryData | undefined) => {
+  if (!summary) {
+    return [
+      {
+        title: "이번 달 지출액",
+        description: "불러오는 중…",
+        amount: "-",
+      },
+      {
+        title: "이번 달 남은 예산",
+        description: "불러오는 중…",
+        amount: "-",
+      },
+      {
+        title: "올해 총 지출액",
+        description: "불러오는 중…",
+        amount: "-",
+      },
+    ] as const;
+  }
+
+  const remainingDiff = summary.remainingDiffFromPreviousMonth;
+  const remainingDiffText =
+    remainingDiff >= 0
+      ? `지난 달보다 ${formatWon(remainingDiff)} 더 많아요`
+      : `지난 달보다 ${formatWon(Math.abs(remainingDiff))} 더 적어요`;
+
+  const spentDiff = summary.spentDiffFromPreviousYear;
+  const spentDiffText =
+    spentDiff >= 0
+      ? `지난 해보다 ${formatWon(spentDiff)} 더 지출했어요`
+      : `지난 해보다 ${formatWon(Math.abs(spentDiff))} 덜 지출했어요`;
+
+  return [
+    {
+      title: "이번 달 지출액",
+      description: `지난 달: ${formatWon(summary.previousMonth.spent)}`,
+      amount: formatWon(summary.currentMonth.spent),
+    },
+    {
+      title: "이번 달 남은 예산",
+      description: remainingDiffText,
+      amount: formatWon(summary.currentMonth.remaining),
+    },
+    {
+      title: "올해 총 지출액",
+      description: spentDiffText,
+      amount: formatWon(summary.currentYear.spent),
+    },
+  ] as const;
+};
+
+const formatProductName = (order: OrderListItem) => {
+  const { firstProductName, itemCount } = order;
+  if (!firstProductName) {
+    return "상품 정보 없음";
+  }
+  if (itemCount <= 1) {
+    return firstProductName;
+  }
+  return `${firstProductName} 외 ${itemCount - 1}건`;
+};
+
+/** 시안용 페이지 번호 배열을 API totalPages 기준으로 만듭니다. */
+const buildPaginationItems = (
+  currentPage: number,
+  totalPages: number,
+): PaginationItem[] => {
+  if (totalPages <= 0) {
+    return ["1"];
+  }
+
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => String(index + 1));
+  }
+
+  const items: PaginationItem[] = ["1", "2", "3", "4", "5", "more"];
+  items.push(String(totalPages));
+  return items;
+};
+
+export default function PurchaseHistoryPage() {
+  const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<OrderListSort>("latest");
+
+  const { data, isPending, isError, error } = useOrders({
+    page,
+    limit: PAGE_SIZE,
+    sort,
+  });
+  const { data: budgetSummaryResponse } = useBudgetSummary();
+
+  const summaryCards = useMemo(
+    () => buildSummaryCards(budgetSummaryResponse?.data),
+    [budgetSummaryResponse?.data],
+  );
+
+  const orders = data?.data ?? [];
+  const pagination = data?.pagination;
+  const hasPurchaseHistory = orders.length > 0;
+
+  const paginationItems = useMemo(
+    () =>
+      buildPaginationItems(
+        pagination?.currentPage ?? page,
+        pagination?.totalPages ?? 0,
+      ),
+    [pagination?.currentPage, pagination?.totalPages, page],
+  );
+
+  const handleSortChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const nextSort = event.target.value as OrderListSort;
+    setSort(nextSort);
+    setPage(1);
+  };
 
   return (
     <main className="min-h-screen bg-surface-muted pb-20 text-foreground">
@@ -91,9 +193,14 @@ export default async function PurchaseHistoryPage({
         <section className="mt-[-4px] flex h-16 items-center justify-end border-b-2 border-border px-6 md:mt-10 xl:mt-3.5 xl:mb-1.5 xl:h-[70px] xl:border-0 xl:px-0">
           <label className="relative block">
             <span className="sr-only">구매 내역 정렬</span>
-            <select className="h-9 w-[87px] appearance-none rounded-lg border border-snack-gray-200 bg-surface py-1.5 pr-7 pl-2 text-sm leading-6 font-normal text-foreground-muted outline-none focus:border-accent xl:h-[50px] xl:w-[136px] xl:px-3.5 xl:pr-10 xl:text-lg xl:leading-[26px]">
-              <option>최신순</option>
-              <option>오래된순</option>
+            <select
+              value={sort}
+              onChange={handleSortChange}
+              className="h-9 w-[120px] appearance-none rounded-lg border border-snack-gray-200 bg-surface py-1.5 pr-7 pl-2 text-sm leading-6 font-normal text-foreground-muted outline-none focus:border-accent xl:h-[50px] xl:w-[160px] xl:px-3.5 xl:pr-10 xl:text-lg xl:leading-[26px]"
+            >
+              <option value="latest">최신순</option>
+              <option value="highPrice">가격 높은순</option>
+              <option value="lowPrice">가격 낮은순</option>
             </select>
             <Icon
               name="chevron-down"
@@ -103,194 +210,169 @@ export default async function PurchaseHistoryPage({
           </label>
         </section>
 
-        <section
-          aria-label="구매 내역"
-          className={hasPurchaseHistory ? undefined : "hidden"}
-        >
-          <div className="hidden xl:block">
-            <div className="grid h-20 grid-cols-[207px_1fr_219px_219px_219px_219px] items-center rounded-full border border-snack-gray-200 bg-surface px-20 text-center text-xl leading-8 font-medium text-snack-black-100">
-              <span>구매승인일</span>
-              <span>상품정보</span>
-              <span>주문 금액</span>
-              <span>요청인</span>
-              <span>담당자</span>
-              <span>구매요청일</span>
-            </div>
-
-            <ul className="mt-4">
-              {visiblePurchaseHistory.map((purchase) => (
-                <li
-                  key={purchase.id}
-                  className="grid h-[104px] grid-cols-[207px_1fr_219px_219px_219px_219px] items-center border-b border-border px-20 text-center text-xl leading-8 text-snack-black-100"
-                >
-                  <span>{purchase.approvedAt}</span>
-                  <div className="text-left">
-                    <p className="font-semibold text-snack-black-200">
-                      {purchase.productName}
-                    </p>
-                    <p className="text-sm leading-6 font-medium text-foreground-muted">
-                      총 수량: {purchase.quantity}개
-                    </p>
-                  </div>
-                  <span>{purchase.amount}</span>
-                  <div className="flex items-center justify-center gap-2">
-                    <span>{purchase.requester}</span>
-                    <span className="rounded-lg border border-snack-orange-200 bg-accent-subtle px-2.5 py-1.5 text-base leading-[26px] font-semibold text-accent">
-                      {purchase.purchaseType}
-                    </span>
-                  </div>
-                  <span>{purchase.manager}</span>
-                  <span>{purchase.requestedAt}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <ul className="xl:hidden">
-            {visiblePurchaseHistory.slice(0, 3).map((purchase) => (
-              <li
-                key={purchase.id}
-                className="border-b-2 border-border px-6 pt-6 pb-6"
-              >
-                <div className="flex items-end gap-4">
-                  <div className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-border bg-surface shadow-[4px_4px_10px_rgba(250,247,243,0.25)]">
-                    <Image
-                      src="/images/purchase-history-product.png"
-                      alt=""
-                      width={28}
-                      height={49}
-                      className="h-[49px] w-7 object-contain"
-                    />
-                  </div>
-                  <div className="self-stretch pt-1">
-                    <p className="text-sm leading-6 text-foreground-strong">
-                      {purchase.productName}
-                    </p>
-                    <p className="text-xs leading-[18px] text-foreground-muted">
-                      총 수량: {purchase.quantity}개
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between border-b border-snack-gray-200 py-3 text-sm leading-6 font-semibold text-foreground-strong">
-                  <span>주문금액</span>
-                  <span>{purchase.amount}원</span>
-                </div>
-
-                <dl className="mt-4 space-y-2 text-sm leading-6 text-foreground-muted">
-                  <div className="flex items-center justify-between">
-                    <dt>구매승인일</dt>
-                    <dd className="font-medium">{purchase.approvedAt}</dd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <dt>구매요청일</dt>
-                    <dd className="font-medium">{purchase.requestedAt}</dd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <dt>요청인</dt>
-                    <dd className="flex items-center gap-2 font-medium">
-                      <span className="rounded-md border border-snack-orange-200 bg-accent-subtle px-1.5 py-0.5 text-xs leading-5 font-semibold text-accent">
-                        {purchase.purchaseType}
-                      </span>
-                      {purchase.requester}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <dt>담당자</dt>
-                    <dd className="font-medium">{purchase.manager}</dd>
-                  </div>
-                </dl>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {!hasPurchaseHistory ? (
-          <section
-            aria-label="구매 내역 없음"
-            className="flex justify-center pt-16 md:pt-40 xl:pt-[179px]"
-          >
-            <div className="flex h-[202px] w-[327px] flex-col items-center gap-6 xl:h-[304px] xl:w-[388px] xl:gap-10">
-              <div className="flex h-[130px] w-[180px] items-center justify-center xl:h-[200px] xl:w-[280px]">
-                <picture>
-                  <source
-                    media="(min-width: 1280px)"
-                    srcSet="/images/common/empty-purchase-md.svg"
-                  />
-                  <Image
-                    src="/images/common/empty-purchase-sm.svg"
-                    alt=""
-                    width={180}
-                    height={130}
-                    className="block h-auto w-[180px] xl:w-[280px]"
-                  />
-                </picture>
-              </div>
-              <p className="text-center text-sm leading-6 font-medium whitespace-nowrap text-snack-gray-400 xl:text-xl xl:leading-8">
-                <span className="block">구매한 내역이 없어요</span>
-                <span className="block">
-                  구매 요청을 승인하고 상품을 주문해보세요!
-                </span>
-              </p>
-            </div>
-          </section>
+        {isPending ? (
+          <p className="px-6 py-16 text-center text-foreground-muted xl:px-0">
+            구매 내역을 불러오는 중…
+          </p>
         ) : null}
 
-        <nav
-          aria-label="구매 내역 페이지"
-          className={[
-            "mt-4 items-center justify-center gap-2 py-2 md:mt-8 md:py-0 xl:mt-10 xl:gap-2.5",
-            hasPurchaseHistory ? "flex" : "hidden",
-          ].join(" ")}
-        >
-          <button
-            type="button"
-            aria-label="이전 페이지"
-            disabled
-            className="flex size-[34px] items-center justify-center rounded-md text-snack-gray-300 disabled:cursor-not-allowed xl:size-12 xl:rounded-lg"
-          >
-            <Icon name="chevron-left" size="sm" />
-          </button>
+        {isError ? (
+          <p className="px-6 py-16 text-center text-snack-state-100 xl:px-0">
+            {error instanceof Error
+              ? error.message
+              : "구매 내역을 불러오지 못했습니다."}
+          </p>
+        ) : null}
 
-          <div className="flex items-center gap-1">
-            {paginationItems.map((page) =>
-              page === "more" ? (
-                <span
-                  key={page}
-                  aria-hidden="true"
-                  className="flex size-[34px] items-center justify-center text-snack-gray-300 xl:size-12"
-                >
-                  ···
-                </span>
-              ) : (
-                <button
-                  key={page}
-                  type="button"
-                  aria-current={page === "1" ? "page" : undefined}
-                  className={[
-                    "flex size-[34px] items-center justify-center rounded-md text-base leading-[26px] xl:size-12 xl:rounded-lg xl:text-lg",
-                    page === "1"
-                      ? "font-semibold text-foreground-strong"
-                      : "font-medium text-snack-gray-300 xl:font-normal",
-                    page === "4" || page === "5" ? "hidden xl:flex" : "",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                >
-                  {page}
-                </button>
-              ),
-            )}
-          </div>
+        {!isPending && !isError ? (
+          <>
+            <section
+              aria-label="구매 내역"
+              className={hasPurchaseHistory ? undefined : "hidden"}
+            >
+              <div className="hidden xl:block">
+                <div className="grid h-20 grid-cols-[207px_1fr_219px_219px_219px_219px] items-center rounded-full border border-snack-gray-200 bg-surface px-20 text-center text-xl leading-8 font-medium text-snack-black-100">
+                  <span>구매승인일</span>
+                  <span>상품정보</span>
+                  <span>주문 금액</span>
+                  <span>요청인</span>
+                  <span>담당자</span>
+                  <span>구매요청일</span>
+                </div>
 
-          <button
-            type="button"
-            aria-label="다음 페이지"
-            className="flex size-[34px] items-center justify-center rounded-md text-foreground-strong xl:size-12 xl:rounded-lg"
-          >
-            <Icon name="chevron-right" size="sm" />
-          </button>
-        </nav>
+                <ul className="mt-4">
+                  {orders.map((purchase) => (
+                    <li key={purchase.id}>
+                      <Link
+                        href={`/purchase/history/${purchase.id}`}
+                        className="grid h-[104px] grid-cols-[207px_1fr_219px_219px_219px_219px] items-center border-b border-border px-20 text-center text-xl leading-8 text-snack-black-100 transition-colors hover:bg-surface"
+                      >
+                        <span>{formatDate(purchase.approvedAt)}</span>
+                        <div className="text-left">
+                          <p className="font-semibold text-snack-black-200">
+                            {formatProductName(purchase)}
+                          </p>
+                          <p className="text-sm leading-6 font-medium text-foreground-muted">
+                            총 수량: {purchase.totalQuantity}
+                          </p>
+                        </div>
+                        <span>{formatPrice(purchase.totalPrice)}</span>
+                        <span>{purchase.requesterName}</span>
+                        <span>{purchase.processorName}</span>
+                        <span>{formatDate(purchase.createdAt)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <ul className="xl:hidden">
+                {orders.map((purchase) => (
+                  <li key={purchase.id}>
+                    <Link
+                      href={`/purchase/history/${purchase.id}`}
+                      className="block border-b-2 border-border px-6 pt-6 pb-6 transition-colors hover:bg-surface"
+                    >
+                      <div className="flex items-end gap-4">
+                        <div className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-border bg-surface shadow-[4px_4px_10px_rgba(250,247,243,0.25)]">
+                          <Image
+                            src="/images/purchase-history-product.png"
+                            alt=""
+                            width={28}
+                            height={49}
+                            className="h-[49px] w-7 object-contain"
+                          />
+                        </div>
+                        <div className="self-stretch pt-1">
+                          <p className="text-sm leading-6 text-foreground-strong">
+                            {formatProductName(purchase)}
+                          </p>
+                          <p className="text-xs leading-[18px] text-foreground-muted">
+                            총 수량: {purchase.totalQuantity}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between border-b border-snack-gray-200 py-3 text-sm leading-6 font-semibold text-foreground-strong">
+                        <span>주문금액</span>
+                        <span>{formatPrice(purchase.totalPrice)}원</span>
+                      </div>
+
+                      <dl className="mt-4 space-y-2 text-sm leading-6 text-foreground-muted">
+                        <div className="flex items-center justify-between">
+                          <dt>구매승인일</dt>
+                          <dd className="font-medium">
+                            {formatDate(purchase.approvedAt)}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <dt>구매요청일</dt>
+                          <dd className="font-medium">
+                            {formatDate(purchase.createdAt)}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <dt>요청인</dt>
+                          <dd className="font-medium">
+                            {purchase.requesterName}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <dt>담당자</dt>
+                          <dd className="font-medium">
+                            {purchase.processorName}
+                          </dd>
+                        </div>
+                      </dl>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            {!hasPurchaseHistory ? (
+              <EmptyState
+                aria-label="구매 내역 없음"
+                image="empty-purchase"
+                className="pt-16 md:pt-40 xl:pt-[179px]"
+                contentClassName="h-[202px] w-[327px] xl:h-[304px] xl:w-[388px]"
+                description={
+                  <>
+                    <span className="block">구매한 내역이 없어요</span>
+                    <span className="block">
+                      구매 요청을 승인하고 상품을 주문해보세요!
+                    </span>
+                  </>
+                }
+              />
+            ) : null}
+
+            <Pagination
+              aria-label="구매 내역 페이지"
+              items={paginationItems}
+              currentPage={String(pagination?.currentPage ?? page)}
+              previousDisabled={(pagination?.currentPage ?? page) <= 1}
+              nextDisabled={!pagination?.hasNextPage}
+              collapseMiddlePages
+              onPrevious={() => setPage((current) => Math.max(1, current - 1))}
+              onNext={() =>
+                setPage((current) =>
+                  pagination?.hasNextPage ? current + 1 : current,
+                )
+              }
+              onPageSelect={(selected) => {
+                const nextPage = Number(selected);
+                if (Number.isInteger(nextPage) && nextPage > 0) {
+                  setPage(nextPage);
+                }
+              }}
+              className={[
+                "mt-4 py-2 md:mt-8 md:py-0 xl:mt-10",
+                hasPurchaseHistory ? "flex" : "hidden",
+              ].join(" ")}
+            />
+          </>
+        ) : null}
       </div>
     </main>
   );

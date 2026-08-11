@@ -7,6 +7,13 @@ import { queryKeys } from "@/constants/queryKeys";
 import { getCategories, getProduct, getProducts } from "@/services/productApi";
 import type { ProductListParams } from "@/types/productTypes";
 
+function parseRouteId(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(raw) ? raw : undefined;
+}
+
 export function useProducts(params: ProductListParams = {}) {
   return useQuery({
     queryKey: queryKeys.products.list(params),
@@ -14,16 +21,13 @@ export function useProducts(params: ProductListParams = {}) {
   });
 }
 
-export function useProduct(id: number | string) {
-  const enabled =
-    typeof id === "number"
-      ? Number.isFinite(id) && id > 0
-      : typeof id === "string" && id.length > 0;
+export function useProduct(id: string | undefined) {
+  const productId = parseRouteId(id);
 
   return useQuery({
-    queryKey: queryKeys.products.detail(id),
-    queryFn: () => getProduct(id),
-    enabled,
+    queryKey: queryKeys.products.detail(productId),
+    queryFn: () => getProduct(productId as string),
+    enabled: productId !== undefined,
   });
 }
 

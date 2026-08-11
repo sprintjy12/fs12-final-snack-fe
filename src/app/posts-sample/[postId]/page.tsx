@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
-import { usePost } from "@/hooks/usePosts";
+import { usePost } from "@/hooks/queries/usePosts";
 
 /**
  * 목록에서 선택한 postId로 상세 Query를 호출하는 예제 페이지입니다.

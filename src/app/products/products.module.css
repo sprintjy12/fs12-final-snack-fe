@@ -197,7 +197,7 @@
 
 @media (max-width: 1200px) {
   .inner {
-    padding: 32px 40px 64px;
+    padding: 32px 40px 96px;
   }
 
   .grid {
@@ -219,15 +219,22 @@
 @media (max-width: 768px) {
   .inner {
     gap: 32px;
-    padding: 24px 16px 48px;
+    /* FAB(52px) + bottom offset + safe spacing */
+    padding: 24px 16px 100px;
   }
 
   .grid {
-    grid-template-columns: 1fr;
+    gap: 20px 12px;
   }
 
   .fab {
     right: 16px;
     bottom: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
   }
 }

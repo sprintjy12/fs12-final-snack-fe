@@ -1,46 +1,29 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense } from "react";
 
 import { Header } from "@/components/layout";
-import {
-  CART_CHANGE_EVENT,
-  CART_STORAGE_KEY,
-  getCartItemCount,
-} from "@/lib/cartStorage";
+import { useCart } from "@/hooks/queries/useCart";
 
 function HeaderWithCartCount() {
-  const [cartCount, setCartCount] = useState(0);
-
-  useEffect(() => {
-    const syncCount = () => setCartCount(getCartItemCount());
-    syncCount();
-
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === CART_STORAGE_KEY || event.key === null) {
-        syncCount();
-      }
-    };
-
-    window.addEventListener(CART_CHANGE_EVENT, syncCount);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener(CART_CHANGE_EVENT, syncCount);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, []);
+  const { data: cart } = useCart();
+  const cartCount = cart?.summary?.totalQuantity ?? 0;
 
   return <Header cartCount={cartCount} />;
 }
 
-/** 표지(`/`), 샘플 페이지에서는 헤더를 숨깁니다. */
+/** 표지(`/`), 인증·샘플 페이지에서는 헤더를 숨깁니다. */
 export function AppHeader() {
   const pathname = usePathname();
   const isSampleRoute =
     pathname === "/modal-sample" || pathname === "/toast-sample";
+  const isAuthRoute =
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/invite");
 
-  if (pathname === "/" || isSampleRoute) {
+  if (pathname === "/" || isSampleRoute || isAuthRoute) {
     return null;
   }
 

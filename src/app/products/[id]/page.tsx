@@ -5,14 +5,9 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Icon } from "@/components/ui";
-import {
-  DeleteProductModal,
-  EditProductModal,
-  ProductOwnerMenu,
-} from "@/features/products";
-import { useProduct } from "@/hooks/useProducts";
-import { addToCart } from "@/lib/cartStorage";
+import { useProduct } from "@/hooks/queries/useProducts";
 import { getProductPhotoSrc } from "@/lib/productMedia";
+import { useAddToCart } from "@/hooks/mutations/useCart";
 
 import styles from "./productDetail.module.css";
 
@@ -56,14 +51,11 @@ function DetailSkeleton() {
 export default function ProductDetailPage() {
   const params = useParams();
   const rawId = params?.id;
-  const idParam = Array.isArray(rawId) ? rawId[0] : rawId;
-  const id = idParam ?? "";
+  const id = Array.isArray(rawId) ? rawId[0] : rawId;
 
   const { data: product, isLoading, isError } = useProduct(id);
   const [quantity, setQuantity] = useState(1);
   const [imageFailed, setImageFailed] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
@@ -73,8 +65,6 @@ export default function ProductDetailPage() {
     setQuantity(1);
     setImageFailed(false);
     setFeedback(null);
-    setEditOpen(false);
-    setDeleteOpen(false);
   }, [id]);
 
   useEffect(() => {
@@ -88,24 +78,37 @@ export default function ProductDetailPage() {
   const categoryLabel =
     product?.subCategory?.name ?? product?.category?.name ?? null;
 
+  const addToCartMutation = useAddToCart();
+
   const decrease = () => setQuantity((value) => Math.max(1, value - 1));
   const increase = () => setQuantity((value) => Math.min(999, value + 1));
 
   const handleAddToCart = () => {
-    if (!product) return;
-    const saved = addToCart(product.id, quantity);
-    if (saved) {
+    if (!product || addToCartMutation.isPending) return;
+    if (!product.id) {
       setFeedback({
-        type: "success",
-        message: `${product.name} ${quantity}개를 장바구니에 담았습니다.`,
+        type: "error",
+        message: "유효하지 않은 상품입니다. 다시 시도해 주세요.",
       });
       return;
     }
-    setFeedback({
-      type: "error",
-      message:
-        "장바구니에 담지 못했습니다. 브라우저 저장소 설정을 확인해 주세요.",
-    });
+    addToCartMutation.mutate(
+      { productId: String(product.id), quantity },
+      {
+        onSuccess: () => {
+          setFeedback({
+            type: "success",
+            message: `장바구니에 ${product.name} 상품을 담았습니다.`,
+          });
+        },
+        onError: () => {
+          setFeedback({
+            type: "error",
+            message: "장바구니에 담지 못했습니다. 다시 시도해 주세요.",
+          });
+        },
+      },
+    );
   };
 
   if (!id) {
@@ -224,19 +227,11 @@ export default function ProductDetailPage() {
 
           <div className={styles.info}>
             <div className={styles.headerBlock}>
-              <div className={styles.titleRow}>
-                <div className={styles.titleBlock}>
-                  {categoryLabel ? (
-                    <p className={styles.category}>{categoryLabel}</p>
-                  ) : null}
-                  <h1 className={styles.name}>{product.name}</h1>
-                </div>
-                <ProductOwnerMenu
-                  productName={product.name}
-                  size="md"
-                  onEdit={() => setEditOpen(true)}
-                  onDelete={() => setDeleteOpen(true)}
-                />
+              <div className={styles.titleBlock}>
+                {categoryLabel ? (
+                  <p className={styles.category}>{categoryLabel}</p>
+                ) : null}
+                <h1 className={styles.name}>{product.name}</h1>
               </div>
               {typeof product.purchaseCount === "number" ? (
                 <span className={styles.purchaseBadge}>
@@ -311,8 +306,12 @@ export default function ProductDetailPage() {
                 type="button"
                 className={styles.addCart}
                 onClick={handleAddToCart}
+                disabled={addToCartMutation.isPending}
+                aria-busy={addToCartMutation.isPending}
               >
-                장바구니 담기
+                {addToCartMutation.isPending
+                  ? "담는 중..."
+                  : "장바구니 담기"}
               </button>
             </div>
 
@@ -328,17 +327,6 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
-
-      <EditProductModal
-        open={editOpen}
-        product={product}
-        onClose={() => setEditOpen(false)}
-      />
-      <DeleteProductModal
-        open={deleteOpen}
-        product={{ id: product.id, name: product.name }}
-        onClose={() => setDeleteOpen(false)}
-      />
     </div>
   );
 }
