@@ -12,8 +12,11 @@ import {
   useChangePassword,
 } from "@/hooks/mutations/useUsers";
 import { useMyProfile } from "@/hooks/queries/useMyProfile";
-import { performClientLogout } from "@/hooks/useClientLogout";
-import { clearAccessToken, getAccessToken } from "@/lib/authStorage";
+import {
+  clearClientSession,
+  performClientLogout,
+} from "@/hooks/useClientLogout";
+import { getAccessToken } from "@/lib/authStorage";
 import {
   changeCompanyNameFormSchema,
   profilePasswordFormSchema,
@@ -352,10 +355,10 @@ const ProfilePage = () => {
       axios.isAxiosError(profileError) &&
       profileError.response?.status === 401
     ) {
-      clearAccessToken();
+      clearClientSession(queryClient);
       router.replace("/login");
     }
-  }, [isError, profileError, router, showToast]);
+  }, [isError, profileError, queryClient, router, showToast]);
 
   const updateField = (key: keyof ProfileForm) => (value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));

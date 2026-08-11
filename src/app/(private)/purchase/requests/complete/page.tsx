@@ -8,6 +8,7 @@ import { ensureAccessToken } from "@/api/authApi";
 import { getMyOrderRequestDetail } from "@/api/orderApi";
 import {
   clearPurchaseRequestComplete,
+  getPurchaseRequestComplete,
   type PurchaseRequestCompleteSummary,
 } from "@/lib/purchaseRequestComplete";
 
@@ -53,7 +54,7 @@ function PurchaseRequestCompleteContent() {
     async function load() {
       // 이전 요청의 완료 화면을 남겨둔 채 다른 orderId로 재진입하면
       // 세션 요약이 지금 조회하려는 주문과 다를 수 있으므로 일치할 때만 신뢰합니다.
-      const session = readPurchaseRequestComplete();
+      const session = getPurchaseRequestComplete();
       if (session && (!orderId || session.orderId === orderId)) {
         if (!cancelled) {
           setSummary(session);

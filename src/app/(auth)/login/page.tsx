@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +9,8 @@ import { z } from "zod";
 
 import { login } from "@/api/authApi";
 import { Button, CommonImage, Icon, TextField, useToast } from "@/components/ui";
+import { clearAuthUserQueries } from "@/hooks/useClientLogout";
+import { clearAccessToken } from "@/lib/authStorage";
 import { loginFormSchema } from "@/schemas/authSchema";
 import type { LoginErrors, LoginForm } from "@/types/authTypes";
 
@@ -155,6 +158,7 @@ const FieldError = ({ id, message }: { id: string; message?: string }) => {
  */
 const LoginPage = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [form, setForm] = useState<LoginForm>(INITIAL_FORM);
   const [errors, setErrors] = useState<LoginErrors>({});
@@ -191,6 +195,10 @@ const LoginPage = () => {
     setIsSubmitting(true);
 
     try {
+      // 이전 사용자 me/cart 캐시·토큰을 비운 뒤 새 토큰을 저장합니다.
+      // (로그인 요청 중 이전 토큰으로 users/me가 다시 채워지는 레이스를 방지)
+      clearAuthUserQueries(queryClient);
+      clearAccessToken();
       await login(parsed.data);
       showToast("로그인되었습니다.");
       router.push("/products");

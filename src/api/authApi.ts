@@ -84,7 +84,7 @@ const getMessageFromBody = (body: unknown): string | undefined => {
  *
  * RouteGuard의 "비로그인 → /login"과 충돌하지 않도록,
  * 기본값에서는 dev-login을 수행하지 않습니다.
- * @see src/app/api/fe-auth/dev-login/route.ts (production은 404)
+ * @see src/app/api/fe-auth/dev-login/route.ts (development 외 404)
  */
 export const ensureAccessToken = async () => {
   const existing = getAccessToken();
@@ -96,6 +96,7 @@ export const ensureAccessToken = async () => {
     clearAccessToken();
   }
 
+  // production/test/staging 및 플래그 미설정 시 자동 로그인 금지
   const allowDevLogin =
     process.env.NODE_ENV === "development" &&
     process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN === "true";
