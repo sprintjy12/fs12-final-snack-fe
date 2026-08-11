@@ -10,8 +10,8 @@ import { getAccessToken } from "@/lib/authStorage";
  * 내 프로필 조회(Query).
  * 컴포넌트는 Axios를 직접 호출하지 않고 이 Hook이 반환하는 상태를 사용합니다.
  *
- * access token이 없으면 enabled: false여도 남아 있는 users/me 캐시를
- * data로 노출하지 않습니다 (이전 사용자 정보 flash 방지).
+ * - access token이 없으면 캐시 data를 노출하지 않음
+ * - 조회 실패(isError) 시에도 cached role이 Header 등에 쓰이지 않도록 data를 숨김
  */
 export const useMyProfile = () => {
   const hasToken = Boolean(getAccessToken());
@@ -24,6 +24,6 @@ export const useMyProfile = () => {
 
   return {
     ...query,
-    data: hasToken ? query.data : undefined,
+    data: hasToken && !query.isError ? query.data : undefined,
   };
 };
