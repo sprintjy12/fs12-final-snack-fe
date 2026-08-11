@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import axios from "axios";
 
@@ -78,6 +79,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 export default function MyProductsPage() {
+  const router = useRouter();
   const [sort, setSort] = useState<SortValue>("latest");
   const [page, setPage] = useState(1);
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(
@@ -130,6 +132,10 @@ export default function MyProductsPage() {
   const handleSortChange = (event: ChangeEvent<HTMLSelectElement>) => {
     setSort(event.target.value as SortValue);
     setPage(1);
+  };
+
+  const goToProductDetail = (productId: string) => {
+    router.push(`/products/${productId}`);
   };
 
   return (
@@ -208,7 +214,17 @@ export default function MyProductsPage() {
                       return (
                         <li
                           key={product.id}
-                          className={`${DESKTOP_GRID} border-b border-border bg-surface-muted py-3 text-xl leading-8`}
+                          className={`${DESKTOP_GRID} cursor-pointer border-b border-border bg-surface-muted py-3 text-xl leading-8 hover:bg-surface`}
+                          onClick={() => goToProductDetail(product.id)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              goToProductDetail(product.id);
+                            }
+                          }}
+                          role="link"
+                          tabIndex={0}
+                          aria-label={`${product.name} 상세 보기`}
                         >
                           <span className="pl-6 text-left text-snack-black-100">
                             {formatDate(product.createdAt)}
@@ -247,6 +263,7 @@ export default function MyProductsPage() {
                               href={productUrl}
                               target="_blank"
                               rel="noreferrer noopener"
+                              onClick={(event) => event.stopPropagation()}
                               className="flex min-w-0 items-center justify-center gap-2 text-snack-black-100 hover:text-accent"
                             >
                               <span className="truncate">
@@ -276,7 +293,17 @@ export default function MyProductsPage() {
                     return (
                       <li
                         key={product.id}
-                        className="border-b-2 border-border px-4 py-5 sm:px-6 sm:py-6"
+                        className="cursor-pointer border-b-2 border-border px-4 py-5 hover:bg-surface sm:px-6 sm:py-6"
+                        onClick={() => goToProductDetail(product.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            goToProductDetail(product.id);
+                          }
+                        }}
+                        role="link"
+                        tabIndex={0}
+                        aria-label={`${product.name} 상세 보기`}
                       >
                         <div className="flex min-h-[88px] gap-3 sm:h-[100px] sm:gap-4">
                           <div className="flex size-[88px] shrink-0 items-center justify-center rounded-lg border border-border bg-surface p-2.5 shadow-[4px_4px_10px_rgba(250,247,243,0.25)] sm:size-[100px] sm:p-3">
@@ -309,6 +336,7 @@ export default function MyProductsPage() {
                                 href={productUrl}
                                 target="_blank"
                                 rel="noreferrer noopener"
+                                onClick={(event) => event.stopPropagation()}
                                 className="inline-flex max-w-full items-center gap-1 text-[13px] leading-[22px] font-medium text-accent"
                               >
                                 <span className="truncate">

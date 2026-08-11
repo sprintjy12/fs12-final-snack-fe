@@ -1,3 +1,4 @@
+import { apiClient } from "@/api/core/apiClient";
 import {
   CATEGORY_MENU_ORDERED,
   TEMP_CATEGORIES,
@@ -13,6 +14,7 @@ import { isUuid } from "@/lib/parseOptionalId";
 import { apiFetch } from "@/services/api";
 import type {
   Category,
+  CreateProductInput,
   Product,
   ProductListParams,
   UpdateProductInput,
@@ -43,6 +45,8 @@ type BeProduct = {
   productUrl: string | null;
   categoryId: string;
   purchaseCount: number;
+  createdAt?: string;
+  createdById?: string;
   category?: BeCategory | null;
 };
 
@@ -100,6 +104,8 @@ function mapBeProduct(product: BeProduct): Product {
         : undefined,
     subCategory,
     purchaseCount: product.purchaseCount,
+    createdAt: product.createdAt,
+    createdById: product.createdById,
   };
 }
 
@@ -332,6 +338,7 @@ export async function getProduct(id: number | string): Promise<Product> {
 /**
  * 상품 수정.
  * mock: DUMMY_PRODUCTS 갱신 / API: PATCH /api/products/:id
+ * Body 필드는 전부 optional(부분 수정). Authorization Bearer 필요.
  */
 export async function updateProduct(
   input: UpdateProductInput,
@@ -344,18 +351,97 @@ export async function updateProduct(
       throw new Error(`Product not found: ${input.id}`);
     }
 
-    const current = DUMMY_PRODUCTS[index];
-    const categoryMenuItem = findCategoryMenuItem(input.categoryId);
+    const current = DUMMY_PRODUCTS[index]!;
+    const nextCategoryId = input.categoryId ?? current.categoryId;
+    const nextSubCategoryId = input.subCategoryId ?? current.subCategoryId;
+    const categoryMenuItem = findCategoryMenuItem(nextCategoryId);
     const subCategoryMenuItem = categoryMenuItem?.subCategories.find(
-      (sub) => String(sub.id) === String(input.subCategoryId),
+      (sub) => String(sub.id) === String(nextSubCategoryId),
     );
 
     const updated: Product = {
       ...current,
+      name: input.name ?? current.name,
+      price: input.price ?? current.price,
+      url: input.productUrl ?? current.url,
+      photo: input.imageUrl ?? current.photo,
+      categoryId: nextCategoryId,
+      subCategoryId: nextSubCategoryId,
+      category: categoryMenuItem
+        ? { id: categoryMenuItem.id, name: categoryMenuItem.name }
+        : current.category,
+      subCategory: subCategoryMenuItem
+        ? {
+            id: subCategoryMenuItem.id,
+            name: subCategoryMenuItem.name,
+            categoryId: nextCategoryId,
+          }
+        : current.subCategory,
+    };
+    DUMMY_PRODUCTS[index] = updated;
+    return updated;
+  }
+
+  await ensureCategoryMenu().catch(() => CATEGORY_MENU_ORDERED);
+
+  const body: Record<string, unknown> = {};
+
+  if (input.name !== undefined) {
+    body.name = input.name;
+  }
+  if (input.price !== undefined) {
+    body.price = input.price;
+  }
+  if (input.productUrl !== undefined) {
+    body.productUrl = input.productUrl;
+  }
+  if (input.imageUrl !== undefined) {
+    body.imageUrl = input.imageUrl;
+  }
+  if (input.stock !== undefined) {
+    body.stock = input.stock;
+  }
+
+  if (input.categoryId !== undefined || input.subCategoryId !== undefined) {
+    const leafApiId =
+      resolveApiLeafCategoryId({
+        categoryId: input.categoryId,
+        subCategoryId: input.subCategoryId,
+      }) ??
+      (input.subCategoryId !== undefined
+        ? String(input.subCategoryId)
+        : undefined);
+    if (leafApiId) {
+      body.categoryId = leafApiId;
+    }
+  }
+
+  const response = await apiClient.patch<BeDetailResponse>(
+    `/api/products/${input.id}`,
+    body,
+  );
+
+  return mapBeProduct(response.data.data);
+}
+
+/**
+ * 상품 등록.
+ * mock: DUMMY_PRODUCTS에 push / API: POST /api/products
+ */
+export async function createProduct(
+  input: CreateProductInput,
+): Promise<Product> {
+  if (USE_MOCK) {
+    const categoryMenuItem = findCategoryMenuItem(input.categoryId);
+    const subCategoryMenuItem = categoryMenuItem?.subCategories.find(
+      (sub) => String(sub.id) === String(input.subCategoryId),
+    );
+    const created: Product = {
+      id: Date.now(),
       name: input.name,
       price: input.price,
-      url: input.url ?? current.url,
-      photo: input.photo ?? current.photo,
+      url: input.productUrl,
+      photo: input.imageUrl,
       categoryId: input.categoryId,
       subCategoryId: input.subCategoryId,
       category: categoryMenuItem
@@ -368,8 +454,11 @@ export async function updateProduct(
             categoryId: input.categoryId,
           }
         : undefined,
+      purchaseCount: 0,
+      createdAt: new Date().toISOString(),
     };
-    return updated;
+    DUMMY_PRODUCTS.unshift(created);
+    return created;
   }
 
   await ensureCategoryMenu().catch(() => CATEGORY_MENU_ORDERED);
@@ -380,22 +469,16 @@ export async function updateProduct(
       subCategoryId: input.subCategoryId,
     }) ?? String(input.subCategoryId);
 
-  const response = await apiFetch<BeDetailResponse>(
-    `/api/products/${input.id}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({
-        name: input.name,
-        price: input.price,
-        categoryId: leafApiId,
-        productUrl: input.url,
-        imageUrl: input.photo,
-      }),
-      credentials: "include",
-    },
-  );
+  const response = await apiClient.post<BeDetailResponse>("/api/products", {
+    name: input.name,
+    price: input.price,
+    categoryId: leafApiId,
+    imageUrl: input.imageUrl,
+    stock: input.stock,
+    productUrl: input.productUrl,
+  });
 
-  return mapBeProduct(response.data);
+  return mapBeProduct(response.data.data);
 }
 
 export async function getCategories(): Promise<CategoryMenuItem[]> {

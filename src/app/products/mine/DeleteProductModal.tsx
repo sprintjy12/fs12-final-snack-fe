@@ -1,6 +1,9 @@
 "use client";
 
+import { isAxiosError } from "axios";
+
 import { CommonImage, Modal, showToast } from "@/components/ui";
+import { useDeleteProduct } from "@/hooks/mutations/useDeleteProduct";
 
 export type DeleteProductTarget = {
   id: string;
@@ -24,19 +27,43 @@ export function DeleteProductModal({
   onClose,
   onConfirm,
 }: DeleteProductModalProps) {
-  const handleConfirm = () => {
-    if (!product) return;
+  const deleteMutation = useDeleteProduct();
 
-    // TODO: 상품 삭제 API 연동
-    onConfirm?.(product);
-    showToast("상품이 삭제되었습니다.");
+  const handleClose = () => {
+    if (deleteMutation.isPending) {
+      return;
+    }
     onClose();
+  };
+
+  const handleConfirm = () => {
+    if (!product || deleteMutation.isPending) {
+      return;
+    }
+
+    deleteMutation.mutate(product.id, {
+      onSuccess: () => {
+        onConfirm?.(product);
+        showToast("상품이 삭제되었습니다.");
+        onClose();
+      },
+      onError: (error) => {
+        const message = isAxiosError(error)
+          ? ((error.response?.data as { message?: string } | undefined)
+              ?.message ?? error.message)
+          : error instanceof Error
+            ? error.message
+            : "상품 삭제에 실패했습니다.";
+        showToast(message);
+      },
+    });
   };
 
   return (
     <Modal
       open={open && Boolean(product)}
-      onClose={onClose}
+      onClose={handleClose}
+      closeOnOverlayClick={!deleteMutation.isPending}
       title="상품 삭제"
       description={
         <div>
@@ -57,10 +84,10 @@ export function DeleteProductModal({
       secondaryAction={{
         label: "더 생각해볼게요",
         variant: "secondary",
-        onClick: onClose,
+        onClick: handleClose,
       }}
       primaryAction={{
-        label: "삭제할래요",
+        label: deleteMutation.isPending ? "삭제 중…" : "삭제할래요",
         variant: "primary",
         onClick: handleConfirm,
       }}
