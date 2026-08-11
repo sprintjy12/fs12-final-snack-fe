@@ -123,8 +123,7 @@ export default function CartPage() {
   }, [selectedIds, cartItems]);
 
   const selectedProducts = useMemo(
-    () =>
-      cartItems.filter((item) => effectiveSelectedIds.includes(item.id)),
+    () => cartItems.filter((item) => effectiveSelectedIds.includes(item.id)),
     [cartItems, effectiveSelectedIds],
   );
   const allSelected =
@@ -177,11 +176,11 @@ export default function CartPage() {
         cartItemIds: requestItems.map((item) => item.id),
         requestMessage: message || undefined,
       });
-        const data = response.data;
-        if (!data.orderId) {
-          throw new Error("구매 요청 응답에 orderId가 없습니다.");
-        }
-        savePurchaseRequestComplete({
+      const data = response.data;
+      if (!data.orderId) {
+        throw new Error("구매 요청 응답에 orderId가 없습니다.");
+      }
+      savePurchaseRequestComplete({
         name: data.firstProductName,
         extraCount: Math.max(0, data.itemCount - 1),
         totalCount: data.totalQuantity,
@@ -195,11 +194,11 @@ export default function CartPage() {
       setRequestOpen(false);
       setRequestItems([]);
       router.push(`/purchase/requests/complete?orderId=${data.orderId}`);
-} catch {
-  showToast("구매 요청에 실패했어요. 잠시 후 다시 시도해 주세요.");
-} finally {
-  setSubmittingRequest(false);
-}
+    } catch {
+      showToast("구매 요청에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setSubmittingRequest(false);
+    }
   };
 
   if (isLoading) {

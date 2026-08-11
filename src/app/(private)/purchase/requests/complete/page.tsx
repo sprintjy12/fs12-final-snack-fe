@@ -8,7 +8,6 @@ import { ensureAccessToken } from "@/api/authApi";
 import { getMyOrderRequestDetail } from "@/api/orderApi";
 import {
   clearPurchaseRequestComplete,
-  readPurchaseRequestComplete,
   type PurchaseRequestCompleteSummary,
 } from "@/lib/purchaseRequestComplete";
 
@@ -22,8 +21,7 @@ const MOCK_SUMMARY: CompleteSummary = {
   totalAmount: 43_000,
   categoryLabel: "청량 ・ 탄산음료",
   photo: "",
-  requestMessage:
-    "코카콜라 제로 인기가 많아요.\n많이 주문하면 좋을 것 같아요!",
+  requestMessage: "코카콜라 제로 인기가 많아요.\n많이 주문하면 좋을 것 같아요!",
   orderId: null,
 };
 

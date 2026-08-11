@@ -203,7 +203,7 @@ async function fetchBeProductPage(params: {
   if (params.categoryId) search.set("categoryId", params.categoryId);
   if (params.sort) search.set("sort", params.sort);
   if (params.page !== undefined) search.set("page", String(params.page));
-  search.set("limit", String(params.pageSize ?? 30));
+  search.set("limit", String(params.pageSize ?? 8));
 
   const query = search.toString();
   const response = await apiFetch<BeListResponse>(
@@ -216,7 +216,7 @@ async function fetchAllProductsForLeaf(
   leafId: string,
   sort: ProductListParams["sort"],
 ): Promise<Product[]> {
-  const pageSize = 30;
+  const pageSize = 8;
   let page = 1;
   const all: Product[] = [];
 
@@ -280,7 +280,7 @@ export async function getProducts(
       categoryId: leafApiId,
       sort: params.sort,
       page: params.page,
-      pageSize: params.pageSize ?? 30,
+      pageSize: params.pageSize ?? 8,
     });
   }
 
@@ -292,7 +292,9 @@ export async function getProducts(
       leafIds.map((id) => fetchAllProductsForLeaf(id, params.sort)),
     );
     const batches = results
-      .filter((r): r is PromiseFulfilledResult<Product[]> => r.status === "fulfilled")
+      .filter(
+        (r): r is PromiseFulfilledResult<Product[]> => r.status === "fulfilled",
+      )
       .map((r) => r.value);
     const merged = sortProducts(dedupeProducts(batches.flat()), params.sort);
     if (params.pageSize !== undefined && params.pageSize > 0) {
@@ -306,7 +308,7 @@ export async function getProducts(
   return fetchBeProductPage({
     sort: params.sort,
     page: params.page,
-    pageSize: params.pageSize ?? 30,
+    pageSize: params.pageSize ?? 8,
   });
 }
 
@@ -345,8 +347,8 @@ export async function updateProduct(
     const current = DUMMY_PRODUCTS[index];
     const categoryMenuItem = findCategoryMenuItem(input.categoryId);
     const subCategoryMenuItem = categoryMenuItem?.subCategories.find(
-    (sub) => String(sub.id) === String(input.subCategoryId),
-);
+      (sub) => String(sub.id) === String(input.subCategoryId),
+    );
 
     const updated: Product = {
       ...current,
@@ -360,13 +362,13 @@ export async function updateProduct(
         ? { id: categoryMenuItem.id, name: categoryMenuItem.name }
         : undefined,
       subCategory: subCategoryMenuItem
-    ? {
-        id: subCategoryMenuItem.id,
-        name: subCategoryMenuItem.name,
-        categoryId: input.categoryId,
-      }
-    : undefined,
-};
+        ? {
+            id: subCategoryMenuItem.id,
+            name: subCategoryMenuItem.name,
+            categoryId: input.categoryId,
+          }
+        : undefined,
+    };
     return updated;
   }
 
