@@ -4,15 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 
 import type { CategoryMenuItem } from "@/constants/categoryConstants";
 import { queryKeys } from "@/constants/queryKeys";
+import { parseRouteId } from "@/lib/parseOptionalId";
 import { getCategories, getProduct, getProducts } from "@/services/productApi";
 import type { ProductListParams } from "@/types/productTypes";
-
-function parseRouteId(raw: string | undefined): string | undefined {
-  if (!raw) return undefined;
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(raw) ? raw : undefined;
-}
 
 export function useProducts(params: ProductListParams = {}) {
   return useQuery({
@@ -26,7 +20,7 @@ export function useProduct(id: string | undefined) {
 
   return useQuery({
     queryKey: queryKeys.products.detail(productId),
-    queryFn: () => getProduct(productId as string),
+    queryFn: () => getProduct(productId as string | number),
     enabled: productId !== undefined,
   });
 }

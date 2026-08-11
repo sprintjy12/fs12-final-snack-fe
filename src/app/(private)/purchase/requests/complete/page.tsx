@@ -128,10 +128,10 @@ function PurchaseRequestCompleteContent() {
     <main className="flex min-h-[calc(100vh-88px)] items-center justify-center bg-surface-muted px-6 py-10">
       <div className="flex w-full max-w-[688px] flex-col gap-8 rounded-[32px] bg-surface-muted px-6 pt-8 pb-10 max-md:max-w-[375px]">
         <header className="flex flex-col items-center gap-2 text-center">
-          <h1 className="m-0 text-[32px] leading-[42px] font-bold text-foreground-strong max-md:text-2xl max-md:leading-8">
+          <h1 className="m-0 text-[32px] leading-[42px] font-semibold text-foreground-strong max-md:text-2xl max-md:leading-8">
             구매 요청 완료
           </h1>
-          <p className="m-0 text-base leading-[26px] text-foreground-muted max-md:text-sm max-md:leading-6">
+          <p className="m-0 text-xl leading-8 text-snack-gray-400 max-md:text-sm max-md:leading-6">
             관리자에게 성공적으로 구매 요청이 완료되었습니다.
           </p>
         </header>
