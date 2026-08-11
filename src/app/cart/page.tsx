@@ -6,10 +6,11 @@ import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { ensureAccessToken } from "@/api/authApi";
-import { createPurchaseRequest } from "@/api/orderApi";
+import { createDirectOrder, createPurchaseRequest } from "@/api/orderApi";
 import { CommonImage, Icon, showToast } from "@/components/ui";
 import { PurchaseRequestModal } from "@/features/cart/PurchaseRequestModal";
 import { useCart } from "@/hooks/queries/useCart";
+import { useMyProfile } from "@/hooks/queries/useMyProfile";
 import {
   useDeleteCart,
   useDeleteCartItem,
@@ -102,6 +103,7 @@ export default function CartPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: cart, isLoading, isError, refetch } = useCart();
+  const { data: profile } = useMyProfile();
   const updateCartItem = useUpdateCartItem();
   const deleteCartItemMutation = useDeleteCartItem();
   const deleteSelectedCartItemsMutation = useDeleteSelectedCartItems();
@@ -143,6 +145,8 @@ export default function CartPage() {
   );
   const requestShippingFee = requestItems.length > 0 ? SHIPPING_FEE : 0;
   const requestOrderTotal = requestProductTotal + requestShippingFee;
+  const isAdminOrSuperAdmin =
+    profile?.role === "ADMIN" || profile?.role === "SUPER_ADMIN";
 
   const openRequestModal = (items: CartItemWithProduct[]) => {
     if (items.length === 0) return;
@@ -150,36 +154,39 @@ export default function CartPage() {
     setRequestOpen(true);
   };
 
-  const handlePurchaseSubmit = async ({ message }: { message: string }) => {
-    if (requestItems.length === 0 || submittingRequest) return;
+  const submitOrderRequest = async (items: CartItemWithProduct[], message?: string) => {
+    if (items.length === 0 || submittingRequest) return;
 
-    const first = requestItems[0];
-    const totalCount = requestItems.reduce(
-      (sum, item) => sum + item.quantity,
-      0,
-    );
-    const localSummary = {
-      name: first.product.name,
-      extraCount: Math.max(0, requestItems.length - 1),
-      totalCount,
-      totalAmount: requestOrderTotal,
-      categoryLabel: "",
-      photo: first.product.imageUrl ?? "",
-      requestMessage: message,
-      orderId: null as string | null,
-    };
+    const first = items[0];
 
     setSubmittingRequest(true);
     try {
       await ensureAccessToken();
-      const response = await createPurchaseRequest({
-        cartItemIds: requestItems.map((item) => item.id),
-        requestMessage: message || undefined,
-      });
+
+      const response = isAdminOrSuperAdmin
+        ? await createDirectOrder({
+            cartItemIds: items.map((item) => item.id),
+          })
+        : await createPurchaseRequest({
+            cartItemIds: items.map((item) => item.id),
+            requestMessage: message || undefined,
+          });
+
       const data = response.data;
       if (!data.orderId) {
-        throw new Error("구매 요청 응답에 orderId가 없습니다.");
+        throw new Error(
+          isAdminOrSuperAdmin
+            ? "즉시 구매 응답에 orderId가 없습니다."
+            : "구매 요청 응답에 orderId가 없습니다.",
+        );
       }
+
+      const requestMessage = isAdminOrSuperAdmin
+        ? "즉시 구매가 완료되었습니다."
+        : "requestMessage" in data
+          ? data.requestMessage ?? message ?? ""
+          : message ?? "";
+
       savePurchaseRequestComplete({
         name: data.firstProductName,
         extraCount: Math.max(0, data.itemCount - 1),
@@ -187,22 +194,30 @@ export default function CartPage() {
         totalAmount: data.totalPrice,
         categoryLabel: data.categoryName ?? "",
         photo: first.product.imageUrl ?? "",
-        requestMessage: data.requestMessage ?? message,
+        requestMessage,
         orderId: data.orderId,
       });
+
       await queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
       setRequestOpen(false);
       setRequestItems([]);
-      router.push(`/purchase/requests/complete?orderId=${data.orderId}`);
+      router.push(`/cart/complete?orderId=${data.orderId}`);
     } catch (error) {
-      const message =
+      const nextMessage =
         error instanceof Error && error.message
           ? error.message
-          : "구매 요청에 실패했어요. 잠시 후 다시 시도해 주세요.";
-      showToast(message);
+          : isAdminOrSuperAdmin
+            ? "즉시 구매에 실패했어요. 잠시 후 다시 시도해 주세요."
+            : "구매 요청에 실패했어요. 잠시 후 다시 시도해 주세요.";
+      showToast(nextMessage);
     } finally {
       setSubmittingRequest(false);
     }
+  };
+
+  const handlePurchaseSubmit = async ({ message }: { message: string }) => {
+    if (requestItems.length === 0 || submittingRequest) return;
+    await submitOrderRequest(requestItems, message);
   };
 
   if (isLoading) {
@@ -468,9 +483,15 @@ export default function CartPage() {
                             type="button"
                             className="flex items-center justify-center rounded-full border-0 bg-accent px-8 py-3 text-lg leading-[26px] font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-40"
                             disabled={submittingRequest}
-                            onClick={() => openRequestModal([item])}
+                            onClick={() => {
+                              if (isAdminOrSuperAdmin) {
+                                void submitOrderRequest([item]);
+                                return;
+                              }
+                              openRequestModal([item]);
+                            }}
                           >
-                            즉시 요청
+                            {isAdminOrSuperAdmin ? "즉시 구매" : "즉시 요청"}
                           </button>
                         </div>
 
@@ -618,10 +639,16 @@ export default function CartPage() {
                 <button
                   type="button"
                   disabled={!someSelected || submittingRequest}
-                  onClick={() => openRequestModal(selectedProducts)}
+                  onClick={() => {
+                    if (isAdminOrSuperAdmin) {
+                      void submitOrderRequest(selectedProducts);
+                      return;
+                    }
+                    openRequestModal(selectedProducts);
+                  }}
                   className="flex h-16 w-full cursor-pointer items-center justify-center rounded-2xl border-0 bg-accent p-4 text-xl leading-8 font-semibold text-surface disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  구매 요청
+                  {isAdminOrSuperAdmin ? "구매하기" : "구매 요청"}
                 </button>
                 <Link
                   href="/products"
