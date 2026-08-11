@@ -6,14 +6,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
 
-import { logout } from "@/api/authApi";
 import { Button, Icon, TextField, useToast } from "@/components/ui";
-import { queryKeys } from "@/constants/queryKeys";
 import {
   useChangeCompanyName,
   useChangePassword,
 } from "@/hooks/mutations/useUsers";
 import { useMyProfile } from "@/hooks/queries/useMyProfile";
+import { performClientLogout } from "@/hooks/useClientLogout";
 import { clearAccessToken, getAccessToken } from "@/lib/authStorage";
 import {
   changeCompanyNameFormSchema,
@@ -471,13 +470,7 @@ const ProfilePage = () => {
 
     // 비밀번호 변경 성공 후에는 logout API 결과와 무관하게 세션 정리 + 로그인 이동
     if (passwordChanged) {
-      try {
-        await logout();
-      } catch {
-        // refresh 쿠키 정리는 best-effort
-      }
-      clearAccessToken();
-      void queryClient.removeQueries({ queryKey: queryKeys.users.me() });
+      await performClientLogout(queryClient);
       showToast(passwordSuccessMessage);
       if (companyErrorAfterPassword) {
         const { message } = applyProfileApiError(companyErrorAfterPassword);

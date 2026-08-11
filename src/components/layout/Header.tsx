@@ -8,6 +8,10 @@ import { useState } from "react";
 import { MobileSidebar } from "@/components/layout/MobileSidebar";
 import { Icon } from "@/components/ui";
 import {
+  ALL_NAV_ITEMS,
+  type AppNavItem,
+} from "@/constants/accessControl";
+import {
   CATEGORY_MENU_ORDERED,
   findCategoryMenuItem,
 } from "@/constants/categoryConstants";
@@ -15,10 +19,7 @@ import { useCategories } from "@/hooks/queries/useProducts";
 import { parseRouteId } from "@/lib/parseOptionalId";
 import { isProductApiMock } from "@/services/productApi";
 
-export type HeaderNavItem = {
-  href: string;
-  label: string;
-};
+export type HeaderNavItem = AppNavItem;
 
 export type HeaderProps = {
   cartCount?: number;
@@ -26,14 +27,8 @@ export type HeaderProps = {
   onLogout?: () => void;
 };
 
-const DEFAULT_NAV_ITEMS = [
-  { href: "/products", label: "상품 리스트" },
-  { href: "/purchase/my-requests", label: "구매 요청 내역" },
-  { href: "/purchase/requests", label: "구매 요청 관리" },
-  { href: "/purchase/history", label: "구매 내역 확인" },
-  { href: "/products/mine", label: "상품 등록 내역" },
-  { href: "/admin", label: "관리" },
-] as const satisfies readonly HeaderNavItem[];
+/** 정책 미주입 시 SUPER_ADMIN 전체 메뉴 (실제 노출은 AppHeader에서 role 필터) */
+const DEFAULT_NAV_ITEMS = ALL_NAV_ITEMS;
 
 function buildProductsHref(
   categoryId?: number | string,
