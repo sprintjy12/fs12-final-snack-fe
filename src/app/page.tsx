@@ -113,7 +113,7 @@ export default function HomePage() {
               </p>
               <span
                 aria-hidden="true"
-                className="mt-0.5 hidden h-6 w-8 border-0 bg-[url('/images/cover/bubble-tail.png')] bg-contain bg-center bg-no-repeat xl:block"
+                className="mt-0.5 block h-6 w-8 border-0 bg-[url('/images/cover/bubble-tail.svg')] bg-contain bg-center bg-no-repeat"
               />
             </div>
           ))}
