@@ -1,4 +1,3 @@
-cat > src / app / page.tsx << 'PAGE_EOF'
 import Link from "next/link";
 
 import { CommonImage } from "@/components/ui";
@@ -131,4 +130,3 @@ export default function HomePage() {
     </main>
   );
 }
-PAGE_EOF
