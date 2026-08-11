@@ -172,7 +172,10 @@ export default function MyProductsPage() {
         ) : null}
 
         {isError ? (
-          <p className="px-4 py-16 text-center text-snack-state-100 sm:px-6 xl:px-0">
+          <p
+            role="alert"
+            className="px-4 py-16 text-center text-snack-state-100 sm:px-6 xl:px-0"
+          >
             {getErrorMessage(error, "상품 등록 내역을 불러오지 못했습니다.")}
           </p>
         ) : null}
