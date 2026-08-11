@@ -14,6 +14,7 @@ import {
 } from "@/features/products";
 import { useProducts } from "@/hooks/queries/useProducts";
 import { parseRouteId } from "@/lib/parseOptionalId";
+import { showToast } from "@/components/ui";
 import type { Product, ProductListParams } from "@/types/productTypes";
 
 import styles from "./products.module.css";
@@ -105,6 +106,7 @@ export default function ProductListPage() {
     void queryClient.invalidateQueries({
       queryKey: queryKeys.products.all,
     });
+    showToast("상품을 등록했어요.");
     router.push(`/products/${product.id}`);
   };
 

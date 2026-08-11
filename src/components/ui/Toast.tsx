@@ -112,7 +112,7 @@ function ToastPortal({
 
   // aria-live 영역은 항상 DOM에 두고, 열릴 때 내부 메시지만 바꿉니다.
   return createPortal(
-    <div className="pointer-events-none fixed inset-x-0 top-[54px] z-[60] flex justify-center md:top-16 xl:top-[88px]">
+    <div className="pointer-events-none fixed inset-x-0 top-[54px] z-[110] flex justify-center md:top-16 xl:top-[88px]">
       <div
         role="status"
         aria-live="polite"
