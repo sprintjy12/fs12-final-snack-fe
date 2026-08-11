@@ -355,8 +355,9 @@ const ProfilePage = () => {
       axios.isAxiosError(profileError) &&
       profileError.response?.status === 401
     ) {
-      clearClientSession(queryClient);
-      router.replace("/login");
+      void clearClientSession(queryClient).then(() => {
+        router.replace("/login");
+      });
     }
   }, [isError, profileError, queryClient, router, showToast]);
 

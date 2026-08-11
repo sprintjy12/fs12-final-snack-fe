@@ -59,8 +59,9 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
     }
 
     if (isUnauthorized) {
-      clearClientSession(queryClient);
-      router.replace("/login");
+      void clearClientSession(queryClient).then(() => {
+        router.replace("/login");
+      });
       return;
     }
 

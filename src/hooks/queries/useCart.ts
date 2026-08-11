@@ -10,7 +10,7 @@ import { getAccessToken } from "@/lib/authStorage";
 /**
  * 장바구니 조회.
  * queryKey는 공용(["cart"])이므로 사용자 전환 시
- * clearAuthUserQueries / performClientLogout으로 캐시를 제거합니다.
+ * clearAuthUserQueries(cancel→remove)로 캐시를 제거합니다.
  */
 export const useCart = () => {
   const hasToken = Boolean(getAccessToken());

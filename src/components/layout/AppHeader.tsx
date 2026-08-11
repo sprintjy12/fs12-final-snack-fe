@@ -15,12 +15,19 @@ import { getAccessToken } from "@/lib/authStorage";
 
 function HeaderWithAuth() {
   const hasToken = Boolean(getAccessToken());
-  const { data: profile, isPending } = useMyProfile();
+  const { data: profile, isPending, isFetching, isError } = useMyProfile();
   const { data: cart } = useCart();
   const onLogout = useClientLogout();
 
-  // 권한 확인 전에는 보호 메뉴를 렌더하지 않음 (이전 세션 메뉴 flash 방지)
-  const roleReady = hasToken && !isPending && Boolean(profile?.role);
+  // 프로필 미확정·조회 실패·초기 fetch 중에는 cached role 메뉴를 쓰지 않음
+  // (RouteGuard error UI와 Header 권한 메뉴 불일치 방지)
+  const roleReady =
+    hasToken &&
+    !isPending &&
+    !isError &&
+    !(isFetching && !profile?.role) &&
+    Boolean(profile?.role);
+
   const navItems = roleReady ? getNavItemsForRole(profile?.role) : [];
   const cartCount = roleReady ? (cart?.summary?.totalQuantity ?? 0) : 0;
 
@@ -28,7 +35,7 @@ function HeaderWithAuth() {
     <Header
       cartCount={cartCount}
       navItems={navItems}
-      onLogout={roleReady ? onLogout : undefined}
+      onLogout={hasToken ? onLogout : undefined}
     />
   );
 }
