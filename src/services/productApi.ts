@@ -338,6 +338,7 @@ export async function getProduct(id: number | string): Promise<Product> {
 /**
  * 상품 수정.
  * mock: DUMMY_PRODUCTS 갱신 / API: PATCH /api/products/:id
+ * Body 필드는 전부 optional(부분 수정). Authorization Bearer 필요.
  */
 export async function updateProduct(
   input: UpdateProductInput,
@@ -350,61 +351,77 @@ export async function updateProduct(
       throw new Error(`Product not found: ${input.id}`);
     }
 
-    const current = DUMMY_PRODUCTS[index];
-    const categoryMenuItem = findCategoryMenuItem(input.categoryId);
+    const current = DUMMY_PRODUCTS[index]!;
+    const nextCategoryId = input.categoryId ?? current.categoryId;
+    const nextSubCategoryId = input.subCategoryId ?? current.subCategoryId;
+    const categoryMenuItem = findCategoryMenuItem(nextCategoryId);
     const subCategoryMenuItem = categoryMenuItem?.subCategories.find(
-      (sub) => String(sub.id) === String(input.subCategoryId),
+      (sub) => String(sub.id) === String(nextSubCategoryId),
     );
 
     const updated: Product = {
       ...current,
-      name: input.name,
-      price: input.price,
+      name: input.name ?? current.name,
+      price: input.price ?? current.price,
       url: input.productUrl ?? current.url,
       photo: input.imageUrl ?? current.photo,
-      categoryId: input.categoryId,
-      subCategoryId: input.subCategoryId,
+      categoryId: nextCategoryId,
+      subCategoryId: nextSubCategoryId,
       category: categoryMenuItem
         ? { id: categoryMenuItem.id, name: categoryMenuItem.name }
-        : undefined,
+        : current.category,
       subCategory: subCategoryMenuItem
         ? {
             id: subCategoryMenuItem.id,
             name: subCategoryMenuItem.name,
-            categoryId: input.categoryId,
+            categoryId: nextCategoryId,
           }
-        : undefined,
+        : current.subCategory,
     };
+    DUMMY_PRODUCTS[index] = updated;
     return updated;
   }
 
   await ensureCategoryMenu().catch(() => CATEGORY_MENU_ORDERED);
 
-  const leafApiId =
-    resolveApiLeafCategoryId({
-      categoryId: input.categoryId,
-      subCategoryId: input.subCategoryId,
-    }) ?? String(input.subCategoryId);
+  const body: Record<string, unknown> = {};
 
-  const response = await apiFetch<BeDetailResponse>(
+  if (input.name !== undefined) {
+    body.name = input.name;
+  }
+  if (input.price !== undefined) {
+    body.price = input.price;
+  }
+  if (input.productUrl !== undefined) {
+    body.productUrl = input.productUrl;
+  }
+  if (input.imageUrl !== undefined) {
+    body.imageUrl = input.imageUrl;
+  }
+  if (input.stock !== undefined) {
+    body.stock = input.stock;
+  }
+
+  if (input.categoryId !== undefined || input.subCategoryId !== undefined) {
+    const leafApiId =
+      resolveApiLeafCategoryId({
+        categoryId: input.categoryId,
+        subCategoryId: input.subCategoryId,
+      }) ??
+      (input.subCategoryId !== undefined
+        ? String(input.subCategoryId)
+        : undefined);
+    if (leafApiId) {
+      body.categoryId = leafApiId;
+    }
+  }
+
+  const response = await apiClient.patch<BeDetailResponse>(
     `/api/products/${input.id}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({
-        name: input.name,
-        price: input.price,
-        categoryId: leafApiId,
-        ...(input.productUrl !== undefined
-          ? { productUrl: input.productUrl }
-          : {}),
-        ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
-        ...(input.stock !== undefined ? { stock: input.stock } : {}),
-      }),
-      credentials: "include",
-    },
+    body,
   );
 
-  return mapBeProduct(response.data);
+  return mapBeProduct(response.data.data);
 }
 
 /**

@@ -100,13 +100,15 @@ export interface CreateProductInput {
   productUrl: string;
 }
 
-/** 상품 수정 요청 */
+/** 상품 수정 요청 — PATCH /api/products/:id (필드 전부 optional) */
 export interface UpdateProductInput {
   id: number | string;
-  name: string;
-  price: number;
-  categoryId: number | string;
-  subCategoryId: number | string;
+  name?: string;
+  price?: number;
+  /** 대분류 (메뉴 UI용) */
+  categoryId?: number | string;
+  /** 소분류 — API categoryId(leaf UUID)로 변환 */
+  subCategoryId?: number | string;
   imageUrl?: string;
   productUrl?: string;
   stock?: number;
