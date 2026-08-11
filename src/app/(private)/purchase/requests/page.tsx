@@ -8,7 +8,7 @@ import { PurchaseRequestsList } from "@/app/(private)/purchase/requests/Purchase
 import {
   EmptyState,
   Icon,
-  type PaginationItem,
+  buildPaginationItems,
 } from "@/components/ui";
 import { useOrderRequests } from "@/hooks/queries/useOrderRequests";
 import type { OrderRequestListSort } from "@/types/orderTypes";
@@ -26,24 +26,6 @@ const getErrorMessage = (error: unknown, fallback: string) => {
     return error.message;
   }
   return fallback;
-};
-
-/** 시안용 페이지 번호 배열을 API totalPages 기준으로 만듭니다. */
-const buildPaginationItems = (
-  currentPage: number,
-  totalPages: number,
-): PaginationItem[] => {
-  if (totalPages <= 0) {
-    return ["1"];
-  }
-
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => String(index + 1));
-  }
-
-  const items: PaginationItem[] = ["1", "2", "3", "4", "5", "more"];
-  items.push(String(totalPages));
-  return items;
 };
 
 export default function PurchaseRequestsPage() {

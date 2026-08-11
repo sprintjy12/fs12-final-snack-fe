@@ -8,7 +8,7 @@ import {
   EmptyState,
   Icon,
   Pagination,
-  type PaginationItem,
+  buildPaginationItems,
 } from "@/components/ui";
 import { useBudgetSummary } from "@/hooks/queries/useBudgetSummary";
 import { useOrders } from "@/hooks/queries/useOrders";
@@ -94,24 +94,6 @@ const formatProductName = (order: OrderListItem) => {
     return firstProductName;
   }
   return `${firstProductName} 외 ${itemCount - 1}건`;
-};
-
-/** 시안용 페이지 번호 배열을 API totalPages 기준으로 만듭니다. */
-const buildPaginationItems = (
-  currentPage: number,
-  totalPages: number,
-): PaginationItem[] => {
-  if (totalPages <= 0) {
-    return ["1"];
-  }
-
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => String(index + 1));
-  }
-
-  const items: PaginationItem[] = ["1", "2", "3", "4", "5", "more"];
-  items.push(String(totalPages));
-  return items;
 };
 
 export default function PurchaseHistoryPage() {
