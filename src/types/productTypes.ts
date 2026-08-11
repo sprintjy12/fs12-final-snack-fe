@@ -29,6 +29,8 @@ export interface Product {
   purchaseCount?: number;
   /** BE 등록 시각 (ISO). latest 정렬용 */
   createdAt?: string;
+  /** 등록자 user id — 상세 본인 상품 케밥 분기용 */
+  createdById?: string;
 }
 
 export interface ProductListParams {

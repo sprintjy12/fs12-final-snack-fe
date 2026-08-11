@@ -70,3 +70,8 @@ export const getMyProducts = async (
     data: (response.data.data ?? []).map(withCategoryParent),
   };
 };
+
+/** 상품 삭제 — DELETE /api/products/:productId */
+export const deleteProduct = async (productId: string): Promise<void> => {
+  await apiClient.delete(`/api/products/${productId}`);
+};
