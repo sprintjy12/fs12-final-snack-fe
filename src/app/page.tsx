@@ -110,10 +110,11 @@ export default function HomePage() {
               ].join(" ")}
             >
               <p className="m-0 w-auto rounded-full bg-accent px-3 py-2 text-center text-[clamp(0.625rem,2.3vw,1.375rem)] leading-[1.3] font-bold break-keep text-surface sm:whitespace-nowrap xl:px-7 xl:py-[18px]">
+                {bubble.text}
               </p>
               <span
                 aria-hidden="true"
-                className="mt-0.5 block h-6 w-8 border-0 bg-[url('/images/cover/bubble-tail.svg')] bg-contain bg-center bg-no-repeat"
+                className="mt-0.5 block h-6 w-8 rotate-180 border-0 bg-[url('/images/cover/bubble-tail.svg')] bg-contain bg-center bg-no-repeat"
               />
             </div>
           ))}
