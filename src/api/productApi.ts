@@ -1,28 +1,25 @@
 import {
   CATEGORY_MENU_ORDERED,
-  TEMP_CATEGORIES,
   findCategoryMenuItem,
   resolveApiLeafCategoryId,
   resolveApiLeafCategoryIdsForParent,
   resolveApiParentCategoryId,
   type CategoryMenuItem,
 } from "@/constants/categoryConstants";
-import { DUMMY_PRODUCTS } from "@/features/products/dummyProducts";
 import { setRuntimeCategoryMenu } from "@/lib/categoryMenuRegistry";
 import { isUuid } from "@/lib/parseOptionalId";
 import { apiClient } from "@/api/core/apiClient";
 import { ensureAccessToken } from "@/api/authApi";
 import type {
   Category,
+  CreateProductInput,
   GetMyProductsParams,
+  MyProductListItem,
   MyProductListResponse,
   Product,
   ProductListParams,
   UpdateProductInput,
 } from "@/types/productTypes";
-
-/** 기본 true. 실 API: .env에 NEXT_PUBLIC_USE_MOCK=false */
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 
 type BeCategory = {
   id: string;
@@ -46,6 +43,8 @@ type BeProduct = {
   productUrl: string | null;
   categoryId: string;
   purchaseCount: number;
+  createdAt?: string;
+  createdById?: string;
   category?: BeCategory | null;
 };
 
@@ -103,6 +102,8 @@ function mapBeProduct(product: BeProduct): Product {
         : undefined,
     subCategory,
     purchaseCount: product.purchaseCount,
+    createdAt: product.createdAt,
+    createdById: product.createdById,
   };
 }
 
@@ -120,50 +121,40 @@ function buildMenuFromBe(nodes: BeCategoryTreeNode[]): CategoryMenuItem[] {
   }));
 }
 
-function filterMockProducts(params: ProductListParams = {}): Product[] {
-  let items = [...DUMMY_PRODUCTS];
-
-  if (params.categoryId !== undefined) {
-    items = items.filter(
-      (product) => String(product.categoryId) === String(params.categoryId),
-    );
+/** 목록 category에 parent가 없으면 parentId로 상위 이름을 채웁니다. */
+const withCategoryParent = (
+  product: MyProductListItem,
+): MyProductListItem => {
+  const category = product.category;
+  if (!category) {
+    return product;
   }
 
-  if (params.subCategoryId !== undefined) {
-    items = items.filter((product) => {
-      const sameSub =
-        String(product.subCategoryId) === String(params.subCategoryId);
-      if (params.categoryId === undefined) return sameSub;
-      return (
-        sameSub && String(product.categoryId) === String(params.categoryId)
-      );
-    });
+  if (category.parent?.name) {
+    return product;
   }
 
-  items.sort((a, b) => {
-    switch (params.sort) {
-      case "popular":
-        return (b.purchaseCount ?? 0) - (a.purchaseCount ?? 0);
-      case "priceAsc":
-        return a.price - b.price;
-      case "priceDesc":
-        return b.price - a.price;
-      case "latest":
-      default:
-        return Number(b.id) - Number(a.id);
-    }
-  });
-
-  const page = params.page ?? 1;
-  const pageSize = params.pageSize;
-
-  if (pageSize !== undefined && pageSize > 0) {
-    const start = (page - 1) * pageSize;
-    return items.slice(start, start + pageSize);
+  const parentId = category.parentId;
+  if (!parentId) {
+    return product;
   }
 
-  return items;
-}
+  const parentName = findCategoryMenuItem(parentId)?.name;
+  if (!parentName) {
+    return product;
+  }
+
+  return {
+    ...product,
+    category: {
+      ...category,
+      parent: {
+        id: String(parentId),
+        name: parentName,
+      },
+    },
+  };
+};
 
 function sortProducts(
   items: Product[],
@@ -238,13 +229,8 @@ async function fetchAllProductsForLeaf(
   return all;
 }
 
-/** API 모드에서 목차/필터용 카테고리 트리를 로드해 레지스트리에 캐시 */
+/** 목차/필터용 카테고리 트리를 로드해 레지스트리에 캐시 */
 export async function ensureCategoryMenu(): Promise<CategoryMenuItem[]> {
-  if (USE_MOCK) {
-    setRuntimeCategoryMenu(null);
-    return CATEGORY_MENU_ORDERED;
-  }
-
   try {
     await ensureAccessToken();
     const response =
@@ -262,10 +248,6 @@ export async function ensureCategoryMenu(): Promise<CategoryMenuItem[]> {
 export async function getProducts(
   params: ProductListParams = {},
 ): Promise<Product[]> {
-  if (USE_MOCK) {
-    return filterMockProducts(params);
-  }
-
   await ensureAccessToken();
 
   // 대분류 leaf 목록 해석을 위해 메뉴를 먼저 맞춤
@@ -319,15 +301,6 @@ export async function getProducts(
 }
 
 export async function getProduct(id: number | string): Promise<Product> {
-  if (USE_MOCK) {
-    await new Promise((resolve) => setTimeout(resolve, 450));
-    const product = DUMMY_PRODUCTS.find((item) => item.id === Number(id));
-    if (!product) {
-      throw new Error(`Product not found: ${id}`);
-    }
-    return product;
-  }
-
   await ensureAccessToken();
 
   // 부모 이름 매핑용
@@ -338,48 +311,59 @@ export async function getProduct(id: number | string): Promise<Product> {
 }
 
 /**
- * 상품 수정.
- * mock: DUMMY_PRODUCTS 갱신 / API: PATCH /api/products/:id
+ * 상품 수정 — PATCH /api/products/:id
+ * Body 필드는 전부 optional(부분 수정). Authorization Bearer 필요.
  */
 export async function updateProduct(
   input: UpdateProductInput,
 ): Promise<Product> {
-  if (USE_MOCK) {
-    const index = DUMMY_PRODUCTS.findIndex(
-      (item) => String(item.id) === String(input.id),
-    );
-    if (index < 0) {
-      throw new Error(`Product not found: ${input.id}`);
-    }
+  await ensureAccessToken();
+  await ensureCategoryMenu().catch(() => CATEGORY_MENU_ORDERED);
 
-    const current = DUMMY_PRODUCTS[index];
-    const categoryMenuItem = findCategoryMenuItem(input.categoryId);
-    const subCategoryMenuItem = categoryMenuItem?.subCategories.find(
-      (sub) => String(sub.id) === String(input.subCategoryId),
-    );
+  const body: Record<string, unknown> = {};
 
-    const updated: Product = {
-      ...current,
-      name: input.name,
-      price: input.price,
-      url: input.url ?? current.url,
-      photo: input.photo ?? current.photo,
-      categoryId: input.categoryId,
-      subCategoryId: input.subCategoryId,
-      category: categoryMenuItem
-        ? { id: categoryMenuItem.id, name: categoryMenuItem.name }
-        : undefined,
-      subCategory: subCategoryMenuItem
-        ? {
-            id: subCategoryMenuItem.id,
-            name: subCategoryMenuItem.name,
-            categoryId: input.categoryId,
-          }
-        : undefined,
-    };
-    return updated;
+  if (input.name !== undefined) {
+    body.name = input.name;
+  }
+  if (input.price !== undefined) {
+    body.price = input.price;
+  }
+  if (input.productUrl !== undefined) {
+    body.productUrl = input.productUrl;
+  }
+  if (input.imageUrl !== undefined) {
+    body.imageUrl = input.imageUrl;
+  }
+  if (input.stock !== undefined) {
+    body.stock = input.stock;
   }
 
+  if (input.categoryId !== undefined || input.subCategoryId !== undefined) {
+    const leafApiId =
+      resolveApiLeafCategoryId({
+        categoryId: input.categoryId,
+        subCategoryId: input.subCategoryId,
+      }) ??
+      (input.subCategoryId !== undefined
+        ? String(input.subCategoryId)
+        : undefined);
+    if (leafApiId) {
+      body.categoryId = leafApiId;
+    }
+  }
+
+  const response = await apiClient.patch<BeDetailResponse>(
+    `/api/products/${input.id}`,
+    body,
+  );
+
+  return mapBeProduct(response.data.data);
+}
+
+/** 상품 등록 — POST /api/products */
+export async function createProduct(
+  input: CreateProductInput,
+): Promise<Product> {
   await ensureAccessToken();
   await ensureCategoryMenu().catch(() => CATEGORY_MENU_ORDERED);
 
@@ -389,16 +373,14 @@ export async function updateProduct(
       subCategoryId: input.subCategoryId,
     }) ?? String(input.subCategoryId);
 
-  const response = await apiClient.patch<BeDetailResponse>(
-    `/api/products/${input.id}`,
-    {
-      name: input.name,
-      price: input.price,
-      categoryId: leafApiId,
-      productUrl: input.url,
-      imageUrl: input.photo,
-    },
-  );
+  const response = await apiClient.post<BeDetailResponse>("/api/products", {
+    name: input.name,
+    price: input.price,
+    categoryId: leafApiId,
+    imageUrl: input.imageUrl,
+    stock: input.stock,
+    productUrl: input.productUrl,
+  });
 
   return mapBeProduct(response.data.data);
 }
@@ -406,19 +388,6 @@ export async function updateProduct(
 export async function getMyProducts(
   params: GetMyProductsParams = {},
 ): Promise<MyProductListResponse> {
-  if (USE_MOCK) {
-    return {
-      message: "mock",
-      data: [],
-      pagination: {
-        page: params.page ?? 1,
-        limit: params.limit ?? 8,
-        total: 0,
-        totalPages: 0,
-      },
-    };
-  }
-
   await ensureAccessToken();
 
   const response = await apiClient.get<MyProductListResponse>(
@@ -432,7 +401,19 @@ export async function getMyProducts(
     },
   );
 
-  return response.data;
+  // 상위 카테고리명 조회용 (목록 응답에는 parent 객체가 없을 수 있음)
+  await ensureCategoryMenu().catch(() => undefined);
+
+  return {
+    ...response.data,
+    data: (response.data.data ?? []).map(withCategoryParent),
+  };
+}
+
+/** 상품 삭제 — DELETE /api/products/:productId */
+export async function deleteProduct(productId: string): Promise<void> {
+  await ensureAccessToken();
+  await apiClient.delete(`/api/products/${productId}`);
 }
 
 export async function getCategories(): Promise<CategoryMenuItem[]> {
@@ -441,13 +422,8 @@ export async function getCategories(): Promise<CategoryMenuItem[]> {
 
 /** 평면 대분류만 필요할 때 */
 export async function getCategoryList(): Promise<Category[]> {
-  if (USE_MOCK) return TEMP_CATEGORIES;
   const menu = await ensureCategoryMenu();
   return menu.map(({ id, name }) => ({ id, name }));
-}
-
-export function isProductApiMock() {
-  return USE_MOCK;
 }
 
 export function isApiCategoryId(value: number | string | undefined) {

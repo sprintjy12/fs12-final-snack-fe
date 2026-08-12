@@ -24,6 +24,7 @@ export default function UploadTestPage() {
     uploadImageMutation.mutate(file, {
       onSuccess: (result) => {
         console.log("S3 Object Key:", result.key);
+        console.log("Public image URL:", result.url);
         setUploadedKey(result.key);
       },
     });

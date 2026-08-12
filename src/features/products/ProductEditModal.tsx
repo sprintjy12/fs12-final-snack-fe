@@ -2,12 +2,19 @@
 
 import Image from "next/image";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { isAxiosError } from "axios";
 import { z } from "zod";
 
+import { ensureAccessToken } from "@/api/authApi";
 import { Button, Icon, ModalShell, Select, TextField, showToast } from "@/components/ui";
-import { CATEGORY_MENU } from "@/constants/categoryConstants";
+import {
+  CATEGORY_MENU,
+  getActiveCategoryMenu,
+  type CategoryMenuItem,
+} from "@/constants/categoryConstants";
+import { useUploadImage } from "@/hooks/mutations/useUploadImage";
 import { getProductPhotoSrc } from "@/lib/productMedia";
-import { updateProduct } from "@/api/productApi";
+import { ensureCategoryMenu, updateProduct } from "@/api/productApi";
 import type { Product, UpdateProductInput } from "@/types/productTypes";
 
 export type ProductEditModalProps = {
@@ -18,16 +25,19 @@ export type ProductEditModalProps = {
   onUpdated?: (product: Product) => void;
 };
 
-const CATEGORY_PLACEHOLDER = "카테고리";
+const CATEGORY_PLACEHOLDER = "대분류";
 const SUB_CATEGORY_PLACEHOLDER = "소분류";
 
-const categoryOptions = [
-  { value: "", label: CATEGORY_PLACEHOLDER },
-  ...CATEGORY_MENU.map((category) => ({
-    value: String(category.id),
-    label: category.name,
-  })),
-];
+function normalizeHttpUrl(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
+}
 
 const productEditSchema = z.object({
   name: z.string().trim().min(1, "상품명을 입력해 주세요."),
@@ -40,13 +50,21 @@ const productEditSchema = z.object({
     .refine((value) => /^\d+$/.test(value), "가격은 숫자만 입력해 주세요.")
     .transform((value) => Number(value))
     .refine((value) => value > 0, "가격은 0보다 커야 해요."),
-  url: z.string().trim().optional(),
+  productUrl: z
+    .string()
+    .trim()
+    .min(1, "제품 링크를 입력해 주세요.")
+    .transform(normalizeHttpUrl)
+    .refine(
+      (value) => z.string().url().safeParse(value).success,
+      "올바른 URL을 입력해 주세요.",
+    ),
 });
 
 /**
- * 상품 수정 폼 모달. ProductRegisterModal과 같은 ModalShell 폼 패턴을 쓰되
- * 기존 상품 값으로 미리 채워지고, 제출 시 updateProduct를 호출합니다.
- * Figma: 상품상세_내가 등록한 상품/Desktop — 상품 수정
+ * 상품 수정 폼 모달.
+ * 열릴 때 product의 대·소분류 ID로 Select를 채우고,
+ * PATCH /api/products/:id 로 부분 수정합니다.
  */
 export function ProductEditModal({
   open,
@@ -58,31 +76,57 @@ export function ProductEditModal({
   const categoryLabelId = useId();
   const subCategoryLabelId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadImageMutation = useUploadImage();
 
+  const [categoryMenu, setCategoryMenu] =
+    useState<CategoryMenuItem[]>(CATEGORY_MENU);
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [subCategoryId, setSubCategoryId] = useState("");
   const [price, setPrice] = useState("");
-  const [url, setUrl] = useState("");
+  const [productUrl, setProductUrl] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // 모달이 열릴 때(또는 대상 상품이 바뀔 때)만 기존 값으로 초기화합니다.
-  // 매 렌더마다 초기화하면 사용자가 입력한 값이 리셋됩니다.
+  // 모달이 열릴 때(또는 대상 상품이 바뀔 때)만 기존 값 + BE 카테고리 메뉴로 초기화
   useEffect(() => {
-    if (!open || !product) return;
+    if (!open || !product) {
+      return;
+    }
+
     setName(product.name);
-    setCategoryId(String(product.categoryId));
-    setSubCategoryId(String(product.subCategoryId));
+    setCategoryId(String(product.categoryId ?? ""));
+    setSubCategoryId(String(product.subCategoryId ?? ""));
     setPrice(String(product.price));
-    setUrl(product.url ?? "");
+    setProductUrl(product.url ?? "");
     setImageFile(null);
     setImagePreview(getProductPhotoSrc(product.photo));
     setSubmitting(false);
+
+    void ensureCategoryMenu()
+      .then(() => {
+        setCategoryMenu(getActiveCategoryMenu());
+        // 메뉴 로드 후 다시 반영 (옵션이 생긴 뒤 Select value 매칭)
+        setCategoryId(String(product.categoryId ?? ""));
+        setSubCategoryId(String(product.subCategoryId ?? ""));
+      })
+      .catch(() => {
+        setCategoryMenu(getActiveCategoryMenu());
+        setCategoryId(String(product.categoryId ?? ""));
+        setSubCategoryId(String(product.subCategoryId ?? ""));
+      });
   }, [open, product]);
 
-  const selectedCategory = CATEGORY_MENU.find(
+  const categoryOptions = [
+    { value: "", label: CATEGORY_PLACEHOLDER },
+    ...categoryMenu.map((category) => ({
+      value: String(category.id),
+      label: category.name,
+    })),
+  ];
+
+  const selectedCategory = categoryMenu.find(
     (category) => String(category.id) === categoryId,
   );
   const subCategoryOptions = [
@@ -95,14 +139,13 @@ export function ProductEditModal({
 
   const handleCategoryChange = (value: string) => {
     setCategoryId(value);
-    // 대분류가 바뀌면 더는 유효하지 않은 소분류 선택을 초기화합니다.
-    // 초기값 채우기(useEffect)와 달리 사용자가 직접 바꿀 때만 호출되므로
-    // 프리필 값을 지워버리는 레이스가 없습니다.
     setSubCategoryId("");
   };
 
   useEffect(() => {
-    if (!imageFile) return;
+    if (!imageFile) {
+      return;
+    }
     const objectUrl = URL.createObjectURL(imageFile);
     setImagePreview(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
@@ -114,16 +157,25 @@ export function ProductEditModal({
     event.target.value = "";
   };
 
+  const handleClose = () => {
+    if (submitting) {
+      return;
+    }
+    onClose();
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!product) return;
+    if (!product || submitting) {
+      return;
+    }
 
     const result = productEditSchema.safeParse({
       name,
       categoryId,
       subCategoryId,
       price,
-      url,
+      productUrl,
     });
 
     if (!result.success) {
@@ -131,36 +183,52 @@ export function ProductEditModal({
       return;
     }
 
-    const input: UpdateProductInput = {
-      id: product.id,
-      name: result.data.name,
-      price: result.data.price,
-      url: result.data.url || undefined,
-      // 새 이미지를 고르지 않았으면 기존 이미지를 유지합니다.
-      photo: product.photo,
-      categoryId: Number(result.data.categoryId),
-      subCategoryId: Number(result.data.subCategoryId),
-    };
-
     setSubmitting(true);
     try {
+      await ensureAccessToken();
+
+      let imageUrl: string | undefined;
+      if (imageFile) {
+        const uploaded = await uploadImageMutation.mutateAsync(imageFile);
+        imageUrl = uploaded.url;
+      }
+
+      const input: UpdateProductInput = {
+        id: product.id,
+        name: result.data.name,
+        price: result.data.price,
+        categoryId: result.data.categoryId,
+        subCategoryId: result.data.subCategoryId,
+        productUrl: result.data.productUrl,
+        ...(imageUrl ? { imageUrl } : {}),
+      };
+
       const updated = await updateProduct(input);
       onUpdated?.(updated);
       showToast("상품을 수정했어요.");
       onClose();
-    } catch {
-      showToast("상품 수정에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    } catch (error) {
+      const message = isAxiosError(error)
+        ? ((error.response?.data as { message?: string } | undefined)
+            ?.message ?? error.message)
+        : error instanceof Error
+          ? error.message
+          : "상품 수정에 실패했어요. 잠시 후 다시 시도해 주세요.";
+      showToast(message);
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (!product) return null;
+  if (!product) {
+    return null;
+  }
 
   return (
     <ModalShell
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
+      closeOnOverlayClick={!submitting}
       aria-labelledby={titleId}
       className="flex max-h-[90vh] max-w-[375px] flex-col gap-6 overflow-y-auto p-6 xl:max-w-[688px] xl:gap-8 xl:px-8 xl:pt-12 xl:pb-10"
     >
@@ -174,8 +242,9 @@ export function ProductEditModal({
         <button
           type="button"
           aria-label="닫기"
-          onClick={onClose}
-          className="flex size-8 shrink-0 cursor-pointer items-center justify-center bg-transparent text-snack-gray-400"
+          onClick={handleClose}
+          disabled={submitting}
+          className="flex size-8 shrink-0 cursor-pointer items-center justify-center bg-transparent text-snack-gray-400 disabled:cursor-not-allowed"
         >
           <Icon name="close" size="sm" />
         </button>
@@ -196,6 +265,7 @@ export function ProductEditModal({
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="상품명을 입력해 주세요"
+              disabled={submitting}
             />
           </label>
 
@@ -235,6 +305,7 @@ export function ProductEditModal({
                 setPrice(event.target.value.replace(/[^0-9]/g, ""))
               }
               placeholder="가격을 입력해 주세요"
+              disabled={submitting}
             />
           </label>
 
@@ -245,7 +316,8 @@ export function ProductEditModal({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="relative flex size-[88px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface-muted xl:size-[104px]"
+              disabled={submitting}
+              className="relative flex size-[88px] shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-border bg-surface-muted disabled:cursor-not-allowed xl:size-[104px]"
             >
               {imagePreview ? (
                 <Image
@@ -274,9 +346,10 @@ export function ProductEditModal({
             </span>
             <TextField
               type="text"
-              value={url}
-              onChange={(event) => setUrl(event.target.value)}
-              placeholder="www.example.com"
+              value={productUrl}
+              onChange={(event) => setProductUrl(event.target.value)}
+              placeholder="https://example.com/product"
+              disabled={submitting}
             />
           </label>
         </div>
@@ -287,7 +360,8 @@ export function ProductEditModal({
             variant="secondary"
             width="modal"
             className="flex-1"
-            onClick={onClose}
+            disabled={submitting}
+            onClick={handleClose}
           >
             취소
           </Button>

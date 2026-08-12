@@ -1,13 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
+import {
+  DeleteProductModal,
+  type DeleteProductTarget,
+} from "@/app/products/mine/DeleteProductModal";
+import { ProductMineMenu } from "@/app/products/mine/ProductMineMenu";
 import { Icon } from "@/components/ui";
+import { queryKeys } from "@/constants/queryKeys";
+import { ProductEditModal } from "@/features/products/ProductEditModal";
+import { useAddToCart } from "@/hooks/mutations/useCart";
+import { useMyProfile } from "@/hooks/queries/useMyProfile";
 import { useProduct } from "@/hooks/queries/useProducts";
 import { getProductPhotoSrc } from "@/lib/productMedia";
-import { useAddToCart } from "@/hooks/mutations/useCart";
+import type { Product } from "@/types/productTypes";
 
 import styles from "./productDetail.module.css";
 
@@ -50,21 +60,30 @@ function DetailSkeleton() {
 
 export default function ProductDetailPage() {
   const params = useParams();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const rawId = params?.id;
   const id = Array.isArray(rawId) ? rawId[0] : rawId;
 
   const { data: product, isLoading, isError } = useProduct(id);
+  const { data: me } = useMyProfile();
   const [quantity, setQuantity] = useState(1);
   const [imageFailed, setImageFailed] = useState(false);
   const [feedback, setFeedback] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteProductTarget | null>(
+    null,
+  );
 
   useEffect(() => {
     setQuantity(1);
     setImageFailed(false);
     setFeedback(null);
+    setEditOpen(false);
+    setDeleteTarget(null);
   }, [id]);
 
   useEffect(() => {
@@ -76,7 +95,15 @@ export default function ProductDetailPage() {
   const photoSrc = product ? getProductPhotoSrc(product.photo) : null;
   const showImage = Boolean(photoSrc) && !imageFailed;
   const categoryLabel =
-    product?.subCategory?.name ?? product?.category?.name ?? null;
+    product?.category?.name && product?.subCategory?.name
+      ? `${product.category.name} · ${product.subCategory.name}`
+      : (product?.subCategory?.name ?? product?.category?.name ?? null);
+
+  const isMine = Boolean(
+    me?.id &&
+      product?.createdById &&
+      String(me.id) === String(product.createdById),
+  );
 
   const addToCartMutation = useAddToCart();
 
@@ -109,6 +136,19 @@ export default function ProductDetailPage() {
         },
       },
     );
+  };
+
+  const handleProductUpdated = (updated: Product) => {
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.products.detail(String(updated.id)),
+    });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.products.all,
+    });
+  };
+
+  const handleProductDeleted = () => {
+    router.push("/products");
   };
 
   if (!id) {
@@ -227,11 +267,26 @@ export default function ProductDetailPage() {
 
           <div className={styles.info}>
             <div className={styles.headerBlock}>
-              <div className={styles.titleBlock}>
-                {categoryLabel ? (
-                  <p className={styles.category}>{categoryLabel}</p>
+              <div className={styles.headerTop}>
+                <div className={styles.titleBlock}>
+                  {categoryLabel ? (
+                    <p className={styles.category}>{categoryLabel}</p>
+                  ) : null}
+                  <h1 className={styles.name}>{product.name}</h1>
+                </div>
+                {isMine ? (
+                  <ProductMineMenu
+                    productName={product.name}
+                    size="md"
+                    onEdit={() => setEditOpen(true)}
+                    onDelete={() =>
+                      setDeleteTarget({
+                        id: String(product.id),
+                        name: product.name,
+                      })
+                    }
+                  />
                 ) : null}
-                <h1 className={styles.name}>{product.name}</h1>
               </div>
               {typeof product.purchaseCount === "number" ? (
                 <span className={styles.purchaseBadge}>
@@ -327,6 +382,20 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </div>
+
+      <ProductEditModal
+        open={editOpen}
+        product={product}
+        onClose={() => setEditOpen(false)}
+        onUpdated={handleProductUpdated}
+      />
+
+      <DeleteProductModal
+        open={Boolean(deleteTarget)}
+        product={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleProductDeleted}
+      />
     </div>
   );
 }
