@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
+import { ensureAccessToken } from "@/api/authApi";
 import type { CategoryMenuItem } from "@/constants/categoryConstants";
 import { queryKeys } from "@/constants/queryKeys";
 import { getCategories, getProduct, getProducts } from "@/api/productApi";
@@ -17,7 +18,10 @@ function parseRouteId(raw: string | undefined): string | undefined {
 export function useProducts(params: ProductListParams = {}) {
   return useQuery({
     queryKey: queryKeys.products.list(params),
-    queryFn: () => getProducts(params),
+    queryFn: async () => {
+      await ensureAccessToken();
+      return getProducts(params);
+    },
   });
 }
 
@@ -26,7 +30,10 @@ export function useProduct(id: string | undefined) {
 
   return useQuery({
     queryKey: queryKeys.products.detail(productId),
-    queryFn: () => getProduct(productId as string),
+    queryFn: async () => {
+      await ensureAccessToken();
+      return getProduct(productId as string);
+    },
     enabled: productId !== undefined,
   });
 }
@@ -34,7 +41,10 @@ export function useProduct(id: string | undefined) {
 export function useCategories() {
   return useQuery<CategoryMenuItem[]>({
     queryKey: queryKeys.categories.all,
-    queryFn: getCategories,
+    queryFn: async () => {
+      await ensureAccessToken();
+      return getCategories();
+    },
     staleTime: 5 * 60 * 1000,
   });
 }
