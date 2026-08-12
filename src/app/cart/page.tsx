@@ -201,7 +201,11 @@ export default function CartPage() {
       await queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
       setRequestOpen(false);
       setRequestItems([]);
-      router.push(`/cart/complete?orderId=${data.orderId}`);
+      router.push(
+        isAdminOrSuperAdmin
+          ? `/cart/complete?orderId=${data.orderId}`
+          : `/purchase/requests/complete?orderId=${data.orderId}`,
+      );
     } catch (error) {
       const nextMessage =
         error instanceof Error && error.message
