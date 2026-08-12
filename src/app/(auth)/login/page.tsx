@@ -1,5 +1,6 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,6 +9,7 @@ import { z } from "zod";
 
 import { login } from "@/api/authApi";
 import { Button, CommonImage, Icon, TextField, useToast } from "@/components/ui";
+import { clearClientSession } from "@/hooks/useClientLogout";
 import { loginFormSchema } from "@/schemas/authSchema";
 import type { LoginErrors, LoginForm } from "@/types/authTypes";
 
@@ -155,6 +157,7 @@ const FieldError = ({ id, message }: { id: string; message?: string }) => {
  */
 const LoginPage = () => {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { showToast } = useToast();
   const [form, setForm] = useState<LoginForm>(INITIAL_FORM);
   const [errors, setErrors] = useState<LoginErrors>({});
@@ -191,6 +194,8 @@ const LoginPage = () => {
     setIsSubmitting(true);
 
     try {
+      // cancel → token 제거 → auth 의존 캐시 remove 후 새 토큰 저장
+      await clearClientSession(queryClient);
       await login(parsed.data);
       showToast("로그인되었습니다.");
       router.push("/products");

@@ -12,7 +12,7 @@ import {
 } from "@/constants/categoryConstants";
 import { ensureAccessToken } from "@/api/authApi";
 import { useUploadImage } from "@/hooks/mutations/useUploadImage";
-import { createProduct, ensureCategoryMenu } from "@/services/productApi";
+import { createProduct, ensureCategoryMenu } from "@/api/productApi";
 import type { CreateProductInput, Product } from "@/types/productTypes";
 
 export type ProductRegisterModalProps = {

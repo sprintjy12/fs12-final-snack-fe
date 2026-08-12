@@ -1,5 +1,7 @@
 import { apiClient } from "@/api/core/apiClient";
 import type {
+  CreateDirectOrderBody,
+  CreateDirectOrderResponse,
   CreatePurchaseRequestBody,
   CreatePurchaseRequestResponse,
   GetMyOrderRequestsParams,
@@ -97,6 +99,18 @@ export const getOrderRequestDetail = async (
 ): Promise<OrderRequestDetailResponse> => {
   const response = await apiClient.get<OrderRequestDetailResponse>(
     `/api/orders/requests/${orderId}`,
+  );
+
+  return response.data;
+};
+
+/** 장바구니 선택 품목으로 즉시 구매 생성 */
+export const createDirectOrder = async (
+  body: CreateDirectOrderBody,
+): Promise<CreateDirectOrderResponse> => {
+  const response = await apiClient.post<CreateDirectOrderResponse>(
+    "/api/orders/direct",
+    body,
   );
 
   return response.data;

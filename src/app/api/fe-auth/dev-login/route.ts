@@ -3,10 +3,10 @@ import { NextResponse } from "next/server";
 /**
  * 로그인 UI 연동 전용 로컬 헬퍼.
  * DEV_LOGIN_EMAIL / DEV_LOGIN_PASSWORD로 백엔드 로그인을 대신 호출합니다.
- * 프로덕션에서는 404로 막아 토큰 발급 경로를 차단합니다.
+ * development 이외(production/test/staging 등)에서는 404로 차단합니다.
  */
 export async function POST() {
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV !== "development") {
     return NextResponse.json(
       { success: false, message: "Not Found" },
       { status: 404 },

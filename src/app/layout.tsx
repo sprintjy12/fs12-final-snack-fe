@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 
 import { Providers } from "@/app/providers";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 import { AppHeader } from "@/components/layout/AppHeader";
 import "@/app/globals.css";
 
@@ -29,7 +30,7 @@ export default function RootLayout({
       <body>
         <Providers>
           <AppHeader />
-          {children}
+          <RouteGuard>{children}</RouteGuard>
         </Providers>
       </body>
     </html>

@@ -14,7 +14,7 @@ import {
 } from "@/constants/categoryConstants";
 import { useUploadImage } from "@/hooks/mutations/useUploadImage";
 import { getProductPhotoSrc } from "@/lib/productMedia";
-import { ensureCategoryMenu, updateProduct } from "@/services/productApi";
+import { ensureCategoryMenu, updateProduct } from "@/api/productApi";
 import type { Product, UpdateProductInput } from "@/types/productTypes";
 
 export type ProductEditModalProps = {

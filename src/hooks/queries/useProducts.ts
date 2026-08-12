@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ensureAccessToken } from "@/api/authApi";
 import type { CategoryMenuItem } from "@/constants/categoryConstants";
 import { queryKeys } from "@/constants/queryKeys";
-import { getCategories, getProduct, getProducts } from "@/services/productApi";
+import { getCategories, getProduct, getProducts } from "@/api/productApi";
 import type { ProductListParams } from "@/types/productTypes";
 
 function parseRouteId(raw: string | undefined): string | undefined {
