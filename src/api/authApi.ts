@@ -75,10 +75,16 @@ const getMessageFromBody = (body: unknown): string | undefined => {
 };
 
 /**
- * 로그인 페이지 연동 전, 로컬 API 호출용 세션을 확보합니다.
- * 서버 전용 DEV_LOGIN_* 로 백엔드 로그인을 대행하고 token만 브라우저에 저장합니다.
- * (비밀번호는 NEXT_PUBLIC이 아니라 서버 .env에만 둡니다.)
- * 액세스 토큰은 백엔드 기준 15분 만료라, 만료·무효면 다시 발급합니다.
+ * API 호출 전 access token을 확보합니다.
+ *
+ * 1) 유효한 토큰이 있으면 그대로 반환
+ * 2) 없거나 만료면 정리 후, **개발 + NEXT_PUBLIC_ENABLE_DEV_LOGIN=true** 일 때만
+ *    `/api/fe-auth/dev-login`으로 자동 발급 (로컬 편의용)
+ * 3) 그 외(프로덕션·플래그 미설정)에는 자동 로그인하지 않고 에러
+ *
+ * RouteGuard의 "비로그인 → /login"과 충돌하지 않도록,
+ * 기본값에서는 dev-login을 수행하지 않습니다.
+ * @see src/app/api/fe-auth/dev-login/route.ts (development 외 404)
  */
 export const ensureAccessToken = async () => {
   const existing = getAccessToken();
@@ -88,6 +94,15 @@ export const ensureAccessToken = async () => {
 
   if (existing) {
     clearAccessToken();
+  }
+
+  // production/test/staging 및 플래그 미설정 시 자동 로그인 금지
+  const allowDevLogin =
+    process.env.NODE_ENV === "development" &&
+    process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN === "true";
+
+  if (!allowDevLogin) {
+    throw new Error("로그인이 필요합니다.");
   }
 
   const response = await fetch("/api/fe-auth/dev-login", {

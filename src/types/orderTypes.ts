@@ -257,3 +257,28 @@ export type CreatePurchaseRequestResponse = {
   message: string;
   data: CreatePurchaseRequestData;
 };
+
+/** POST /api/orders/direct body */
+export type CreateDirectOrderBody = {
+  cartItemIds: string[];
+};
+
+/** POST /api/orders/direct data — 완료 페이지 요약 */
+export type CreateDirectOrderData = {
+  orderId: string;
+  status: OrderDetailStatus;
+  productAmount: number;
+  shippingFee: number;
+  totalPrice: number;
+  totalQuantity: number;
+  itemCount: number;
+  approvedAt: string | null;
+  firstProductName: string;
+  categoryName: string | null;
+};
+
+export type CreateDirectOrderResponse = {
+  success: boolean;
+  message: string;
+  data: CreateDirectOrderData;
+};
