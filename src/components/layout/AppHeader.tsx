@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import { Header } from "@/components/layout";
 import {
@@ -14,7 +14,13 @@ import { useClientLogout } from "@/hooks/useClientLogout";
 import { getAccessToken } from "@/lib/authStorage";
 
 function HeaderWithAuth() {
-  const hasToken = Boolean(getAccessToken());
+  // SSR·클라 첫 렌더는 false로 맞춰 hydration mismatch 방지. mount 후 localStorage 반영.
+  const [hasToken, setHasToken] = useState(false);
+
+  useEffect(() => {
+    setHasToken(Boolean(getAccessToken()));
+  }, []);
+
   const { data: profile, isPending, isFetching, isError } = useMyProfile();
   const { data: cart } = useCart();
   const onLogout = useClientLogout();
