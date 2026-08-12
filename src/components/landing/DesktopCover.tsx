@@ -35,19 +35,41 @@ const BUBBLES = [
 export function DesktopCover() {
   return (
     <main className="hidden min-h-screen overflow-x-hidden bg-background xl:block">
-      <div className="relative mx-auto box-border min-h-screen w-full max-w-[1920px] px-[58px] pt-[52px] pb-[116px]">
-        <div className="absolute top-[52px] left-[58px] z-[2] inline-flex items-center gap-4 rounded-[20px] bg-[#555] px-10 py-5 pr-10 pl-8 text-[clamp(1.25rem,2.5vw,2rem)] leading-[1.3] font-extrabold text-surface">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/cover/badge-notebook.svg"
-            alt=""
-            width={40}
-            height={40}
-            className="block size-10 shrink-0"
-          />
-          <span>고급 프로젝트</span>
-        </div>
+      <header className="w-full bg-accent">
+        <div className="mx-auto flex h-[88px] w-full max-w-[1920px] items-center justify-between px-[120px]">
+          <Link href="/" aria-label="Snack 홈" className="inline-flex shrink-0">
+            <CommonImage
+              name="logo-text-white"
+              size="md"
+              label="Snack"
+              className="h-8 w-auto"
+            />
+          </Link>
 
+          <nav aria-label="인증 메뉴">
+            <ul className="flex items-center gap-10">
+              <li>
+                <Link
+                  href="/login"
+                  className="text-xl leading-8 font-semibold whitespace-nowrap text-surface"
+                >
+                  로그인
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/signup/admin"
+                  className="text-xl leading-8 font-semibold whitespace-nowrap text-surface"
+                >
+                  기업 담당자 회원가입
+                </Link>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+
+      <div className="relative mx-auto box-border min-h-[calc(100vh-88px)] w-full max-w-[1920px] px-[58px] pt-[52px] pb-[116px]">
         <div className="mx-auto mt-[108px] flex w-full max-w-[742px] flex-col items-center gap-12 text-center">
           <h1 className="m-0 w-full px-2">
             <CommonImage
@@ -86,42 +108,6 @@ export function DesktopCover() {
               />
             </div>
           ))}
-        </div>
-
-        <div className="mx-auto mt-8 flex w-full max-w-[1640px] flex-row items-center justify-between gap-6">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/cover/codeit-logo.svg"
-            alt="codeit"
-            width={245}
-            height={69}
-            className="h-auto w-[min(245px,40vw)]"
-          />
-
-          <div className="flex w-auto flex-wrap items-center justify-end gap-4">
-            <div className="inline-flex items-center gap-2.5 rounded-xl border border-[#dfdfdf] bg-surface py-4 pr-7 pl-6 text-[clamp(0.875rem,2.5vw,1.75rem)] leading-none font-bold text-[#101828]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/cover/uiux-icon.svg"
-                alt=""
-                width={40}
-                height={40}
-                className="block size-10 shrink-0 object-contain"
-              />
-              <span>UI/UX 디자인</span>
-            </div>
-            <div className="inline-flex items-center gap-2.5 rounded-xl border border-[#dfdfdf] bg-surface py-4 pr-7 pl-6 text-[clamp(0.875rem,2.5vw,1.75rem)] leading-none font-bold text-[#101828]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/cover/figma-logo.svg"
-                alt=""
-                width={28}
-                height={40}
-                className="h-10 w-auto"
-              />
-              <span>Figma</span>
-            </div>
-          </div>
         </div>
 
         <Link
