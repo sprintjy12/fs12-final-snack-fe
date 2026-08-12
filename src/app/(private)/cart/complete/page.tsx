@@ -47,7 +47,7 @@ function CartPurchaseCompleteContent() {
         await ensureAccessToken();
         const response = await getOrderDetail(orderId);
         const detail = response.data;
-        const first = detail.items[0];
+        const first = detail.items?.[0];
 
         if (!cancelled) {
           const extraCount = Math.max(0, detail.itemCount - 1);

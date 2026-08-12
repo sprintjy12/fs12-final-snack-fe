@@ -20,6 +20,7 @@ import {
 import { queryKeys } from "@/constants/queryKeys";
 import { savePurchaseRequestComplete } from "@/lib/purchaseRequestComplete";
 import type { CartItemWithProduct } from "@/types/cartTypes";
+import { getMyProfile } from "@/api/userApi";
 
 const SHIPPING_FEE = 3000;
 const MAX_QUANTITY = 999;
@@ -154,70 +155,78 @@ export default function CartPage() {
     setRequestOpen(true);
   };
 
-  const submitOrderRequest = async (items: CartItemWithProduct[], message?: string) => {
-    if (items.length === 0 || submittingRequest) return;
+const submitOrderRequest = async (items: CartItemWithProduct[], message?: string) => {
+  if (items.length === 0 || submittingRequest) return;
 
-    const first = items[0];
+  const first = items[0];
+  let isAdmin = isAdminOrSuperAdmin;
 
-    setSubmittingRequest(true);
-    try {
-      await ensureAccessToken();
+  setSubmittingRequest(true);
+  try {
+    await ensureAccessToken();
 
-      const response = isAdminOrSuperAdmin
-        ? await createDirectOrder({
-            cartItemIds: items.map((item) => item.id),
-          })
-        : await createPurchaseRequest({
-            cartItemIds: items.map((item) => item.id),
-            requestMessage: message || undefined,
-          });
+    const freshProfile = await queryClient.fetchQuery({
+      queryKey: queryKeys.users.me(),
+      queryFn: getMyProfile,
+    });
+    isAdmin = freshProfile?.role === "ADMIN" || freshProfile?.role === "SUPER_ADMIN";
 
-      const data = response.data;
-      if (!data.orderId) {
-        throw new Error(
-          isAdminOrSuperAdmin
-            ? "즉시 구매 응답에 orderId가 없습니다."
-            : "구매 요청 응답에 orderId가 없습니다.",
-        );
-      }
+    const response = isAdmin
+      ? await createDirectOrder({ cartItemIds: items.map((item) => item.id) })
+      : await createPurchaseRequest({
+          cartItemIds: items.map((item) => item.id),
+          requestMessage: message || undefined,
+        });
 
-      const requestMessage = isAdminOrSuperAdmin
-        ? "즉시 구매가 완료되었습니다."
-        : "requestMessage" in data
-          ? data.requestMessage ?? message ?? ""
-          : message ?? "";
-
-      savePurchaseRequestComplete({
-        name: data.firstProductName,
-        extraCount: Math.max(0, data.itemCount - 1),
-        totalCount: data.totalQuantity,
-        totalAmount: data.totalPrice,
-        categoryLabel: data.categoryName ?? "",
-        photo: first.product.imageUrl ?? "",
-        requestMessage,
-        orderId: data.orderId,
-      });
-
-      await queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
-      setRequestOpen(false);
-      setRequestItems([]);
-      router.push(
-        isAdminOrSuperAdmin
-          ? `/cart/complete?orderId=${data.orderId}`
-          : `/purchase/requests/complete?orderId=${data.orderId}`,
+    const data = response.data;
+    if (!data.orderId) {
+      throw new Error(
+        isAdmin
+          ? "즉시 구매 응답에 orderId가 없습니다."
+          : "구매 요청 응답에 orderId가 없습니다.",
       );
-    } catch (error) {
-      const nextMessage =
-        error instanceof Error && error.message
-          ? error.message
-          : isAdminOrSuperAdmin
-            ? "즉시 구매에 실패했어요. 잠시 후 다시 시도해 주세요."
-            : "구매 요청에 실패했어요. 잠시 후 다시 시도해 주세요.";
-      showToast(nextMessage);
-    } finally {
-      setSubmittingRequest(false);
     }
-  };
+
+    const requestMessage = isAdmin
+      ? "즉시 구매가 완료되었습니다."
+      : "requestMessage" in data
+        ? data.requestMessage ?? message ?? ""
+        : message ?? "";
+
+    savePurchaseRequestComplete({
+      name: data.firstProductName,
+      extraCount: Math.max(0, data.itemCount - 1),
+      totalCount: data.totalQuantity,
+      totalAmount: data.totalPrice,
+      categoryLabel: data.categoryName ?? "",
+      photo: first.product.imageUrl ?? "",
+      requestMessage,
+      orderId: data.orderId,
+    });
+
+    await queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
+    setRequestOpen(false);
+    setRequestItems([]);
+    router.push(
+      isAdmin
+        ? `/cart/complete?orderId=${data.orderId}`
+        : `/purchase/requests/complete?orderId=${data.orderId}`,
+    );
+  } catch (error) {
+    console.error("주문 요청 실패:", error);
+
+    if ( error instanceof Error) {
+      showToast(error.message);
+    }
+
+    const nextMessage = isAdmin
+      ? "즉시 구매에 실패했어요. 잠시 후 다시 시도해 주세요."
+      : "구매 요청에 실패했어요. 잠시 후 다시 시도해 주세요.";
+    showToast(nextMessage);
+  } finally {
+    setSubmittingRequest(false);
+  }
+};
 
   const handlePurchaseSubmit = async ({ message }: { message: string }) => {
     if (requestItems.length === 0 || submittingRequest) return;
