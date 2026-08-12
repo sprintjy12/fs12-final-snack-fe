@@ -48,6 +48,8 @@ type BeProduct = {
   productUrl: string | null;
   categoryId: string;
   purchaseCount: number;
+  createdAt?: string;
+  createdById?: string;
   category?: BeCategory | null;
 };
 
@@ -105,6 +107,8 @@ function mapBeProduct(product: BeProduct): Product {
         : undefined,
     subCategory,
     purchaseCount: product.purchaseCount,
+    createdAt: product.createdAt,
+    createdById: product.createdById,
   };
 }
 
