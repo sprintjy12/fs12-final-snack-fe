@@ -209,7 +209,10 @@ export function ProductRegisterModal({
   };
 
   useEffect(() => {
-    if (!imageFile) return;
+    if (!imageFile) {
+      setImagePreview(null);
+      return;
+    }
     const objectUrl = URL.createObjectURL(imageFile);
     setImagePreview(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
@@ -326,6 +329,7 @@ export function ProductRegisterModal({
                 type="text"
                 value={name}
                 error={Boolean(fieldErrors.name)}
+                aria-label="상품명"
                 aria-describedby={
                   fieldErrors.name ? "product-name-error" : undefined
                 }
@@ -394,6 +398,7 @@ export function ProductRegisterModal({
                 inputMode="numeric"
                 value={price}
                 error={Boolean(fieldErrors.price)}
+                aria-label="가격"
                 aria-describedby={
                   fieldErrors.price ? "product-price-error" : undefined
                 }
@@ -419,6 +424,7 @@ export function ProductRegisterModal({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={submitting}
+                aria-label="상품 이미지 선택"
                 aria-describedby={
                   fieldErrors.image ? "product-image-error" : undefined
                 }
@@ -464,6 +470,7 @@ export function ProductRegisterModal({
                 type="text"
                 value={productUrl}
                 error={Boolean(fieldErrors.productUrl)}
+                aria-label="제품 링크"
                 aria-describedby={
                   fieldErrors.productUrl ? "product-url-error" : undefined
                 }

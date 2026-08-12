@@ -17,7 +17,6 @@ import {
 } from "@/constants/categoryConstants";
 import { useCategories } from "@/hooks/queries/useProducts";
 import { parseRouteId } from "@/lib/parseOptionalId";
-import { isProductApiMock } from "@/api/productApi";
 
 export type HeaderNavItem = AppNavItem;
 
@@ -61,11 +60,8 @@ function isProductArea(pathname: string) {
   return /^\/products\/[^/]+/.test(pathname);
 }
 
-function categoryRouteId(
-  category: { id: number | string; apiId: string },
-  useApiIds: boolean,
-) {
-  return useApiIds ? category.apiId : category.id;
+function categoryRouteId(category: { apiId: string }) {
+  return category.apiId;
 }
 
 function isNavItemActive(href: string, pathname: string) {
@@ -141,7 +137,6 @@ export function Header({
   const categoryId = parseRouteId(searchParams.get("categoryId"));
   const subCategoryId = parseRouteId(searchParams.get("subCategoryId"));
   const showCategoryBar = isProductArea(pathname);
-  const useApiIds = !isProductApiMock();
   const { data: categoryMenu = CATEGORY_MENU_ORDERED } = useCategories();
 
   const activeCategory = findCategoryMenuItem(categoryId);
@@ -268,7 +263,7 @@ export function Header({
               aria-label="상품 카테고리"
             >
               {categoryMenu.map((category) => {
-                const routeId = categoryRouteId(category, useApiIds);
+                const routeId = categoryRouteId(category);
                 const isActive =
                   categoryId !== undefined &&
                   (category.id === categoryId ||
@@ -300,9 +295,9 @@ export function Header({
                   const parentRouteId =
                     categoryId ??
                     (activeCategory
-                      ? categoryRouteId(activeCategory, useApiIds)
+                      ? categoryRouteId(activeCategory)
                       : undefined);
-                  const subRouteId = useApiIds ? sub.apiId : sub.id;
+                  const subRouteId = sub.apiId;
                   const isActive =
                     subCategoryId !== undefined &&
                     (sub.id === subCategoryId ||
