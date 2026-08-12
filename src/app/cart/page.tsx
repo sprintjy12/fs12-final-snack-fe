@@ -215,6 +215,10 @@ const submitOrderRequest = async (items: CartItemWithProduct[], message?: string
   } catch (error) {
     console.error("주문 요청 실패:", error);
 
+    if ( error instanceof Error) {
+      showToast(error.message);
+    }
+
     const nextMessage = isAdmin
       ? "즉시 구매에 실패했어요. 잠시 후 다시 시도해 주세요."
       : "구매 요청에 실패했어요. 잠시 후 다시 시도해 주세요.";
