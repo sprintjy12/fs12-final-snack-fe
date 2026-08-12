@@ -11,7 +11,6 @@ import {
 import { DUMMY_PRODUCTS } from "@/features/products/dummyProducts";
 import { setRuntimeCategoryMenu } from "@/lib/categoryMenuRegistry";
 import { isUuid } from "@/lib/parseOptionalId";
-import { apiFetch } from "@/services/api";
 import type {
   Category,
   CreateProductInput,
@@ -205,17 +204,15 @@ async function fetchBeProductPage(params: {
   page?: number;
   pageSize?: number;
 }): Promise<Product[]> {
-  const search = new URLSearchParams();
-  if (params.categoryId) search.set("categoryId", params.categoryId);
-  if (params.sort) search.set("sort", params.sort);
-  if (params.page !== undefined) search.set("page", String(params.page));
-  search.set("limit", String(params.pageSize ?? 8));
-
-  const query = search.toString();
-  const response = await apiFetch<BeListResponse>(
-    `/api/products${query ? `?${query}` : ""}`,
-  );
-  return (response.data ?? []).map(mapBeProduct);
+  const response = await apiClient.get<BeListResponse>("/api/products", {
+    params: {
+      ...(params.categoryId ? { categoryId: params.categoryId } : {}),
+      ...(params.sort ? { sort: params.sort } : {}),
+      ...(params.page !== undefined ? { page: params.page } : {}),
+      limit: params.pageSize ?? 8,
+    },
+  });
+  return (response.data.data ?? []).map(mapBeProduct);
 }
 
 async function fetchAllProductsForLeaf(
@@ -250,8 +247,8 @@ export async function ensureCategoryMenu(): Promise<CategoryMenuItem[]> {
   }
 
   try {
-    const response = await apiFetch<BeCategoriesResponse>("/api/categories");
-    const menu = buildMenuFromBe(response.data ?? []);
+    const response = await apiClient.get<BeCategoriesResponse>("/api/categories");
+    const menu = buildMenuFromBe(response.data.data ?? []);
     setRuntimeCategoryMenu(menu);
     return menu;
   } catch {
@@ -331,8 +328,8 @@ export async function getProduct(id: number | string): Promise<Product> {
   // 부모 이름 매핑용
   await ensureCategoryMenu().catch(() => CATEGORY_MENU_ORDERED);
 
-  const response = await apiFetch<BeDetailResponse>(`/api/products/${id}`);
-  return mapBeProduct(response.data);
+  const response = await apiClient.get<BeDetailResponse>(`/api/products/${id}`);
+  return mapBeProduct(response.data.data);
 }
 
 /**
