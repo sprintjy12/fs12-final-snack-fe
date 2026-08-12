@@ -40,9 +40,13 @@ const PATH_ACCESS_RULES: readonly PathAccessRule[] = [
     allowedRoles: SUPER_ADMIN_ONLY,
   },
   {
+    match: (pathname) => pathname === "/purchase/requests/complete",
+    allowedRoles: USER_UP,
+  },
+  {
     match: (pathname) =>
       pathname === "/purchase/requests" ||
-      pathname.startsWith("/purchase/requests/"),
+      (pathname.startsWith("/purchase/requests/") && pathname !== "/purchase/requests/complete"),
     allowedRoles: ADMIN_UP,
   },
   {

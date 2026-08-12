@@ -7,7 +7,7 @@ import { z } from "zod";
 import { Button, Icon, ModalShell, Select, TextField, showToast } from "@/components/ui";
 import { CATEGORY_MENU } from "@/constants/categoryConstants";
 import { getProductPhotoSrc } from "@/lib/productMedia";
-import { updateProduct } from "@/services/productApi";
+import { updateProduct } from "@/api/productApi";
 import type { Product, UpdateProductInput } from "@/types/productTypes";
 
 export type ProductEditModalProps = {
