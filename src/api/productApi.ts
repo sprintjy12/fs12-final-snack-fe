@@ -2,7 +2,6 @@ import {
   CATEGORY_MENU_ORDERED,
   findCategoryMenuItem,
   resolveApiLeafCategoryId,
-  resolveApiLeafCategoryIdsForParent,
   resolveApiParentCategoryId,
   type CategoryMenuItem,
 } from "@/constants/categoryConstants";
@@ -156,37 +155,6 @@ const withCategoryParent = (
   };
 };
 
-function sortProducts(
-  items: Product[],
-  sort: ProductListParams["sort"],
-): Product[] {
-  const next = [...items];
-  next.sort((a, b) => {
-    switch (sort) {
-      case "popular":
-        return (b.purchaseCount ?? 0) - (a.purchaseCount ?? 0);
-      case "priceAsc":
-        return a.price - b.price;
-      case "priceDesc":
-        return b.price - a.price;
-      case "latest":
-      default:
-        return String(b.id).localeCompare(String(a.id));
-    }
-  });
-  return next;
-}
-
-function dedupeProducts(items: Product[]): Product[] {
-  const seen = new Set<string>();
-  return items.filter((item) => {
-    const key = String(item.id);
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
 async function fetchBeProductPage(params: {
   categoryId?: string;
   sort?: ProductListParams["sort"];
@@ -203,30 +171,6 @@ async function fetchBeProductPage(params: {
   });
 
   return (response.data.data ?? []).map(mapBeProduct);
-}
-
-async function fetchAllProductsForLeaf(
-  leafId: string,
-  sort: ProductListParams["sort"],
-): Promise<Product[]> {
-  const pageSize = 8;
-  let page = 1;
-  const all: Product[] = [];
-
-  for (;;) {
-    const batch = await fetchBeProductPage({
-      categoryId: leafId,
-      sort,
-      page,
-      pageSize,
-    });
-    all.push(...batch);
-    if (batch.length < pageSize) break;
-    page += 1;
-    if (page > 20) break;
-  }
-
-  return all;
 }
 
 /** 목차/필터용 카테고리 트리를 로드해 레지스트리에 캐시 */
@@ -263,37 +207,10 @@ export async function getProducts(
     return [];
   }
 
-  if (leafApiId) {
+  const categoryIdToSend = leafApiId ?? parentApiId ?? undefined;
+
     return fetchBeProductPage({
-      categoryId: leafApiId,
-      sort: params.sort,
-      page: params.page,
-      pageSize: params.pageSize ?? 8,
-    });
-  }
-
-  if (parentApiId) {
-    const leafIds = resolveApiLeafCategoryIdsForParent(params.categoryId);
-    if (leafIds.length === 0) return [];
-
-    const results = await Promise.allSettled(
-      leafIds.map((id) => fetchAllProductsForLeaf(id, params.sort)),
-    );
-    const batches = results
-      .filter(
-        (r): r is PromiseFulfilledResult<Product[]> => r.status === "fulfilled",
-      )
-      .map((r) => r.value);
-    const merged = sortProducts(dedupeProducts(batches.flat()), params.sort);
-    if (params.pageSize !== undefined && params.pageSize > 0) {
-      const page = params.page ?? 1;
-      const start = (page - 1) * params.pageSize;
-      return merged.slice(start, start + params.pageSize);
-    }
-    return merged;
-  }
-
-  return fetchBeProductPage({
+    categoryId: categoryIdToSend,
     sort: params.sort,
     page: params.page,
     pageSize: params.pageSize ?? 8,
