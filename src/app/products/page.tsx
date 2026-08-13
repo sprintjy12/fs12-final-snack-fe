@@ -108,7 +108,10 @@ export default function ProductListPage() {
   };
 
   const handleProductCreated = (product: Product) => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.products.all,
+      refetchType: "none",
+    });
     setPage(1);
     setAccumulated([]);
     showToast("상품을 등록했어요.");
