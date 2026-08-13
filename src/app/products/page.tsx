@@ -19,7 +19,6 @@ import type { Product, ProductListParams } from "@/types/productTypes";
 
 import styles from "./products.module.css";
 
-/** 시안: 4열 × 2행 */
 const PAGE_SIZE = 8;
 
 export default function ProductListPage() {
@@ -29,39 +28,51 @@ export default function ProductListPage() {
   const [sort, setSort] = useState<ProductListParams["sort"]>("latest");
   const [sortOpen, setSortOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [accumulated, setAccumulated] = useState<Product[]>([]);
   const [registerOpen, setRegisterOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
 
   const categoryId = parseRouteId(searchParams.get("categoryId"));
   const subCategoryId = parseRouteId(searchParams.get("subCategoryId"));
 
-  // API: BE limit 상한(30)까지 한 번에 받아 클라이언트에서 8개씩 더보기
   const listParams: ProductListParams = useMemo(
     () => ({
       sort,
       categoryId,
       subCategoryId,
-      page: 1,
-      pageSize: 30,
+      page,
+      pageSize: PAGE_SIZE,
     }),
-    [sort, categoryId, subCategoryId],
+    [sort, categoryId, subCategoryId, page],
   );
 
-  const { data: products = [], isLoading, isError } = useProducts(listParams);
+  const {
+    data: pageProducts = [],
+    isLoading,
+    isFetching,
+    isError,
+  } = useProducts(listParams);
 
-  const visibleProducts = useMemo(
-    () => products.slice(0, page * PAGE_SIZE),
-    [products, page],
-  );
-  const hasMore = visibleProducts.length < products.length;
+  // 필터가 바뀌면 1페이지부터 다시
+  useEffect(() => {
+    setPage(1);
+    setAccumulated([]);
+  }, [sort, categoryId, subCategoryId]);
+
+  // 새 페이지 데이터가 오면 누적
+  useEffect(() => {
+    if (isLoading) return;
+    setAccumulated((prev) =>
+      page === 1 ? pageProducts : [...prev, ...pageProducts],
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageProducts, page]);
+
+  // 이번 페이지가 꽉 찬 8개면 다음 페이지가 있을 수 있다고 추정
+  const hasMore = pageProducts.length === PAGE_SIZE;
 
   const selectedSortLabel =
     SORT_OPTIONS.find((option) => option.value === sort)?.label ?? "최신순";
-
-  useEffect(() => {
-    setPage(1);
-  }, [sort, categoryId, subCategoryId]);
 
   useEffect(() => {
     if (!sortOpen) return;
@@ -88,24 +99,21 @@ export default function ProductListPage() {
 
   const resetFilters = () => {
     setSort("latest");
-    setPage(1);
     router.push("/products");
   };
 
   const handleLoadMore = () => {
-    if (!hasMore || isLoadingMore) return;
-    setIsLoadingMore(true);
-    // 목 API 지연 느낌
-    window.setTimeout(() => {
-      setPage((current) => current + 1);
-      setIsLoadingMore(false);
-    }, 250);
+    if (!hasMore || isFetching) return;
+    setPage((current) => current + 1);
   };
 
   const handleProductCreated = (product: Product) => {
     void queryClient.invalidateQueries({
       queryKey: queryKeys.products.all,
+      refetchType: "none",
     });
+    setPage(1);
+    setAccumulated([]);
     showToast("상품을 등록했어요.");
     router.push(`/products/${product.id}`);
   };
@@ -130,11 +138,7 @@ export default function ProductListPage() {
                 {SORT_OPTIONS.map((option) => {
                   const selected = sort === option.value;
                   return (
-                    <li
-                      key={option.value}
-                      role="option"
-                      aria-selected={selected}
-                    >
+                    <li key={option.value} role="option" aria-selected={selected}>
                       <button
                         type="button"
                         className={[
@@ -158,19 +162,19 @@ export default function ProductListPage() {
           </div>
         </div>
 
-        {isLoading ? (
+        {isLoading && page === 1 ? (
           <ProductsSkeleton />
         ) : isError ? (
           <ProductsEmpty
             title="상품을 불러오지 못했습니다"
             description="잠시 후 다시 시도해 주세요."
           />
-        ) : products.length === 0 ? (
+        ) : accumulated.length === 0 ? (
           <ProductsEmpty onReset={resetFilters} />
         ) : (
           <>
             <div className={styles.grid}>
-              {visibleProducts.map((product) => (
+              {accumulated.map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
@@ -180,11 +184,11 @@ export default function ProductListPage() {
                   type="button"
                   className={styles.loadMore}
                   onClick={handleLoadMore}
-                  disabled={isLoadingMore}
-                  aria-busy={isLoadingMore}
+                  disabled={isFetching}
+                  aria-busy={isFetching}
                 >
-                  <span>{isLoadingMore ? "불러오는 중…" : "더보기"}</span>
-                  {!isLoadingMore ? (
+                  <span>{isFetching ? "불러오는 중…" : "더보기"}</span>
+                  {!isFetching ? (
                     <span className={styles.loadMoreCaret} aria-hidden="true" />
                   ) : null}
                 </button>
@@ -198,9 +202,7 @@ export default function ProductListPage() {
           className={styles.fab}
           onClick={() => setRegisterOpen(true)}
         >
-          <span className={styles.fabIcon} aria-hidden="true">
-            +
-          </span>
+          <span className={styles.fabIcon} aria-hidden="true">+</span>
           <span>상품 등록</span>
         </button>
       </div>
