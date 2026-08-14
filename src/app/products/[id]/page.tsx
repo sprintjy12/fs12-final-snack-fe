@@ -196,6 +196,10 @@ export default function ProductDetailPage() {
     );
   }
 
+  const showSubCategoryCrumb =
+    Boolean(product.subCategory?.name) &&
+    product.subCategory?.name !== product.category?.name;
+
   return (
     <div className={styles.page}>
       <div className={styles.inner}>
@@ -205,46 +209,43 @@ export default function ProductDetailPage() {
               <Link href="/" className={styles.breadcrumbLink}>
                 홈
               </Link>
-              <Icon
-                name="chevron-right"
-                size="sm"
-                className={styles.breadcrumbSep}
-              />
+              {product.category?.name || product.subCategory?.name ? (
+                <Icon
+                  name="chevron-right"
+                  size="sm"
+                  className={styles.breadcrumbSep}
+                />
+              ) : null}
             </li>
             {product.category?.name ? (
-              <li className={styles.breadcrumbItem}>
-                <Link
-                  href={`/products?categoryId=${product.categoryId}`}
-                  className={styles.breadcrumbLink}
-                >
-                  {product.category.name}
-                </Link>
-                <Icon
-                  name="chevron-right"
-                  size="sm"
-                  className={styles.breadcrumbSep}
-                />
+              <li
+                className={styles.breadcrumbItem}
+                aria-current={showSubCategoryCrumb ? undefined : "page"}
+              >
+                {showSubCategoryCrumb ? (
+                  <>
+                    <Link
+                      href={`/products?categoryId=${product.categoryId}`}
+                      className={styles.breadcrumbLink}
+                    >
+                      {product.category.name}
+                    </Link>
+                    <Icon
+                      name="chevron-right"
+                      size="sm"
+                      className={styles.breadcrumbSep}
+                    />
+                  </>
+                ) : (
+                  product.category.name
+                )}
               </li>
             ) : null}
-            {product.subCategory?.name &&
-            product.subCategory.name !== product.category?.name ? (
-              <li className={styles.breadcrumbItem}>
-                <Link
-                  href={`/products?categoryId=${product.categoryId}&subCategoryId=${product.subCategoryId}`}
-                  className={styles.breadcrumbLink}
-                >
-                  {product.subCategory.name}
-                </Link>
-                <Icon
-                  name="chevron-right"
-                  size="sm"
-                  className={styles.breadcrumbSep}
-                />
+            {showSubCategoryCrumb ? (
+              <li className={styles.breadcrumbItem} aria-current="page">
+                {product.subCategory?.name}
               </li>
             ) : null}
-            <li className={styles.breadcrumbItem} aria-current="page">
-              {product.name}
-            </li>
           </ol>
         </nav>
 
