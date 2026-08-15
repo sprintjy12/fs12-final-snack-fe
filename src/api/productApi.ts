@@ -251,9 +251,6 @@ export async function updateProduct(
   if (input.imageUrl !== undefined) {
     body.imageUrl = input.imageUrl;
   }
-  if (input.stock !== undefined) {
-    body.stock = input.stock;
-  }
 
   if (input.categoryId !== undefined || input.subCategoryId !== undefined) {
     const leafApiId =
@@ -295,7 +292,6 @@ export async function createProduct(
     price: input.price,
     categoryId: leafApiId,
     imageUrl: input.imageUrl,
-    stock: input.stock,
     productUrl: input.productUrl,
   });
 

@@ -266,8 +266,6 @@ export function ProductRegisterModal({
       const input: CreateProductInput = {
         name: result.data.name,
         price: result.data.price,
-        // 모달에 재고 입력이 없어 API 필수값(≥1)은 기본 1로 보냅니다.
-        stock: 1,
         productUrl: result.data.productUrl,
         imageUrl: uploaded.url,
         categoryId: result.data.categoryId,

@@ -94,8 +94,6 @@ export interface CreateProductInput {
   subCategoryId: number | string;
   /** 공개 이미지 URL (S3 업로드 후) */
   imageUrl: string;
-  /** 재고 (≥ 1) */
-  stock: number;
   /** 상품 페이지 URL */
   productUrl: string;
 }
@@ -111,5 +109,4 @@ export interface UpdateProductInput {
   subCategoryId?: number | string;
   imageUrl?: string;
   productUrl?: string;
-  stock?: number;
 }
