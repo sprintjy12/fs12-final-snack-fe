@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { ensureAccessToken } from "@/api/authApi";
@@ -19,7 +19,7 @@ import {
 } from "@/hooks/mutations/useCart";
 import { queryKeys } from "@/constants/queryKeys";
 import { savePurchaseRequestComplete } from "@/lib/purchaseRequestComplete";
-import type { CartItemWithProduct } from "@/types/cartTypes";
+import type { CartItemWithProduct, CartResponse } from "@/types/cartTypes";
 import { getMyProfile } from "@/api/userApi";
 
 const SHIPPING_FEE = 3000;
@@ -120,6 +120,11 @@ export default function CartPage() {
   const [requestItems, setRequestItems] = useState<CartItemWithProduct[]>([]);
   const [submittingRequest, setSubmittingRequest] = useState(false);
 
+  const pendingDeltaRef = useRef<Map<CartItemId, number>>(new Map());
+  const debounceTimerRef = useRef<
+    Map<CartItemId, ReturnType<typeof setTimeout>>
+  >(new Map());
+
   // 데이터가 로드되면 전체 선택 상태로 초기화
   const effectiveSelectedIds = useMemo(() => {
     return selectedIds ?? cartItems.map((cartItem) => cartItem.id);
@@ -155,78 +160,82 @@ export default function CartPage() {
     setRequestOpen(true);
   };
 
-const submitOrderRequest = async (items: CartItemWithProduct[], message?: string) => {
-  if (items.length === 0 || submittingRequest) return;
+  const submitOrderRequest = async (
+    items: CartItemWithProduct[],
+    message?: string,
+  ) => {
+    if (items.length === 0 || submittingRequest) return;
 
-  const first = items[0];
-  let isAdmin = isAdminOrSuperAdmin;
+    const first = items[0];
+    let isAdmin = isAdminOrSuperAdmin;
 
-  setSubmittingRequest(true);
-  try {
-    await ensureAccessToken();
+    setSubmittingRequest(true);
+    try {
+      await ensureAccessToken();
 
-    const freshProfile = await queryClient.fetchQuery({
-      queryKey: queryKeys.users.me(),
-      queryFn: getMyProfile,
-    });
-    isAdmin = freshProfile?.role === "ADMIN" || freshProfile?.role === "SUPER_ADMIN";
+      const freshProfile = await queryClient.fetchQuery({
+        queryKey: queryKeys.users.me(),
+        queryFn: getMyProfile,
+      });
+      isAdmin =
+        freshProfile?.role === "ADMIN" || freshProfile?.role === "SUPER_ADMIN";
 
-    const response = isAdmin
-      ? await createDirectOrder({ cartItemIds: items.map((item) => item.id) })
-      : await createPurchaseRequest({
-          cartItemIds: items.map((item) => item.id),
-          requestMessage: message || undefined,
-        });
+      const response = isAdmin
+        ? await createDirectOrder({ cartItemIds: items.map((item) => item.id) })
+        : await createPurchaseRequest({
+            cartItemIds: items.map((item) => item.id),
+            requestMessage: message || undefined,
+          });
 
-    const data = response.data;
-    if (!data.orderId) {
-      throw new Error(
+      const data = response.data;
+      if (!data.orderId) {
+        throw new Error(
+          isAdmin
+            ? "즉시 구매 응답에 orderId가 없습니다."
+            : "구매 요청 응답에 orderId가 없습니다.",
+        );
+      }
+
+      const requestMessage = isAdmin
+        ? "즉시 구매가 완료되었습니다."
+        : "requestMessage" in data
+          ? (data.requestMessage ?? message ?? "")
+          : (message ?? "");
+
+      savePurchaseRequestComplete({
+        name: data.firstProductName,
+        extraCount: Math.max(0, data.itemCount - 1),
+        totalCount: data.totalQuantity,
+        totalAmount: data.totalPrice,
+        categoryLabel: data.categoryName ?? "",
+        photo: first.product.imageUrl ?? "",
+        requestMessage,
+        orderId: data.orderId,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
+      setRequestOpen(false);
+      setRequestItems([]);
+      router.push(
         isAdmin
-          ? "즉시 구매 응답에 orderId가 없습니다."
-          : "구매 요청 응답에 orderId가 없습니다.",
+          ? `/cart/complete?orderId=${data.orderId}`
+          : `/purchase/requests/complete?orderId=${data.orderId}`,
       );
+    } catch (error) {
+      console.error("주문 요청 실패:", error);
+
+      if (error instanceof Error) {
+        showToast(error.message);
+      }
+
+      const nextMessage = isAdmin
+        ? "즉시 구매에 실패했어요. 잠시 후 다시 시도해 주세요."
+        : "구매 요청에 실패했어요. 잠시 후 다시 시도해 주세요.";
+      showToast(nextMessage);
+    } finally {
+      setSubmittingRequest(false);
     }
-
-    const requestMessage = isAdmin
-      ? "즉시 구매가 완료되었습니다."
-      : "requestMessage" in data
-        ? data.requestMessage ?? message ?? ""
-        : message ?? "";
-
-    savePurchaseRequestComplete({
-      name: data.firstProductName,
-      extraCount: Math.max(0, data.itemCount - 1),
-      totalCount: data.totalQuantity,
-      totalAmount: data.totalPrice,
-      categoryLabel: data.categoryName ?? "",
-      photo: first.product.imageUrl ?? "",
-      requestMessage,
-      orderId: data.orderId,
-    });
-
-    await queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
-    setRequestOpen(false);
-    setRequestItems([]);
-    router.push(
-      isAdmin
-        ? `/cart/complete?orderId=${data.orderId}`
-        : `/purchase/requests/complete?orderId=${data.orderId}`,
-    );
-  } catch (error) {
-    console.error("주문 요청 실패:", error);
-
-    if ( error instanceof Error) {
-      showToast(error.message);
-    }
-
-    const nextMessage = isAdmin
-      ? "즉시 구매에 실패했어요. 잠시 후 다시 시도해 주세요."
-      : "구매 요청에 실패했어요. 잠시 후 다시 시도해 주세요.";
-    showToast(nextMessage);
-  } finally {
-    setSubmittingRequest(false);
-  }
-};
+  };
 
   const handlePurchaseSubmit = async ({ message }: { message: string }) => {
     if (requestItems.length === 0 || submittingRequest) return;
@@ -302,7 +311,40 @@ const submitOrderRequest = async (items: CartItemWithProduct[], message?: string
   ) => {
     const nextQuantity = currentQuantity + delta;
     if (nextQuantity < 1 || nextQuantity > MAX_QUANTITY) return;
-    updateCartItem.mutate({ cartId: cartItemId, request: { delta } });
+
+    // 화면에 즉시 반영 (낙관적 업데이트)
+    queryClient.setQueryData<CartResponse>(queryKeys.cart.all, (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        items: old.items.map((item) =>
+          item.id === cartItemId ? { ...item, quantity: nextQuantity } : item,
+        ),
+      };
+    });
+
+    // 이 아이템의 누적 delta 갱신
+    const prevDelta = pendingDeltaRef.current.get(cartItemId) ?? 0;
+    pendingDeltaRef.current.set(cartItemId, prevDelta + delta);
+
+    // 이전 타이머 취소, 새로 예약
+    const existingTimer = debounceTimerRef.current.get(cartItemId);
+    if (existingTimer) clearTimeout(existingTimer);
+
+    const timer = setTimeout(() => {
+      const totalDelta = pendingDeltaRef.current.get(cartItemId) ?? 0;
+      pendingDeltaRef.current.delete(cartItemId);
+      debounceTimerRef.current.delete(cartItemId);
+
+      if (totalDelta !== 0) {
+        updateCartItem.mutate({
+          cartId: cartItemId,
+          request: { delta: totalDelta },
+        });
+      }
+    }, 500);
+
+    debounceTimerRef.current.set(cartItemId, timer);
   };
 
   const handleRemoveOne = (cartItemId: CartItemId) => {

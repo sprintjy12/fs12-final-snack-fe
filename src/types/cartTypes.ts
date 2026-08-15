@@ -39,7 +39,7 @@ export type AddToCartRequest = {
 };
 
 export type UpdateCartItemRequest = {
-  delta: 1 | -1;
+  delta: number;
 };
 
 export type DeleteSelectedCartRequest = {
