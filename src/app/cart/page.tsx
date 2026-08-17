@@ -395,8 +395,8 @@ export default function CartPage() {
           <section className="flex min-h-[420px] flex-col items-center justify-center gap-3 border-y border-snack-gray-300">
             <CommonImage
               name="empty-purchase"
-              size="md"
-              className="h-auto w-full max-w-[280px]"
+              size="sm"
+              className="h-auto w-[300px]"
             />
             <h2 className="mt-1 mb-0 text-2xl leading-8 text-foreground-strong">
               장바구니가 비어 있습니다
