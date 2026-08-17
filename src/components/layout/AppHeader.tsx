@@ -35,7 +35,7 @@ function HeaderWithAuth() {
     Boolean(profile?.role);
 
   const navItems = roleReady ? getNavItemsForRole(profile?.role) : [];
-  const cartCount = roleReady ? (cart?.summary?.totalQuantity ?? 0) : 0;
+  const cartCount = roleReady ? (cart?.items.length ?? 0) : 0;
 
   return (
     <Header

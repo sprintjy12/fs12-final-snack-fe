@@ -183,7 +183,7 @@ export function ModalShell({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-snack-black-500/40 px-0 md:items-center md:px-6"
+      className="fixed inset-0 z-[120] flex items-end justify-center bg-snack-black-500/40 px-0 md:items-center md:px-6"
       onClick={handleOverlayClick}
       role="presentation"
     >
