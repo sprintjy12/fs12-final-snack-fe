@@ -129,10 +129,12 @@
 
 .name {
   margin: 0;
+  min-width: 0;
   color: var(--color-foreground-strong);
   font-size: 2rem;
   font-weight: 600;
   line-height: 42px;
+  overflow-wrap: anywhere;
 }
 
 .purchaseBadge {
