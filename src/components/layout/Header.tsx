@@ -160,7 +160,7 @@ export function Header({
               <Icon name="menu" size="sm" />
             </button>
 
-            <Link href="/" aria-label="Snack 홈" className="shrink-0">
+            <Link href="/products" aria-label="상품 리스트" className="shrink-0">
               <picture>
                 <source
                   media="(min-width: 1280px)"
