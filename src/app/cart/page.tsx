@@ -88,14 +88,23 @@ function SelectCheckbox({
     <button
       type="button"
       className={cx(
-        "grid size-[26px] shrink-0 place-items-center rounded border border-snack-gray-300 bg-transparent p-0 text-[17px] leading-none text-surface",
-        checked && "border-accent bg-accent",
+        "grid size-[26px] shrink-0 place-items-center overflow-hidden rounded p-0",
+        checked
+          ? "border-0 bg-transparent"
+          : "border border-snack-gray-300 bg-transparent",
       )}
       aria-label={label}
       aria-pressed={checked}
       onClick={onToggle}
     >
-      {checked ? <span aria-hidden="true">✓</span> : null}
+      {checked ? (
+        <img
+          src="/icons/checkbox-checked.svg"
+          alt=""
+          aria-hidden="true"
+          className="size-full"
+        />
+      ) : null}
     </button>
   );
 }
