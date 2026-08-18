@@ -43,8 +43,8 @@ const HEADER_LINK_CLASS =
 export function MobileSignupLanding() {
   return (
     <main className="min-h-screen overflow-x-clip bg-background xl:hidden">
-      <div className="relative mx-auto flex min-h-screen w-full max-w-[375px] flex-col md:max-w-[768px] lg:max-w-[1024px]">
-        <header className="flex h-[54px] shrink-0 items-center justify-center bg-accent md:h-[72px] md:justify-between md:px-8 lg:px-12">
+      <header className="w-full bg-accent">
+        <div className="mx-auto flex h-[54px] w-full max-w-[375px] items-center justify-center md:h-[72px] md:max-w-[768px] md:justify-between md:px-8 lg:max-w-[1024px] lg:px-12">
           <Link href="/" aria-label="Snack 홈" className="inline-flex shrink-0">
             <CommonImage
               name="logo-text-white"
@@ -68,8 +68,10 @@ export function MobileSignupLanding() {
               </li>
             </ul>
           </nav>
-        </header>
+        </div>
+      </header>
 
+      <div className="relative mx-auto flex min-h-[calc(100vh-54px)] w-full max-w-[375px] flex-col md:min-h-[calc(100vh-72px)] md:max-w-[768px] lg:max-w-[1024px]">
         <div className="mt-[56px] flex flex-col items-center gap-10 md:mt-[72px] md:gap-12">
           <h1 className="m-0">
             <CommonImage
@@ -90,7 +92,10 @@ export function MobileSignupLanding() {
           </div>
         </div>
 
-        <div className="relative mt-auto h-[310px] w-full md:h-[400px] lg:h-[460px]">
+        {/* 말풍선이 일러스트 위로 음수 offset 배치라, 로고와 겹치지 않을 최소 여백 확보 */}
+        <div aria-hidden="true" className="min-h-[150px] flex-1 md:min-h-[120px]" />
+
+        <div className="relative h-[310px] w-full md:h-[400px] lg:h-[460px]">
           <div className="pointer-events-none absolute bottom-0 left-1/2 h-[310px] w-[670px] -translate-x-1/2 overflow-hidden md:h-[400px] md:w-[900px] lg:h-[460px] lg:w-[1100px]">
             <CommonImage
               name="landing-illustration"
