@@ -104,7 +104,7 @@ export function DesktopCover() {
               </p>
               <span
                 aria-hidden="true"
-                className="mt-0.5 block h-6 w-8 border-0 bg-[url('/images/cover/bubble-tail.svg')] bg-contain bg-center bg-no-repeat"
+                className="mt-0.5 block h-6 w-8 scale-y-[-1] border-0 bg-[url('/images/cover/bubble-tail.svg')] bg-contain bg-center bg-no-repeat"
               />
             </div>
           ))}
