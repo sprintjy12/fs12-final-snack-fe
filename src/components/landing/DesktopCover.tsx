@@ -69,7 +69,7 @@ export function DesktopCover() {
         </div>
       </header>
 
-           <div className="relative mx-auto box-border flex min-h-[calc(100vh-88px)] w-full max-w-[1920px] flex-col justify-center px-[58px] pt-[52px] pb-[116px]">
+           <div className="relative mx-auto box-border flex min-h-[calc(100vh-88px)] w-full max-w-[1920px] flex-col px-[58px] pt-[52px] pb-[116px]">
            <div className="mx-auto flex w-full max-w-[742px] flex-col items-center gap-12 text-center">
           <h1 className="m-0 w-full px-2">
             <CommonImage
@@ -79,12 +79,12 @@ export function DesktopCover() {
               className="mx-auto h-auto w-full max-w-[min(504px,78vw)]"
             />
           </h1>
-          <p className="m-0 box-border flex w-full items-center justify-center rounded-full border-4 border-snack-orange-300 bg-surface px-8 py-5 text-[clamp(0.8125rem,3.2vw,1.625rem)] leading-[1.25] font-bold break-keep text-accent">
+          <p className="m-0 box-border flex w-full items-center justify-center rounded-full border-4 border-snack-orange-300 bg-surface px-8 py-5 text-[22px] leading-8 font-bold whitespace-nowrap text-accent">
             흩어진 간식 구매처를 통합하고, 기수별 지출을 똑똑하게 관리하세요
           </p>
         </div>
 
-        <div className="relative mx-auto mt-[clamp(24px,5vw,80px)] flex w-full max-w-[1674px] flex-col items-center overflow-visible">
+        <div className="relative mx-auto mt-[72px] flex w-full max-w-[1674px] flex-col items-center overflow-visible">
           <CommonImage
             name="landing-illustration"
             size="md"
@@ -99,7 +99,7 @@ export function DesktopCover() {
                 bubble.positionClass,
               ].join(" ")}
             >
-              <p className="m-0 w-auto rounded-full bg-accent px-7 py-[18px] text-center text-[clamp(0.75rem,2.8vw,1.375rem)] leading-[1.3] font-bold whitespace-nowrap text-surface">
+              <p className="m-0 w-auto rounded-full bg-accent px-7 py-[14px] text-center text-[18px] leading-[1.3] font-bold whitespace-nowrap text-surface">
                 {bubble.text}
               </p>
               <span
