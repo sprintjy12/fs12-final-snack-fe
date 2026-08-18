@@ -69,8 +69,8 @@ export function DesktopCover() {
         </div>
       </header>
 
-      <div className="relative mx-auto box-border min-h-[calc(100vh-88px)] w-full max-w-[1920px] px-[58px] pt-[52px] pb-[116px]">
-        <div className="mx-auto mt-[108px] flex w-full max-w-[742px] flex-col items-center gap-12 text-center">
+           <div className="relative mx-auto box-border flex min-h-[calc(100vh-88px)] w-full max-w-[1920px] flex-col justify-center px-[58px] pt-[52px] pb-[116px]">
+           <div className="mx-auto flex w-full max-w-[742px] flex-col items-center gap-12 text-center">
           <h1 className="m-0 w-full px-2">
             <CommonImage
               name="logo-landing"
@@ -104,7 +104,7 @@ export function DesktopCover() {
               </p>
               <span
                 aria-hidden="true"
-                className="mt-0.5 block h-6 w-8 border-0 bg-[url('/images/cover/bubble-tail.png')] bg-contain bg-center bg-no-repeat"
+                className="mt-0.5 block h-6 w-8 border-0 bg-[url('/images/cover/bubble-tail.svg')] bg-contain bg-center bg-no-repeat"
               />
             </div>
           ))}
