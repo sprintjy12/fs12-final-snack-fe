@@ -88,14 +88,23 @@ function SelectCheckbox({
     <button
       type="button"
       className={cx(
-        "grid size-[26px] shrink-0 place-items-center rounded border border-snack-gray-300 bg-transparent p-0 text-[17px] leading-none text-surface",
-        checked && "border-accent bg-accent",
+        "grid size-[26px] shrink-0 place-items-center overflow-hidden rounded p-0",
+        checked
+          ? "border-0 bg-transparent"
+          : "border border-snack-gray-300 bg-transparent",
       )}
       aria-label={label}
       aria-pressed={checked}
       onClick={onToggle}
     >
-      {checked ? <span aria-hidden="true">✓</span> : null}
+      {checked ? (
+        <img
+          src="/icons/checkbox-checked.svg"
+          alt=""
+          aria-hidden="true"
+          className="size-full"
+        />
+      ) : null}
     </button>
   );
 }
@@ -395,8 +404,8 @@ export default function CartPage() {
           <section className="flex min-h-[420px] flex-col items-center justify-center gap-3 border-y border-snack-gray-300">
             <CommonImage
               name="empty-purchase"
-              size="md"
-              className="h-auto w-full max-w-[280px]"
+              size="sm"
+              className="h-auto w-[300px]"
             />
             <h2 className="mt-1 mb-0 text-2xl leading-8 text-foreground-strong">
               장바구니가 비어 있습니다

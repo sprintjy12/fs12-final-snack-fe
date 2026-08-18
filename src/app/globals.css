@@ -90,6 +90,7 @@
   --color-foreground-muted: var(--snack-gray-500);
   --color-accent: var(--snack-orange-400);
   --color-accent-subtle: var(--snack-orange-100);
+  --color-illustration-02: var(--snack-illustration-200);
   --color-border: var(--snack-line-200);
   --color-border-subtle: var(--snack-line-100);
   --color-danger: var(--snack-state-100);

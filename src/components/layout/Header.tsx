@@ -131,6 +131,8 @@ export function Header({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const showCartBadge = cartCount > 0;
+  const isCartActive =
+    pathname === "/cart" || pathname.startsWith("/cart/");
   const activeHref = getActiveNavHref(navItems, pathname);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -158,7 +160,7 @@ export function Header({
               <Icon name="menu" size="sm" />
             </button>
 
-            <Link href="/" aria-label="Snack 홈" className="shrink-0">
+            <Link href="/products" aria-label="상품 리스트" className="shrink-0">
               <picture>
                 <source
                   media="(min-width: 1280px)"
@@ -207,7 +209,11 @@ export function Header({
                   ? `장바구니, 상품 ${cartCount}개`
                   : "장바구니"
               }
-              className="relative flex items-center text-snack-gray-400 xl:gap-2 xl:px-4"
+              aria-current={isCartActive ? "page" : undefined}
+              className={[
+                "relative flex items-center xl:gap-2 xl:px-4",
+                isCartActive ? "text-accent" : "text-snack-gray-400",
+              ].join(" ")}
             >
               <Icon
                 name="cart"
@@ -215,7 +221,12 @@ export function Header({
                 variant="outlined"
                 className="xl:hidden"
               />
-              <span className="hidden text-xl leading-8 font-bold text-snack-gray-300 xl:inline">
+              <span
+                className={[
+                  "hidden text-xl leading-8 font-bold xl:inline",
+                  isCartActive ? "text-accent" : "text-snack-gray-300",
+                ].join(" ")}
+              >
                 Cart
               </span>
               {showCartBadge ? (
