@@ -34,7 +34,6 @@ const BUBBLES = [
 
 export function DesktopCover() {
   return (
-<<<<<<< Updated upstream
     <main className="hidden h-screen overflow-hidden bg-background xl:block">
       <header className="h-[88px] w-full bg-accent">
         <div className="mx-auto flex h-full w-full max-w-[1920px] items-center justify-between px-[120px]">
@@ -43,12 +42,10 @@ export function DesktopCover() {
             aria-label="Snack 홈"
             className="inline-flex shrink-0"
           >
-=======
     <main className="hidden overflow-x-hidden bg-background xl:block">
       <header className="h-[88px] w-full bg-accent">
         <div className="mx-auto flex h-full w-full max-w-[1920px] items-center justify-between px-[120px]">
           <Link href="/" aria-label="Snack 홈" className="inline-flex shrink-0">
->>>>>>> Stashed changes
             <CommonImage
               name="logo-text-white"
               size="md"
