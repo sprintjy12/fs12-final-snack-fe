@@ -12,25 +12,23 @@ const MOBILE_BUBBLES = [
     id: "want",
     text: "내가 원하는 간식을, 원하는 만큼!",
     className:
-      "absolute left-[133px] top-[-113px] md:left-[42%] md:top-[-18%] lg:left-[45%]",
+      "absolute left-[35.5%] top-[-36.5%] md:left-[42%] md:top-[-18%] lg:left-[45%]",
   },
   {
     id: "role",
     text: "관리자와 유저 모두 이용 가능해요",
-    className:
-      "absolute left-[15px] top-[-63px] md:left-[8%] md:top-[-10%]",
+    className: "absolute left-[4%] top-[-20.3%] md:left-[8%] md:top-[-10%]",
   },
   {
     id: "items",
     text: "다양한 품목도 한 눈에 파악해요",
     className:
-      "absolute left-[214px] top-[-49px] md:left-[62%] md:top-[-8%] lg:left-[68%]",
+      "absolute left-[57.1%] top-[-15.8%] md:left-[62%] md:top-[-8%] lg:left-[68%]",
   },
   {
     id: "request",
     text: "쉽고 빠르게 구매를 요청해보세요",
-    className:
-      "absolute left-[-9px] top-[-9px] md:left-[2%] md:top-[4%]",
+    className: "absolute left-[-2.4%] top-[-2.9%] md:left-[2%] md:top-[4%]",
   },
 ] as const;
 
@@ -42,7 +40,7 @@ const HEADER_LINK_CLASS =
 
 export function MobileSignupLanding() {
   return (
-    <main className="min-h-screen overflow-x-clip bg-background xl:hidden">
+    <main className="flex min-h-screen flex-col overflow-x-clip bg-background xl:hidden">
       <header className="w-full bg-accent">
         <div className="mx-auto flex h-[54px] w-full max-w-[375px] items-center justify-center md:h-[72px] md:max-w-[768px] md:justify-between md:px-8 lg:max-w-[1024px] lg:px-12">
           <Link href="/" aria-label="Snack 홈" className="inline-flex shrink-0">
@@ -71,16 +69,20 @@ export function MobileSignupLanding() {
         </div>
       </header>
 
-      <div className="relative mx-auto flex min-h-[calc(100vh-54px)] w-full max-w-[375px] flex-col md:min-h-[calc(100vh-72px)] md:max-w-[768px] lg:max-w-[1024px]">
+      <div className="relative mx-auto flex w-full max-w-[375px] flex-1 flex-col md:max-w-[768px] lg:max-w-[1024px]">
         <div className="mt-[56px] flex flex-col items-center gap-10 md:mt-[72px] md:gap-12">
           <h1 className="m-0">
             <CommonImage
               name="logo-landing"
               size="sm"
               label="Snack"
-              className="h-12 w-[200px] md:h-16 md:w-[266px]"
+              className="h-12 w-[193px] md:h-16 md:w-[266px]"
             />
           </h1>
+
+          <p className="m-0 box-border hidden w-fit max-w-full items-center justify-center gap-[10px] rounded-full border-2 border-snack-orange-300 bg-surface px-3 py-2 text-center text-base leading-6 font-bold whitespace-nowrap text-accent md:flex">
+            흩어진 간식 구매처를 통합하고, 기수별 지출을 똑똑하게 관리하세요
+          </p>
 
           <div className="flex w-[194px] flex-col items-center gap-2 md:hidden">
             <Link href="/login" className={CTA_CLASS}>
@@ -93,7 +95,10 @@ export function MobileSignupLanding() {
         </div>
 
         {/* 말풍선이 일러스트 위로 음수 offset 배치라, 로고와 겹치지 않을 최소 여백 확보 */}
-        <div aria-hidden="true" className="min-h-[150px] flex-1 md:min-h-[120px]" />
+        <div
+          aria-hidden="true"
+          className="min-h-[150px] max-h-[220px] flex-1 md:min-h-[120px] md:max-h-[200px]"
+        />
 
         <div className="relative h-[310px] w-full md:h-[400px] lg:h-[460px]">
           <div className="pointer-events-none absolute bottom-0 left-1/2 h-[310px] w-[670px] -translate-x-1/2 overflow-hidden md:h-[400px] md:w-[900px] lg:h-[460px] lg:w-[1100px]">
