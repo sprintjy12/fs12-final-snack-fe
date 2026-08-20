@@ -120,3 +120,7 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
 
   return children;
 };
+  }
+
+  return children;
+};
