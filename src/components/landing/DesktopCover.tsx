@@ -42,10 +42,6 @@ export function DesktopCover() {
             aria-label="Snack 홈"
             className="inline-flex shrink-0"
           >
-    <main className="hidden overflow-x-hidden bg-background xl:block">
-      <header className="h-[88px] w-full bg-accent">
-        <div className="mx-auto flex h-full w-full max-w-[1920px] items-center justify-between px-[120px]">
-          <Link href="/" aria-label="Snack 홈" className="inline-flex shrink-0">
             <CommonImage
               name="logo-text-white"
               size="md"
@@ -72,13 +68,8 @@ export function DesktopCover() {
         </div>
       </header>
 
-<<<<<<< Updated upstream
       <div className="relative mx-auto flex h-[calc(100svh-88px)] w-full max-w-[1920px] flex-col overflow-hidden pt-[52px]">
         {/* 로고 + 부제목: 좌우 패딩 적용 */}
-=======
-      <div className="relative mx-auto flex w-full max-w-[1920px] flex-col pt-[52px]">
-        {/* 로고 + 부제목 */}
->>>>>>> Stashed changes
         <div className="w-full shrink-0 px-[58px]">
           <div className="mx-auto flex w-full max-w-[742px] flex-col items-center gap-12 text-center">
             <h1 className="m-0 w-full px-2">
@@ -90,7 +81,6 @@ export function DesktopCover() {
               />
             </h1>
 
-<<<<<<< Updated upstream
             <p className="m-0 box-border flex w-full items-center justify-center rounded-full border-4 border-snack-orange-300 bg-surface px-8 py-5 text-[24px] leading-9 font-bold whitespace-nowrap text-accent">
               흩어진 간식 구매처를 통합하고, 기수별 지출을 똑똑하게 관리하세요
             </p>
@@ -103,20 +93,6 @@ export function DesktopCover() {
             name="landing-illustration"
             size="md"
             className="block max-h-full w-full object-contain object-top"
-=======
-          <p className="m-0 box-border flex w-[750px] max-w-full items-center justify-center gap-[10px] rounded-full border-4 border-snack-orange-300 bg-surface px-8 py-5 text-center text-[24px] leading-8 font-bold whitespace-nowrap text-accent">
-            흩어진 간식 구매처를 통합하고, 기수별 지출을 똑똑하게 관리하세요
-          </p>
-          </div>
-        </div>
-
-        {/* 일러스트 + 말풍선 */}
-        <div className="relative mx-auto mt-[72px] flex w-full max-w-[1674px] flex-cocdcl items-center">
-          <CommonImage
-            name="landing-illustration"
-            size="md"
-            className="block h-auto w-full object-contain"
->>>>>>> Stashed changes
           />
 
           {BUBBLES.map((bubble) => (
