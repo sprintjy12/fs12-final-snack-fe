@@ -100,12 +100,12 @@ export function MobileSignupLanding() {
           className="min-h-[150px] max-h-[220px] flex-1 md:min-h-[120px] md:max-h-[200px]"
         />
 
-        <div className="relative h-[310px] w-full md:h-[400px] lg:h-[460px]">
-          <div className="pointer-events-none absolute bottom-0 left-1/2 h-[310px] w-[670px] -translate-x-1/2 overflow-hidden md:h-[400px] md:w-[900px] lg:h-[460px] lg:w-[1100px]">
+        <div className="relative h-[310px] w-full overflow-visible md:h-[400px] lg:h-[460px]">
+          <div className="pointer-events-none absolute bottom-0 left-1/2 h-[310px] w-[670px] -translate-x-1/2 md:h-[400px] md:w-[900px] lg:h-[460px] lg:w-[1100px]">
             <CommonImage
               name="landing-illustration"
               size="sm"
-              className="size-full"
+              className="size-full object-contain object-bottom"
             />
           </div>
 
