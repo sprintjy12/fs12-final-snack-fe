@@ -80,7 +80,7 @@ export function DesktopCover() {
             name="logo-landing"
             size="md"
             label="Snack"
-            className="mx-auto h-auto w-full max-w-[240px]"
+            className="mx-auto h-auto w-full max-w-[504px]"
           />
         </h1>
 
