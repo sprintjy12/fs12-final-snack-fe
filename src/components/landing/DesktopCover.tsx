@@ -3,31 +3,32 @@ import Link from "next/link";
 import { CommonImage } from "@/components/ui";
 
 /**
- * 데스크톱(xl+) 커버 (1920 기준 수치, 뷰포트에 맞게 축소).
- * - Snack 로고: 좌우 708px → max 504px
- * - 흰색 CTA: 좌우 589px → max 742px
- * - 상단 최대 160px, 일러스트 최대 792px (한 화면에 잘리지 않게 맞춤)
+ * 데스크톱(xl+) 커버 (Figma Desktop 1:12154, 1920 기준).
+ * - GNB: h 88 / px 120 / 링크 Bold 20 · gap 48
+ * - Snack 로고 max 504 · CTA max 742 · logo↔CTA gap 48
+ * - 상단 max 160 · 일러스트 max 792 (한 화면에 맞춤)
  */
+/** Figma Desktop(1:12154) 일러스트(1674×564) 기준 상대 위치 — 잘림 방지를 위해 소폭 안쪽 */
 const BUBBLES = [
   {
     id: "tl",
     text: "쉽고 빠르게 구매를 요청해보세요",
-    positionClass: "absolute top-[6%] left-[10%]",
+    positionClass: "absolute top-[-4%] left-[6%]",
   },
   {
     id: "bl",
     text: "내가 원하는 간식을, 원하는 만큼!",
-    positionClass: "absolute top-[34%] left-[4%]",
+    positionClass: "absolute top-[22%] left-[0%]",
   },
   {
     id: "tr",
     text: "다양한 품목도 한 눈에 파악해요",
-    positionClass: "absolute top-[6%] right-[10%]",
+    positionClass: "absolute top-[-4%] right-[6%]",
   },
   {
     id: "br",
     text: "관리자와 유저 모두 이용 가능해요",
-    positionClass: "absolute top-[34%] right-[4%]",
+    positionClass: "absolute top-[22%] right-[0%]",
   },
 ] as const;
 
@@ -50,11 +51,12 @@ export function DesktopCover() {
           </Link>
 
           <nav aria-label="인증 메뉴">
-            <ul className="flex items-center gap-10">
+            {/* Figma gnb: gap 48px (gap-12), Pretendard Bold 20px */}
+            <ul className="flex items-center gap-12">
               <li>
                 <Link
                   href="/login"
-                  className="text-xl leading-8 font-semibold whitespace-nowrap text-surface"
+                  className="text-xl leading-8 font-bold whitespace-nowrap text-surface"
                 >
                   로그인
                 </Link>
@@ -63,7 +65,7 @@ export function DesktopCover() {
               <li>
                 <Link
                   href="/signup/admin"
-                  className="text-xl leading-8 font-semibold whitespace-nowrap text-surface"
+                  className="text-xl leading-8 font-bold whitespace-nowrap text-surface"
                 >
                   기업 담당자 회원가입
                 </Link>
@@ -84,7 +86,8 @@ export function DesktopCover() {
           />
         </h1>
 
-        <p className="m-0 mt-6 box-border flex w-full max-w-[742px] shrink-0 items-center justify-center rounded-full border-4 border-snack-orange-300 bg-surface px-8 py-4 text-[clamp(1rem,1.35vw,1.5rem)] leading-9 font-bold break-keep text-accent xl:mt-8 xl:py-5">
+        {/* Figma: logo↔CTA gap 48, CTA text 26 / py 20 / px 32 */}
+        <p className="m-0 mt-12 box-border flex w-full max-w-[742px] shrink-0 items-center justify-center rounded-full border-4 border-snack-orange-300 bg-surface px-8 py-5 text-[clamp(1rem,1.4vw,1.625rem)] leading-8 font-bold break-keep text-accent">
           흩어진 간식 구매처를 통합하고, 기수별 지출을 똑똑하게 관리하세요
         </p>
 
