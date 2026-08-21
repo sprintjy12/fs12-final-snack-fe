@@ -39,6 +39,7 @@ export interface ProductListParams {
   sort?: "latest" | "popular" | "priceAsc" | "priceDesc";
   page?: number;
   pageSize?: number;
+  search?: string;
 }
 
 /** GET /api/products/me — 전체 상품 목록과 동일 sort */
