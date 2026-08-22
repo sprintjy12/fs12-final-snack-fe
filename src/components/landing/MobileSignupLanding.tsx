@@ -97,7 +97,7 @@ export function MobileSignupLanding() {
         {/* 말풍선이 일러스트 위로 음수 offset 배치라, 로고와 겹치지 않을 최소 여백 확보 */}
         <div
           aria-hidden="true"
-          className="min-h-[150px] max-h-[220px] flex-1 md:min-h-[120px] md:max-h-[200px]"
+          className="min-h-[150px] flex-1 md:min-h-[120px]"
         />
 
         <div className="relative h-[310px] w-full overflow-visible md:h-[400px] lg:h-[460px]">
