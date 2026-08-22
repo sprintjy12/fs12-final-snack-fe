@@ -18,7 +18,7 @@ const BUBBLES = [
   {
     id: "bl",
     text: "내가 원하는 간식을, 원하는 만큼!",
-    positionClass: "absolute top-[30%] left-[0%]",
+    positionClass: "absolute top-[30%] left-[2%]",
   },
   {
     id: "tr",
@@ -28,7 +28,7 @@ const BUBBLES = [
   {
     id: "br",
     text: "관리자와 유저 모두 이용 가능해요",
-    positionClass: "absolute top-[30%] right-[0%]",
+    positionClass: "absolute top-[30%] right-[2%]",
   },
 ] as const;
 
