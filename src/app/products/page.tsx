@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { SORT_OPTIONS } from "@/constants/categoryConstants";
@@ -32,6 +32,30 @@ export default function ProductListPage() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement>(null);
 
+  // ── Search ──────────────────────────────────────────
+  const [searchInput, setSearchInput] = useState("");
+  const [committedSearch, setCommittedSearch] = useState("");
+
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchInput(e.target.value);
+    },
+    [],
+  );
+
+  const handleSearchSubmit = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      setCommittedSearch(searchInput.trim());
+    },
+    [searchInput],
+  );
+
+  const handleSearchClear = useCallback(() => {
+    setSearchInput("");
+    setCommittedSearch("");
+  }, []);
+
   const categoryId = parseRouteId(searchParams.get("categoryId"));
   const subCategoryId = parseRouteId(searchParams.get("subCategoryId"));
 
@@ -42,8 +66,9 @@ export default function ProductListPage() {
       subCategoryId,
       page,
       pageSize: PAGE_SIZE,
+      ...(committedSearch ? { search: committedSearch } : {}),
     }),
-    [sort, categoryId, subCategoryId, page],
+    [sort, categoryId, subCategoryId, page, committedSearch],
   );
 
   const {
@@ -57,7 +82,7 @@ export default function ProductListPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [sort, categoryId, subCategoryId]);
+  }, [sort, categoryId, subCategoryId, committedSearch]);
 
   // 새 페이지 데이터가 오면 누적
   useEffect(() => {
@@ -99,6 +124,7 @@ export default function ProductListPage() {
 
   const resetFilters = () => {
     setSort("latest");
+    handleSearchClear();
     router.push("/products");
   };
 
@@ -122,6 +148,52 @@ export default function ProductListPage() {
     <div className={styles.page}>
       <div className={styles.inner}>
         <div className={styles.toolbar}>
+          {/* ── Search bar ── */}
+          <form
+            onSubmit={handleSearchSubmit}
+            className="relative flex items-center w-full max-w-80 max-md:max-w-full max-md:-order-1"
+          >
+            <button
+              type="submit"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-snack-gray-500 hover:text-snack-orange-500 transition-colors flex items-center justify-center cursor-pointer p-0 border-none bg-transparent"
+              aria-label="검색"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </button>
+            <input
+              id="product-search"
+              type="text"
+              className="w-full h-[42px] pl-10 pr-9 border border-snack-line-200 rounded-xl bg-snack-gray-50 text-snack-black-300 text-sm font-normal outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-snack-gray-500 focus:border-snack-orange-400 focus:shadow-[0_0_0_3px_rgba(249,123,34,0.12)]"
+              placeholder="상품 검색"
+              value={searchInput}
+              onChange={handleSearchChange}
+              autoComplete="off"
+            />
+            {searchInput ? (
+              <button
+                type="button"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center w-[22px] h-[22px] p-0 border-none rounded-full bg-snack-line-200 text-snack-gray-500 text-xs leading-none cursor-pointer transition-colors duration-150 hover:bg-snack-gray-500 hover:text-snack-gray-50"
+                onClick={handleSearchClear}
+                aria-label="검색어 지우기"
+              >
+                ✕
+              </button>
+            ) : null}
+          </form>
+
+          {/* ── Sort dropdown ── */}
           <div className={styles.sort} ref={sortRef}>
             <button
               type="button"
