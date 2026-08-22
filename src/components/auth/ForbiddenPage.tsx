@@ -1,12 +1,18 @@
 import { EmptyState } from "@/components/ui";
 
+/** GNB(AppHeader) 아래 영역 — 헤더 높이: 54 / md 64 / xl 88 */
+const BELOW_HEADER_MIN_H =
+  "min-h-[calc(100vh-54px)] md:min-h-[calc(100vh-64px)] xl:min-h-[calc(100vh-88px)]";
+
 /**
  * 권한 부족(403) 안내.
  * GNB(AppHeader) 아래에 표시 — not-found의 fixed overlay 패턴을 쓰지 않습니다.
  */
 export function ForbiddenPage() {
   return (
-    <main className="flex min-h-[calc(100vh-88px)] w-full items-center justify-center bg-surface-muted px-6">
+    <main
+      className={`flex w-full items-center justify-center bg-surface-muted px-6 ${BELOW_HEADER_MIN_H}`}
+    >
       <EmptyState
         aria-label="권한이 없습니다"
         image="empty-purchase"
