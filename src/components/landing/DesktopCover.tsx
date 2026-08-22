@@ -5,7 +5,7 @@ import { CommonImage } from "@/components/ui";
 /**
  * 데스크톱(xl+) 커버 (Figma Desktop 1:12154, 1920 기준).
  * - GNB: h 88 / px 120 / 링크 Bold 20 · gap 48
- * - Snack 로고 max 504 · CTA max 742 · logo↔CTA gap 48
+ * - Snack 로고 max 504 · CTA max 742
  * - 상단 max 160 · 일러스트 max 792 (한 화면에 맞춤)
  */
 /** Figma Desktop(1:12154) 일러스트(1674×564) 기준 상대 위치 — 잘림 방지를 위해 소폭 안쪽 */
@@ -13,22 +13,22 @@ const BUBBLES = [
   {
     id: "tl",
     text: "쉽고 빠르게 구매를 요청해보세요",
-    positionClass: "absolute top-[-4%] left-[6%]",
+    positionClass: "absolute top-[4%] left-[6%]",
   },
   {
     id: "bl",
     text: "내가 원하는 간식을, 원하는 만큼!",
-    positionClass: "absolute top-[22%] left-[0%]",
+    positionClass: "absolute top-[30%] left-[0%]",
   },
   {
     id: "tr",
     text: "다양한 품목도 한 눈에 파악해요",
-    positionClass: "absolute top-[-4%] right-[6%]",
+    positionClass: "absolute top-[4%] right-[6%]",
   },
   {
     id: "br",
     text: "관리자와 유저 모두 이용 가능해요",
-    positionClass: "absolute top-[22%] right-[0%]",
+    positionClass: "absolute top-[30%] right-[0%]",
   },
 ] as const;
 
@@ -86,8 +86,7 @@ export function DesktopCover() {
           />
         </h1>
 
-        {/* Figma: logo↔CTA gap 48, CTA text 26 / py 20 / px 32 */}
-        <p className="m-0 mt-12 box-border flex w-full max-w-[742px] shrink-0 items-center justify-center rounded-full border-4 border-snack-orange-300 bg-surface px-8 py-5 text-[clamp(1rem,1.4vw,1.625rem)] leading-8 font-bold break-keep text-accent">
+        <p className="m-0 mt-6 box-border flex w-full max-w-[742px] shrink-0 items-center justify-center rounded-full border-4 border-snack-orange-300 bg-surface px-8 py-4 text-[clamp(1rem,1.35vw,1.5rem)] leading-9 font-bold break-keep text-accent xl:mt-8 xl:py-5">
           흩어진 간식 구매처를 통합하고, 기수별 지출을 똑똑하게 관리하세요
         </p>
 
