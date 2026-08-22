@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState, type ChangeEvent } from "react";
+import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 
 import BudgetSectionTabs from "@/components/BudgetSectionTabs";
 import { useMonthlyBudgetSummary } from "@/hooks/queries/useMonthlyBudgetSummary";
@@ -10,7 +11,6 @@ import type {
   MonthlyBudgetSubcategory,
 } from "@/types/budgetTypes";
 
-const ETC_THRESHOLD = 3;
 const CHART_COLORS = [
   "#FF6B00",
   "#FF8A1F",
@@ -27,20 +27,6 @@ const ETC_COLOR = "#D9D0C7";
 
 type DisplayCategory = MonthlyBudgetCategory & {
   color: string;
-};
-
-type ChartSegment = DisplayCategory & {
-  dashOffset: number;
-  label: {
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-    x3: number;
-    y3: number;
-    textX: number;
-    textAnchor: "start" | "end";
-  };
 };
 
 function getCurrentKstYearMonth() {
@@ -63,6 +49,13 @@ function formatPercentage(percentage: number) {
   return `${percentage.toFixed(2)}%`;
 }
 
+function formatMonthLabel(yearMonth: string) {
+  const month = Number(yearMonth.split("-")[1]);
+  return Number.isInteger(month) && month >= 1 && month <= 12
+    ? `${month}월`
+    : "선택 월";
+}
+
 function buildDisplayCategories(
   categories: MonthlyBudgetCategory[],
   productAmount: number,
@@ -73,12 +66,10 @@ function buildDisplayCategories(
       productAmount > 0 ? (category.amount / productAmount) * 100 : 0,
   }));
   const regularCategories = normalizedCategories.filter(
-    (category) =>
-      category.name !== "기타" && category.percentage >= ETC_THRESHOLD,
+    (category) => category.name !== "기타",
   );
   const etcCategories = normalizedCategories.filter(
-    (category) =>
-      category.name === "기타" || category.percentage < ETC_THRESHOLD,
+    (category) => category.name === "기타",
   );
 
   const result: DisplayCategory[] = regularCategories.map(
@@ -124,42 +115,6 @@ function buildDisplayCategories(
   return result.sort((a, b) => b.amount - a.amount);
 }
 
-function buildChartSegments(categories: DisplayCategory[]): ChartSegment[] {
-  let accumulatedPercentage = 0;
-
-  return categories.map((category) => {
-    const dashOffset = -accumulatedPercentage;
-    const middlePercentage =
-      accumulatedPercentage + category.percentage / 2;
-    const angle = ((middlePercentage * 3.6 - 90) * Math.PI) / 180;
-    const isRight = Math.cos(angle) >= 0;
-    const centerX = 220;
-    const centerY = 180;
-    const x1 = centerX + Math.cos(angle) * 98;
-    const y1 = centerY + Math.sin(angle) * 98;
-    const x2 = centerX + Math.cos(angle) * 116;
-    const y2 = centerY + Math.sin(angle) * 116;
-    const x3 = x2 + (isRight ? 28 : -28);
-
-    accumulatedPercentage += category.percentage;
-
-    return {
-      ...category,
-      dashOffset,
-      label: {
-        x1,
-        y1,
-        x2,
-        y2,
-        x3,
-        y3: y2,
-        textX: x3 + (isRight ? 5 : -5),
-        textAnchor: isRight ? "start" : "end",
-      },
-    };
-  });
-}
-
 function DonutChart({
   categories,
   productAmount,
@@ -167,8 +122,6 @@ function DonutChart({
   categories: DisplayCategory[];
   productAmount: number;
 }) {
-  const segments = useMemo(() => buildChartSegments(categories), [categories]);
-
   return (
     <div className="flex justify-center">
       <div
@@ -176,117 +129,108 @@ function DonutChart({
         aria-label={`상품 구매 금액 ${formatWon(productAmount)}의 대분류별 지출 도넛 차트`}
         className="relative size-[260px] md:hidden"
       >
-        <svg
-          viewBox="0 0 200 200"
-          className="size-full -rotate-90"
-          aria-hidden="true"
-        >
-          <circle
-            cx="100"
-            cy="100"
-            r="72"
-            pathLength="100"
-            fill="none"
-            stroke="#F4EFEA"
-            strokeWidth="30"
-          />
-          {segments.map((segment) => (
-            <circle
-              key={segment.name}
-              cx="100"
-              cy="100"
-              r="72"
-              pathLength="100"
-              fill="none"
-              stroke={segment.color}
-              strokeWidth="30"
-              strokeDasharray={`${segment.percentage} ${100 - segment.percentage}`}
-              strokeDashoffset={segment.dashOffset}
-            />
-          ))}
-        </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className="text-sm leading-6 text-foreground-muted">
-            상품 구매 금액
-          </span>
-          <strong className="mt-1 text-xl leading-8 text-foreground-strong">
-            {formatWon(productAmount)}
-          </strong>
-        </div>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart aria-hidden="true">
+            <Pie
+              data={categories}
+              dataKey="amount"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={57}
+              outerRadius={87}
+              stroke="none"
+              isAnimationActive={false}
+            >
+              {categories.map((category) => (
+                <Cell key={category.name} fill={category.color} />
+              ))}
+            </Pie>
+            <text
+              x="50%"
+              y="47%"
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="#8A847E"
+              fontSize="14"
+            >
+              상품 구매 금액
+            </text>
+            <text
+              x="50%"
+              y="57%"
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="#2D2926"
+              fontSize="20"
+              fontWeight="700"
+            >
+              {formatWon(productAmount)}
+            </text>
+          </PieChart>
+        </ResponsiveContainer>
       </div>
 
-      <svg
+      <div
         role="img"
         aria-label={`상품 구매 금액 ${formatWon(productAmount)}의 대분류별 지출 도넛 차트`}
-        viewBox="0 0 440 360"
-        className="hidden h-[360px] w-full max-w-[440px] overflow-visible md:block"
+        className="hidden h-[360px] w-full max-w-[440px] md:block"
       >
-        <circle
-          cx="220"
-          cy="180"
-          r="80"
-          pathLength="100"
-          fill="none"
-          stroke="#F4EFEA"
-          strokeWidth="32"
-        />
-        {segments.map((segment) => (
-          <circle
-            key={segment.name}
-            cx="220"
-            cy="180"
-            r="80"
-            pathLength="100"
-            fill="none"
-            stroke={segment.color}
-            strokeWidth="32"
-            strokeDasharray={`${segment.percentage} ${100 - segment.percentage}`}
-            strokeDashoffset={segment.dashOffset}
-            transform="rotate(-90 220 180)"
-          />
-        ))}
-
-        {segments.map((segment) => (
-          <g key={segment.name}>
-            <polyline
-              points={`${segment.label.x1},${segment.label.y1} ${segment.label.x2},${segment.label.y2} ${segment.label.x3},${segment.label.y3}`}
-              fill="none"
-              stroke={segment.color}
-              strokeWidth="1.5"
-            />
-            <text
-              x={segment.label.textX}
-              y={segment.label.y3 + 5}
-              textAnchor={segment.label.textAnchor}
-              fill="#5F5A55"
-              fontSize="14"
-              fontWeight="600"
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart aria-hidden="true">
+            <Pie
+              data={categories}
+              dataKey="amount"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={64}
+              outerRadius={96}
+              stroke="none"
+              labelLine={{ stroke: "#C9B7A5", strokeWidth: 1 }}
+              label={(props) => (
+                <text
+                  x={props.x}
+                  y={props.y}
+                  textAnchor={props.textAnchor}
+                  dominantBaseline="central"
+                  fill="#5F5A55"
+                  fontSize="14"
+                  fontWeight="600"
+                >
+                  {props.name}
+                </text>
+              )}
+              isAnimationActive={false}
             >
-              {segment.name}
+              {categories.map((category) => (
+                <Cell key={category.name} fill={category.color} />
+              ))}
+            </Pie>
+            <text
+              x="50%"
+              y="47%"
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="#8A847E"
+              fontSize="14"
+            >
+              상품 구매 금액
             </text>
-          </g>
-        ))}
-
-        <text
-          x="220"
-          y="174"
-          textAnchor="middle"
-          fill="#8A847E"
-          fontSize="14"
-        >
-          상품 구매 금액
-        </text>
-        <text
-          x="220"
-          y="202"
-          textAnchor="middle"
-          fill="#2D2926"
-          fontSize="20"
-          fontWeight="700"
-        >
-          {formatWon(productAmount)}
-        </text>
-      </svg>
+            <text
+              x="50%"
+              y="55%"
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="#2D2926"
+              fontSize="20"
+              fontWeight="700"
+            >
+              {formatWon(productAmount)}
+            </text>
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
@@ -309,17 +253,20 @@ export default function BudgetStatisticsPage() {
     setYearMonth(event.target.value);
   };
 
+  const monthLabel = summary
+    ? formatMonthLabel(summary.yearMonth)
+    : "선택 월";
   const summaryCards = summary
     ? [
         {
-          label: "선택 월 예산",
+          label: `${monthLabel} 예산`,
           amount: summary.isUnlimited ? "무제한" : formatWon(summary.budget),
           description: summary.isUnlimited
             ? "예산 제한 없이 사용할 수 있어요"
             : `${summary.yearMonth}에 적용된 예산이에요`,
         },
         {
-          label: "선택 월 총지출",
+          label: `${monthLabel} 총지출`,
           amount: formatWon(summary.spent),
           description: "상품 구매 금액과 배송비를 포함해요",
         },
@@ -328,8 +275,8 @@ export default function BudgetStatisticsPage() {
             !summary.isUnlimited &&
             summary.remaining !== null &&
             summary.remaining < 0
-              ? "초과 금액"
-              : "선택 월 잔액",
+              ? `${monthLabel} 초과 금액`
+              : `${monthLabel} 잔액`,
           amount: summary.isUnlimited
             ? "제한 없음"
             : formatWon(Math.abs(summary.remaining ?? 0)),
@@ -521,8 +468,7 @@ export default function BudgetStatisticsPage() {
                   </ul>
 
                   <p className="mt-4 text-xs leading-5 text-foreground-muted">
-                    기타는 상품 구매 금액의 3% 미만인 대분류와 카테고리
-                    정보가 없는 항목을 합산해요.
+                    기타는 카테고리 정보가 없는 항목을 합산해요.
                   </p>
 
                   <div className="mt-6 flex items-center justify-between rounded-xl bg-surface-muted px-4 py-4 md:px-5">
