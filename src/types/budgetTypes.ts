@@ -27,6 +27,40 @@ export type BudgetSummaryResponse = {
   data: BudgetSummaryData;
 };
 
+/** GET /api/budgets/monthly-summary */
+export type MonthlyBudgetSubcategory = {
+  name: string;
+  amount: number;
+  /** 배송비를 제외한 상품 구매 총액 기준 비율 */
+  percentage: number;
+};
+
+export type MonthlyBudgetCategory = {
+  name: string;
+  amount: number;
+  /** 배송비를 제외한 상품 구매 총액 기준 비율 */
+  percentage: number;
+  children: MonthlyBudgetSubcategory[];
+};
+
+export type MonthlyBudgetSummaryData = {
+  yearMonth: string;
+  budget: number;
+  spent: number;
+  productAmount: number;
+  shippingFee: number;
+  /** 무제한 예산이면 null */
+  remaining: number | null;
+  isUnlimited: boolean;
+  categories: MonthlyBudgetCategory[];
+};
+
+export type MonthlyBudgetSummaryResponse = {
+  success: boolean;
+  message: string;
+  data: MonthlyBudgetSummaryData;
+};
+
 /** GET /api/budgets/settings */
 export type BudgetSettingsCurrentMonth = {
   yearMonth: string;

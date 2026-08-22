@@ -32,6 +32,8 @@ export const queryKeys = {
   budgets: {
     all: ["budgets"] as const,
     summary: () => ["budgets", "summary"] as const,
+    monthlySummary: (yearMonth: string) =>
+      ["budgets", "monthlySummary", yearMonth] as const,
     settings: () => ["budgets", "settings"] as const,
   },
   users: {
