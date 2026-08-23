@@ -44,7 +44,7 @@ export function MobileSignupLanding() {
   return (
     <main className="flex min-h-screen flex-col overflow-x-clip bg-background xl:hidden">
       <header className="w-full bg-accent">
-        <div className="mx-auto flex h-[54px] w-full max-w-[744px] items-center justify-center px-4 md:h-[72px] md:max-w-[768px] md:justify-between md:px-8 lg:max-w-[1024px] lg:px-12">
+        <div className="mx-auto flex h-[54px] w-full max-w-[744px] items-center justify-center px-4 md:h-16 md:max-w-[768px] md:justify-between md:px-8 lg:max-w-[1024px] lg:px-12">
           <Link href="/" aria-label="Snack 홈" className="inline-flex shrink-0">
             <CommonImage
               name="logo-text-white"
