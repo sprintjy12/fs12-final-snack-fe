@@ -34,7 +34,7 @@ const BUBBLES = [
 
 export function DesktopCover() {
   return (
-    <main className="hidden h-svh overflow-hidden bg-background xl:flex xl:flex-col">
+    <main className="hidden min-h-svh bg-background xl:flex xl:flex-col">
       <header className="h-[88px] w-full shrink-0 bg-accent">
         <div className="mx-auto flex h-full w-full max-w-[1920px] items-center justify-between px-[120px]">
           <Link
@@ -75,8 +75,8 @@ export function DesktopCover() {
         </div>
       </header>
 
-      {/* 헤더 아래 한 화면에 로고+CTA+일러스트 전부 표시 (스크롤로 잘림 방지) */}
-      <div className="relative mx-auto flex min-h-0 w-full max-w-[1920px] flex-1 flex-col items-center overflow-hidden pt-[clamp(40px,6vh,160px)]">
+      {/* 헤더 아래 로고+CTA+일러스트. 뷰포트가 낮으면(예: 800px) 한 화면에 안 맞고 세로 스크롤로 이어짐 */}
+      <div className="relative mx-auto flex w-full max-w-[1920px] flex-1 flex-col items-center pt-[clamp(40px,6vh,160px)] pb-[clamp(40px,6vh,80px)]">
         <h1 className="m-0 w-full max-w-[504px] shrink-0 px-2 text-center">
           <CommonImage
             name="logo-landing"
@@ -90,8 +90,8 @@ export function DesktopCover() {
           흩어진 간식 구매처를 통합하고, 기수별 지출을 똑똑하게 관리하세요
         </p>
 
-        {/* max 792px, 남는 뷰포트만 사용 → 하단이 잘리며 아래로 이어지지 않음 */}
-        <div className="relative mx-auto mt-4 min-h-0 w-full max-w-[1674px] flex-1 max-h-[792px]">
+        {/* max 792px, 짧은 뷰포트에서도 최소 높이 확보 → 잘리지 않고 스크롤로 전체 확인 가능 */}
+        <div className="relative mx-auto mt-4 h-[min(792px,60vh)] w-full max-w-[1674px] shrink-0">
           <CommonImage
             name="landing-illustration"
             size="md"
