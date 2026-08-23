@@ -5,7 +5,10 @@ import axios from "axios";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 
-import { ForbiddenPage } from "@/components/auth/ForbiddenPage";
+import {
+  BELOW_HEADER_MIN_H,
+  ForbiddenPage,
+} from "@/components/auth/ForbiddenPage";
 import { Button } from "@/components/ui";
 import {
   canAccessPath,
@@ -36,9 +39,10 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
   const hasToken = Boolean(getAccessToken());
   const protectedPath = isProtectedPath(pathname);
   const exemptPath = isGuardExemptPath(pathname);
+  const shouldFetchProfile = protectedPath && !exemptPath && hasToken;
 
   const { data: profile, isPending, isError, error, refetch, isFetching } =
-    useMyProfile();
+    useMyProfile({ enabled: shouldFetchProfile });
 
   const isUnauthorized =
     isError &&
@@ -60,9 +64,17 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
     }
 
     if (isUnauthorized) {
+      let cancelled = false;
+
       void clearClientSession(queryClient).then(() => {
-        router.replace("/login");
+        if (!cancelled) {
+          router.replace("/login");
+        }
       });
+
+      return () => {
+        cancelled = true;
+      };
     }
 
     // 권한 없음·5xx/네트워크 오류: URL 유지, 아래 render에서 fallback UI
@@ -72,6 +84,7 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
     hasToken,
     isPending,
     isUnauthorized,
+    pathname,
     router,
     queryClient,
   ]);
@@ -94,7 +107,9 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
 
   if (isError) {
     return (
-      <main className="flex min-h-[calc(100vh-54px)] w-full flex-col items-center justify-center gap-3 bg-surface-muted px-6 md:min-h-[calc(100vh-64px)] xl:min-h-[calc(100vh-88px)]">
+      <main
+        className={`flex w-full flex-col items-center justify-center gap-3 bg-surface-muted px-6 ${BELOW_HEADER_MIN_H}`}
+      >
         <p className="m-0 text-center text-base text-snack-black-100">
           사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
         </p>

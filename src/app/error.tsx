@@ -20,7 +20,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
   }, [error]);
 
   return (
-    <main className="flex min-h-[calc(100vh-54px)] w-full flex-col items-center justify-center gap-6 bg-surface-muted px-6 md:min-h-[calc(100vh-64px)] xl:min-h-[calc(100vh-88px)]">
+    <main className="flex min-h-[calc(100svh-54px)] w-full flex-col items-center justify-center gap-6 bg-surface-muted px-6 md:min-h-[calc(100svh-64px)] xl:min-h-[calc(100svh-88px)]">
       <EmptyState
         aria-label="오류가 발생했습니다"
         image="empty-purchase"

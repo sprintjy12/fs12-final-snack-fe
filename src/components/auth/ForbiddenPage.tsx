@@ -1,8 +1,8 @@
 import { EmptyState } from "@/components/ui";
 
 /** GNB(AppHeader) 아래 영역 — 헤더 높이: 54 / md 64 / xl 88 */
-const BELOW_HEADER_MIN_H =
-  "min-h-[calc(100vh-54px)] md:min-h-[calc(100vh-64px)] xl:min-h-[calc(100vh-88px)]";
+export const BELOW_HEADER_MIN_H =
+  "min-h-[calc(100svh-54px)] md:min-h-[calc(100svh-64px)] xl:min-h-[calc(100svh-88px)]";
 
 /**
  * 권한 부족(403) 안내.
