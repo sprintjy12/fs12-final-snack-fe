@@ -1,4 +1,4 @@
-﻿/* Figma 상품상세/Desktop — node 1:3385 */
+/* Figma 상품상세/Desktop — node 1:3385 */
 
 .page {
   width: 100%;
@@ -69,7 +69,7 @@
   box-sizing: border-box;
   width: min(50%, 828px);
   aspect-ratio: 1 / 1;
-  padding: 73px 120px;
+  padding: 0;
   border-radius: 20px;
   background: var(--color-surface);
   box-shadow: 4px 4px 10px rgb(250 247 243 / 25%);
@@ -77,11 +77,9 @@
 }
 
 .image {
-  width: 280px;
-  max-width: 100%;
-  height: auto;
-  max-height: 486px;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .placeholder {
@@ -442,12 +440,12 @@
   .gallery {
     width: 100%;
     max-width: 560px;
-    padding: 48px 64px;
+    padding: 0;
   }
 
   .image {
-    width: min(280px, 100%);
-    max-height: 360px;
+    width: 100%;
+    height: 100%;
   }
 
   .info {
@@ -467,11 +465,12 @@
 
   .gallery {
     max-width: none;
-    padding: 24px 16px;
+    padding: 0;
   }
 
   .image {
-    max-height: 240px;
+    width: 100%;
+    height: 100%;
   }
 
   .breadcrumb {

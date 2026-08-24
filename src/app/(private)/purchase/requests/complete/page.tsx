@@ -162,14 +162,14 @@ function PurchaseRequestCompleteContent() {
                 상품정보
               </h2>
               <div className="flex items-start gap-6">
-                <div className="box-border flex size-[120px] shrink-0 items-center justify-center rounded-lg border border-border bg-surface-muted p-6 max-md:size-16 max-md:p-3">
+                <div className="box-border flex size-[120px] shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface-muted max-md:size-16">
                   {showImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       key={summary.photo}
                       src={summary.photo}
                       alt=""
-                      className="block max-h-full max-w-full object-contain"
+                      className="size-full object-cover"
                       onError={() => setImageFailed(true)}
                     />
                   ) : null}
