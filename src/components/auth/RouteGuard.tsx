@@ -29,6 +29,7 @@ type RouteGuardProps = {
  * - 보호 + 비로그인: /login
  * - 보호 + 권한 없음: URL 유지 + ForbiddenPage (GNB는 layout AppHeader)
  * - users/me 401: 세션·캐시 정리 후 /login
+ * - users/me 403: URL 유지 + ForbiddenPage
  * - users/me 일반 오류(5xx/네트워크): redirect 없이 재시도 UI
  * profile 로딩 중에는 children을 렌더하지 않아 권한 페이지 flash를 막습니다.
  */
@@ -48,6 +49,11 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
     isError &&
     axios.isAxiosError(error) &&
     error.response?.status === 401;
+
+  const isForbidden =
+    isError &&
+    axios.isAxiosError(error) &&
+    error.response?.status === 403;
 
   useEffect(() => {
     if (exemptPath || !protectedPath) {
@@ -103,6 +109,10 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
 
   if (isUnauthorized) {
     return null;
+  }
+
+  if (isForbidden) {
+    return <ForbiddenPage />;
   }
 
   if (isError) {
