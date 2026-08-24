@@ -94,13 +94,13 @@ export function PurchaseRequestModal({
                     className="flex items-center justify-between gap-3"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="box-border flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface p-2">
+                      <span className="box-border flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface">
                         {item.product.imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={item.product.imageUrl}
                             alt=""
-                            className="max-h-full max-w-full object-contain"
+                            className="size-full object-cover"
                           />
                         ) : null}
                       </span>

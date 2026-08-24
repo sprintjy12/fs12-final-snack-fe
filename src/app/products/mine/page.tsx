@@ -231,13 +231,13 @@ export default function MyProductsPage() {
                           </span>
 
                           <div className="flex min-w-0 items-center gap-4 pl-6">
-                            <div className="flex size-20 shrink-0 items-center justify-center rounded-lg border border-border bg-surface p-6 shadow-[4px_4px_10px_rgba(250,247,243,0.25)]">
+                            <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface shadow-[4px_4px_10px_rgba(250,247,243,0.25)]">
                               {showImage ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                   src={photoSrc!}
                                   alt={product.name}
-                                  className="size-full object-contain"
+                                  className="size-full object-cover"
                                   onError={() => handleImageError(product.id)}
                                 />
                               ) : (
@@ -306,13 +306,13 @@ export default function MyProductsPage() {
                         aria-label={`${product.name} 상세 보기`}
                       >
                         <div className="flex min-h-[88px] gap-3 sm:h-[100px] sm:gap-4">
-                          <div className="flex size-[88px] shrink-0 items-center justify-center rounded-lg border border-border bg-surface p-2.5 shadow-[4px_4px_10px_rgba(250,247,243,0.25)] sm:size-[100px] sm:p-3">
+                          <div className="flex size-[88px] shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface shadow-[4px_4px_10px_rgba(250,247,243,0.25)] sm:size-[100px]">
                             {showImage ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={photoSrc!}
                                 alt={product.name}
-                                className="size-full object-contain"
+                                className="size-full object-cover"
                                 onError={() => handleImageError(product.id)}
                               />
                             ) : (

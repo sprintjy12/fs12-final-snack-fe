@@ -33,8 +33,12 @@ export default function ProductListPage() {
   const sortRef = useRef<HTMLDivElement>(null);
 
   // ── Search ──────────────────────────────────────────
-  const [searchInput, setSearchInput] = useState("");
-  const [committedSearch, setCommittedSearch] = useState("");
+  const searchParam = searchParams.get("search") ?? "";
+  const [searchInput, setSearchInput] = useState(searchParam);
+
+  useEffect(() => {
+    setSearchInput(searchParam);
+  }, [searchParam]);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,15 +50,26 @@ export default function ProductListPage() {
   const handleSearchSubmit = useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
-      setCommittedSearch(searchInput.trim());
+      const query = searchInput.trim();
+      const params = new URLSearchParams(searchParams.toString());
+      if (query) {
+        params.set("search", query);
+      } else {
+        params.delete("search");
+      }
+      const queryString = params.toString();
+      router.push(queryString ? `/products?${queryString}` : "/products");
     },
-    [searchInput],
+    [searchInput, searchParams, router],
   );
 
   const handleSearchClear = useCallback(() => {
     setSearchInput("");
-    setCommittedSearch("");
-  }, []);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("search");
+    const queryString = params.toString();
+    router.push(queryString ? `/products?${queryString}` : "/products");
+  }, [searchParams, router]);
 
   const categoryId = parseRouteId(searchParams.get("categoryId"));
   const subCategoryId = parseRouteId(searchParams.get("subCategoryId"));
@@ -66,9 +81,9 @@ export default function ProductListPage() {
       subCategoryId,
       page,
       pageSize: PAGE_SIZE,
-      ...(committedSearch ? { search: committedSearch } : {}),
+      ...(searchParam ? { search: searchParam } : {}),
     }),
-    [sort, categoryId, subCategoryId, page, committedSearch],
+    [sort, categoryId, subCategoryId, page, searchParam],
   );
 
   const {
@@ -82,7 +97,7 @@ export default function ProductListPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [sort, categoryId, subCategoryId, committedSearch]);
+  }, [sort, categoryId, subCategoryId, searchParam]);
 
   // 새 페이지 데이터가 오면 누적
   useEffect(() => {
@@ -124,7 +139,7 @@ export default function ProductListPage() {
 
   const resetFilters = () => {
     setSort("latest");
-    handleSearchClear();
+    setSearchInput("");
     router.push("/products");
   };
 
