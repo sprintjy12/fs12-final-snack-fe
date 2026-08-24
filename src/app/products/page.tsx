@@ -179,6 +179,7 @@ export default function ProductListPage() {
               placeholder="상품 검색"
               value={searchInput}
               onChange={handleSearchChange}
+              maxLength={20}
               autoComplete="off"
             />
             {searchInput ? (
@@ -210,7 +211,11 @@ export default function ProductListPage() {
                 {SORT_OPTIONS.map((option) => {
                   const selected = sort === option.value;
                   return (
-                    <li key={option.value} role="option" aria-selected={selected}>
+                    <li
+                      key={option.value}
+                      role="option"
+                      aria-selected={selected}
+                    >
                       <button
                         type="button"
                         className={[
@@ -274,7 +279,9 @@ export default function ProductListPage() {
           className={styles.fab}
           onClick={() => setRegisterOpen(true)}
         >
-          <span className={styles.fabIcon} aria-hidden="true">+</span>
+          <span className={styles.fabIcon} aria-hidden="true">
+            +
+          </span>
           <span>상품 등록</span>
         </button>
       </div>
