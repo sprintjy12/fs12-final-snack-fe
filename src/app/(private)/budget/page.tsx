@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { z } from "zod";
 
+import BudgetSectionTabs from "@/components/BudgetSectionTabs";
 import { Button, TextField, showToast } from "@/components/ui";
 import { useUpdateBudgetSettings } from "@/hooks/mutations/useUpdateBudgetSettings";
 import { useBudgetSettings } from "@/hooks/queries/useBudgetSettings";
@@ -240,6 +241,8 @@ export default function BudgetPage() {
           예산 관리
         </h1>
 
+        <BudgetSectionTabs />
+
         {isPending ? (
           <p className="mt-10 text-center text-foreground-muted md:mt-16">
             예산 설정을 불러오는 중…
@@ -257,7 +260,7 @@ export default function BudgetPage() {
         {!isPending && !isError && isFormReady ? (
           <form
             onSubmit={handleSubmit}
-            className="mt-10 flex w-full flex-col items-stretch md:mt-16"
+            className="mt-10 flex w-full flex-col items-stretch"
             noValidate
           >
             <div className="flex flex-col gap-4 border-y border-snack-gray-200 py-4 md:gap-8 md:py-8">

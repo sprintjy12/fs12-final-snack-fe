@@ -1,5 +1,6 @@
 import { apiClient } from "@/api/core/apiClient";
 import type {
+  MonthlyBudgetSummaryResponse,
   BudgetSettingsResponse,
   BudgetSummaryResponse,
   UpdateBudgetSettingsBody,
@@ -12,6 +13,18 @@ import type {
 export const getBudgetSummary = async (): Promise<BudgetSummaryResponse> => {
   const response = await apiClient.get<BudgetSummaryResponse>(
     "/api/budgets/summary",
+  );
+
+  return response.data;
+};
+
+/** 선택한 연월의 예산 및 카테고리별 지출 통계 */
+export const getMonthlyBudgetSummary = async (
+  yearMonth: string,
+): Promise<MonthlyBudgetSummaryResponse> => {
+  const response = await apiClient.get<MonthlyBudgetSummaryResponse>(
+    "/api/budgets/monthly-summary",
+    { params: { yearMonth } },
   );
 
   return response.data;
