@@ -178,7 +178,7 @@ export function Header({
             </Link>
 
             <nav className="hidden xl:block" aria-label="주요 메뉴">
-              <ul className="flex items-center gap-10">
+              <ul className="flex items-center gap-2">
                 {navItems.map((navigation) => {
                   const active = navigation.href === activeHref;
 
@@ -188,7 +188,7 @@ export function Header({
                         href={navigation.href}
                         aria-current={active ? "page" : undefined}
                         className={[
-                          "flex h-[88px] items-center whitespace-nowrap px-4 text-xl leading-8 font-bold",
+                          "flex items-center whitespace-nowrap px-4 py-[26px] text-xl leading-8 font-bold",
                           active ? "text-accent" : "text-snack-gray-400",
                         ].join(" ")}
                       >
@@ -248,7 +248,7 @@ export function Header({
                   "hidden text-xl leading-8 font-bold xl:inline",
                   pathname.startsWith("/profile")
                     ? "text-accent"
-                    : "text-snack-gray-300",
+                    : "text-snack-gray-400",
                 ].join(" ")}
               >
                 Profile
@@ -259,7 +259,7 @@ export function Header({
               <button
                 type="button"
                 onClick={onLogout}
-                className="hidden cursor-pointer bg-transparent text-xl leading-8 font-bold text-snack-gray-300 xl:block xl:px-4"
+                className="hidden cursor-pointer bg-transparent text-xl leading-8 font-bold text-snack-gray-400 xl:block xl:px-4"
               >
                 Logout
               </button>
