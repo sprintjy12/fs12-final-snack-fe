@@ -1,6 +1,5 @@
 "use client";
 
-// ===해당부분 현재 수정===
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { ensureAccessToken } from "@/api/authApi";
@@ -26,4 +25,3 @@ export const useRestoreUser = () => {
     },
   });
 };
-// ==================

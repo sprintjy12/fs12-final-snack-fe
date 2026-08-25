@@ -92,7 +92,6 @@ export const withdrawUser = async (
   return response.data;
 };
 
-// ===해당부분 현재 수정===
 /** 회원 복구 — PATCH /api/users/:userId/restore */
 export const restoreUser = async (
   userId: string,
@@ -103,7 +102,6 @@ export const restoreUser = async (
 
   return response.data;
 };
-// ==================
 
 /** 회원 권한 변경 — PATCH /api/users/:userId/role */
 export const updateUserRole = async (
