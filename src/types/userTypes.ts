@@ -54,6 +54,8 @@ export type UserListItem = {
   name: string;
   email: string;
   role: UserApiRole;
+  status: UserStatus;
+  withdrawnAt: string | null;
 };
 
 export type UserListPagination = {
@@ -78,6 +80,11 @@ export type GetUsersParams = {
 
 /** DELETE /api/users/:userId */
 export type WithdrawUserResponse = {
+  message: string;
+};
+
+/** PATCH /api/users/:userId/restore */
+export type RestoreUserResponse = {
   message: string;
 };
 
