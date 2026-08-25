@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { SORT_OPTIONS } from "@/constants/categoryConstants";
@@ -21,7 +21,7 @@ import styles from "./products.module.css";
 
 const PAGE_SIZE = 8;
 
-export default function ProductListPage() {
+function ProductListPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
@@ -213,5 +213,13 @@ export default function ProductListPage() {
         onCreated={handleProductCreated}
       />
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<ProductsSkeleton />}>
+      <ProductListPage />
+    </Suspense>
   );
 }
