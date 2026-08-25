@@ -1,0 +1,14 @@
+version: 0.0
+os: linux
+
+files:
+  - source: /
+    destination: /home/ec2-user/snack/frontend
+
+file_exists_behavior: OVERWRITE
+
+hooks:
+  ApplicationStart:
+    - location: scripts/codedeploy-frontend.sh
+      timeout: 900
+      runas: ec2-user
