@@ -9,12 +9,16 @@ type MemberMenuProps = {
   memberName: string;
   onChangeRole?: () => void;
   onWithdraw?: () => void;
+  withdrawn?: boolean;
+  onRestore?: () => void;
 };
 
 export function MemberMenu({
   memberName,
   onChangeRole,
   onWithdraw,
+  withdrawn = false,
+  onRestore,
 }: MemberMenuProps) {
   const [open, setOpen] = useState(false);
   const menuId = useId();
@@ -46,28 +50,44 @@ export function MemberMenu({
           aria-label={`${memberName} 작업`}
           className="absolute top-8 right-0 z-20 w-24 overflow-hidden rounded-lg bg-surface shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
         >
-          <button
-            type="button"
-            role="menuitem"
-            className="flex h-11 w-full cursor-pointer items-center justify-center bg-transparent text-sm leading-6 font-medium text-snack-black-200"
-            onClick={() => {
-              setOpen(false);
-              onWithdraw?.();
-            }}
-          >
-            계정 탈퇴
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className="flex h-11 w-full cursor-pointer items-center justify-center bg-transparent text-sm leading-6 font-medium text-snack-black-200"
-            onClick={() => {
-              setOpen(false);
-              onChangeRole?.();
-            }}
-          >
-            권한 변경
-          </button>
+          {withdrawn ? (
+            <button
+              type="button"
+              role="menuitem"
+              className="flex h-11 w-full cursor-pointer items-center justify-center bg-transparent text-sm leading-6 font-medium text-snack-state-100"
+              onClick={() => {
+                setOpen(false);
+                onRestore?.();
+              }}
+            >
+              계정 복구
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className="flex h-11 w-full cursor-pointer items-center justify-center bg-transparent text-sm leading-6 font-medium text-snack-black-200"
+                onClick={() => {
+                  setOpen(false);
+                  onWithdraw?.();
+                }}
+              >
+                계정 탈퇴
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="flex h-11 w-full cursor-pointer items-center justify-center bg-transparent text-sm leading-6 font-medium text-snack-black-200"
+                onClick={() => {
+                  setOpen(false);
+                  onChangeRole?.();
+                }}
+              >
+                권한 변경
+              </button>
+            </>
+          )}
         </div>
       ) : null}
     </div>
