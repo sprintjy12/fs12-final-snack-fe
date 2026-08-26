@@ -35,9 +35,11 @@ export default function ProductListPage() {
   // ── Search ──────────────────────────────────────────
   const searchParam = searchParams.get("search") ?? "";
   const [searchInput, setSearchInput] = useState(searchParam);
+  const [activeSearch, setActiveSearch] = useState(searchParam);
 
   useEffect(() => {
     setSearchInput(searchParam);
+    setActiveSearch(searchParam);
   }, [searchParam]);
 
   const handleSearchChange = useCallback(
@@ -58,6 +60,9 @@ export default function ProductListPage() {
         params.delete("search");
       }
       const queryString = params.toString();
+      setActiveSearch(query);
+      setPage(1);
+      setAccumulated([]);
       router.push(queryString ? `/products?${queryString}` : "/products");
     },
     [searchInput, searchParams, router],
@@ -65,9 +70,12 @@ export default function ProductListPage() {
 
   const handleSearchClear = useCallback(() => {
     setSearchInput("");
+    setActiveSearch("");
     const params = new URLSearchParams(searchParams.toString());
     params.delete("search");
     const queryString = params.toString();
+    setPage(1);
+    setAccumulated([]);
     router.push(queryString ? `/products?${queryString}` : "/products");
   }, [searchParams, router]);
 
@@ -81,9 +89,9 @@ export default function ProductListPage() {
       subCategoryId,
       page,
       pageSize: PAGE_SIZE,
-      ...(searchParam ? { search: searchParam } : {}),
+      ...(activeSearch ? { search: activeSearch } : {}),
     }),
-    [sort, categoryId, subCategoryId, page, searchParam],
+    [sort, categoryId, subCategoryId, page, activeSearch],
   );
 
   const {
@@ -97,7 +105,7 @@ export default function ProductListPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [sort, categoryId, subCategoryId, searchParam]);
+  }, [sort, categoryId, subCategoryId, activeSearch]);
 
   // 새 페이지 데이터가 오면 누적
   useEffect(() => {
