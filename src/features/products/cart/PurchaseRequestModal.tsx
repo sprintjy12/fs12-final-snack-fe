@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useId, useState, type FormEvent } from "react";
+import {
+    useEffect,
+    useId,
+    useState,
+    type ChangeEvent,
+    type FormEvent,
+} from "react";
 
 import { Icon, ModalShell } from "@/components/ui";
 import { getProductPhotoSrc } from "@/lib/productMedia";
@@ -8,6 +14,7 @@ import type { CartItem } from "@/lib/cartStorage";
 import type { Product } from "@/types/productTypes";
 
 type PurchaseRequestItem = CartItem & { product: Product };
+const MAX_REQUEST_MESSAGE_LENGTH = 500;
 
 export type PurchaseRequestModalProps = {
     open: boolean;
@@ -39,13 +46,27 @@ export function PurchaseRequestModal({
 }: PurchaseRequestModalProps) {
     const titleId = useId();
     const [message, setMessage] = useState("");
+    const [isMessageLimitExceeded, setIsMessageLimitExceeded] = useState(false);
 
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
     useEffect(() => {
         if (!open) return;
         setMessage("");
+        setIsMessageLimitExceeded(false);
     }, [open]);
+
+    const handleMessageChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+        const nextMessage = event.target.value;
+        if (nextMessage.length > MAX_REQUEST_MESSAGE_LENGTH) {
+            setMessage(nextMessage.slice(0, MAX_REQUEST_MESSAGE_LENGTH));
+            setIsMessageLimitExceeded(true);
+            return;
+        }
+
+        setMessage(nextMessage);
+        setIsMessageLimitExceeded(false);
+    };
 
     const handleSubmit = (event: FormEvent) => {
         event.preventDefault();
@@ -147,12 +168,45 @@ export function PurchaseRequestModal({
                     </label>
                     <textarea
                         id="purchase-request-message"
-                        className="min-h-28 w-full resize-y rounded-2xl border border-border bg-surface px-4 py-3 text-base leading-[26px] text-foreground-strong outline-none placeholder:text-snack-gray-300 focus:border-accent"
+                        aria-invalid={isMessageLimitExceeded}
+                        aria-describedby={
+                            isMessageLimitExceeded
+                                ? "purchase-request-message-error purchase-request-message-count"
+                                : "purchase-request-message-count"
+                        }
+                        className={[
+                            "min-h-28 w-full resize-y rounded-2xl border bg-surface px-4 py-3 text-base leading-[26px] text-foreground-strong outline-none placeholder:text-snack-gray-300",
+                            isMessageLimitExceeded
+                                ? "border-danger focus:border-danger"
+                                : "border-border focus:border-accent",
+                        ].join(" ")}
                         placeholder="요청 메시지를 입력해주세요."
                         value={message}
-                        onChange={(event) => setMessage(event.target.value)}
-                        maxLength={1000}
+                        onChange={handleMessageChange}
                     />
+                    <div className="flex min-h-6 items-start justify-between gap-3 text-sm leading-6">
+                        {isMessageLimitExceeded ? (
+                            <p
+                                id="purchase-request-message-error"
+                                role="alert"
+                                className="text-danger"
+                            >
+                                요청 메시지는 500자까지 입력할 수 있어요.
+                            </p>
+                        ) : (
+                            <span aria-hidden="true" />
+                        )}
+                        <p
+                            id="purchase-request-message-count"
+                            className={
+                                isMessageLimitExceeded
+                                    ? "shrink-0 text-danger"
+                                    : "shrink-0 text-foreground-muted"
+                            }
+                        >
+                            {message.length}/{MAX_REQUEST_MESSAGE_LENGTH}
+                        </p>
+                    </div>
                 </div>
 
                 <div className="flex gap-3">

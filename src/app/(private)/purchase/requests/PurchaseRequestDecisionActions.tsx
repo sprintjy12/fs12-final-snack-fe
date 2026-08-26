@@ -16,12 +16,15 @@ type PurchaseRequestDecisionActionsProps = {
   requestId: string;
   /** 예산 초과 시 승인 버튼 비활성화 */
   approveDisabled?: boolean;
+  /** 처리 완료 후에도 완료 모달 상태를 유지하고 버튼만 숨깁니다. */
+  showActions?: boolean;
 };
 
 /** 상세 페이지 하단 요청 반려/승인 버튼 + 폼 모달 */
 export function PurchaseRequestDecisionActions({
   requestId,
   approveDisabled = false,
+  showActions = true,
 }: PurchaseRequestDecisionActionsProps) {
   const fetchOrderRequestDetail = useFetchOrderRequestDetail();
   const [mode, setMode] = useState<PurchaseRequestDecisionMode | null>(null);
@@ -59,32 +62,34 @@ export function PurchaseRequestDecisionActions({
 
   return (
     <>
-      <div className="mt-8 flex w-full gap-3 md:mt-16 md:w-[696px] md:gap-5 xl:mt-6 xl:w-full xl:gap-[23px]">
-        <Button
-          type="button"
-          variant="muted"
-          width="full"
-          disabled={isOpening}
-          className="flex-1 text-sm leading-6 xl:text-xl xl:leading-8"
-          onClick={() => openModal("reject")}
-        >
-          요청 반려
-        </Button>
-        <Button
-          type="button"
-          width="full"
-          disabled={isOpening || approveDisabled}
-          className={[
-            "flex-1 text-center text-sm leading-6 xl:text-xl xl:leading-8",
-            approveDisabled
-              ? "border border-solid border-snack-gray-200 !bg-snack-background-400 !text-snack-gray-400 disabled:!opacity-100"
-              : "",
-          ].join(" ")}
-          onClick={() => openModal("approve")}
-        >
-          요청 승인
-        </Button>
-      </div>
+      {showActions ? (
+        <div className="mt-8 flex w-full gap-3 md:mt-16 md:w-[696px] md:gap-5 xl:mt-6 xl:w-full xl:gap-[23px]">
+          <Button
+            type="button"
+            variant="muted"
+            width="full"
+            disabled={isOpening}
+            className="flex-1 text-sm leading-6 xl:text-xl xl:leading-8"
+            onClick={() => openModal("reject")}
+          >
+            요청 반려
+          </Button>
+          <Button
+            type="button"
+            width="full"
+            disabled={isOpening || approveDisabled}
+            className={[
+              "flex-1 text-center text-sm leading-6 xl:text-xl xl:leading-8",
+              approveDisabled
+                ? "border border-solid border-snack-gray-200 !bg-snack-background-400 !text-snack-gray-400 disabled:!opacity-100"
+                : "",
+            ].join(" ")}
+            onClick={() => openModal("approve")}
+          >
+            요청 승인
+          </Button>
+        </div>
+      ) : null}
 
       <PurchaseRequestDecisionModal
         open={Boolean(mode && target)}
