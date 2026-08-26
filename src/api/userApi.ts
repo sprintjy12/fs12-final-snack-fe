@@ -8,6 +8,7 @@ import type {
   MyProfile,
   UpdateUserRolePayload,
   UpdateUserRoleResponse,
+  RestoreUserResponse,
   UserListResponse,
   WithdrawUserResponse,
 } from "@/types/userTypes";
@@ -86,6 +87,17 @@ export const withdrawUser = async (
 ): Promise<WithdrawUserResponse> => {
   const response = await apiClient.delete<WithdrawUserResponse>(
     `/api/users/${userId}`,
+  );
+
+  return response.data;
+};
+
+/** 회원 복구 — PATCH /api/users/:userId/restore */
+export const restoreUser = async (
+  userId: string,
+): Promise<RestoreUserResponse> => {
+  const response = await apiClient.patch<RestoreUserResponse>(
+    `/api/users/${userId}/restore`,
   );
 
   return response.data;

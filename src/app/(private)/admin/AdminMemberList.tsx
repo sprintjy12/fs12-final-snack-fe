@@ -10,17 +10,23 @@ import {
 } from "@/app/(private)/admin/ChangeMemberRoleModal";
 import { MemberMenu } from "@/app/(private)/admin/MemberMenu";
 import {
+  RestoreMemberModal,
+  type RestoreMemberTarget,
+} from "@/app/(private)/admin/RestoreMemberModal";
+import {
   WithdrawMemberModal,
   type WithdrawMemberTarget,
 } from "@/app/(private)/admin/WithdrawMemberModal";
 import { Pagination, type PaginationItem } from "@/components/ui";
-import type { UserApiRole, UserListItem } from "@/types/userTypes";
+import type { UserApiRole, UserListItem, UserStatus } from "@/types/userTypes";
 
 export type AdminMember = {
   id: string;
   name: string;
   email: string;
   role: MemberRole;
+  status: UserStatus;
+  withdrawnAt: string | null;
 };
 
 type AdminMemberListProps = {
@@ -42,6 +48,8 @@ export const mapUserToAdminMember = (user: UserListItem): AdminMember => ({
   name: user.name,
   email: user.email,
   role: mapUserRoleToMemberRole(user.role),
+  status: user.status,
+  withdrawnAt: user.withdrawnAt,
 });
 
 function RoleChip({ role, size }: { role: MemberRole; size: "sm" | "md" }) {
@@ -101,6 +109,8 @@ export function AdminMemberList({
   );
   const [withdrawTarget, setWithdrawTarget] =
     useState<WithdrawMemberTarget | null>(null);
+  const [restoreTarget, setRestoreTarget] =
+    useState<RestoreMemberTarget | null>(null);
 
   const openRoleModal = (member: AdminMember) => {
     setRoleTarget(member);
@@ -118,10 +128,21 @@ export function AdminMemberList({
     setWithdrawTarget(null);
   };
 
+  const openRestoreModal = (member: AdminMember) => {
+    setRestoreTarget(member);
+  };
+
+  const closeRestoreModal = () => {
+    setRestoreTarget(null);
+  };
+
   return (
     <>
       <ul className="mt-2 xl:mt-4" aria-label="회원 목록">
-        {members.map((member) => (
+        {members.map((member) => {
+          const withdrawn = member.status === "WITHDRAWN";
+
+          return (
           <li key={member.id} className="relative border-b border-border">
             {/* Mobile / Tablet 카드 */}
             <div className="flex items-center gap-3 py-5 xl:hidden">
@@ -139,8 +160,10 @@ export function AdminMemberList({
               </div>
               <MemberMenu
                 memberName={member.name}
+                withdrawn={withdrawn}
                 onChangeRole={() => openRoleModal(member)}
                 onWithdraw={() => openWithdrawModal(member)}
+                onRestore={() => openRestoreModal(member)}
               />
             </div>
 
@@ -166,27 +189,40 @@ export function AdminMemberList({
                   </div>
                   <div className="flex h-20 w-[250px] items-center justify-center">
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => openWithdrawModal(member)}
-                        className="cursor-pointer rounded-lg bg-snack-background-300 px-4 py-2 text-lg leading-[26px] font-medium text-snack-gray-500"
-                      >
-                        계정 탈퇴
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => openRoleModal(member)}
-                        className="cursor-pointer rounded-lg border border-accent bg-accent px-4 py-2 text-lg leading-[26px] font-semibold text-surface"
-                      >
-                        권한 변경
-                      </button>
+                      {withdrawn ? (
+                        <button
+                          type="button"
+                          onClick={() => openRestoreModal(member)}
+                          className="cursor-pointer rounded-lg bg-snack-state-100 px-4 py-2 text-lg leading-[26px] font-semibold text-surface"
+                        >
+                          계정 복구
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => openWithdrawModal(member)}
+                            className="cursor-pointer rounded-lg bg-snack-background-300 px-4 py-2 text-lg leading-[26px] font-medium text-snack-gray-500"
+                          >
+                            계정 탈퇴
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => openRoleModal(member)}
+                            className="cursor-pointer rounded-lg border border-accent bg-accent px-4 py-2 text-lg leading-[26px] font-semibold text-surface"
+                          >
+                            권한 변경
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       <Pagination
@@ -211,6 +247,12 @@ export function AdminMemberList({
         open={Boolean(withdrawTarget)}
         member={withdrawTarget}
         onClose={closeWithdrawModal}
+      />
+
+      <RestoreMemberModal
+        open={Boolean(restoreTarget)}
+        member={restoreTarget}
+        onClose={closeRestoreModal}
       />
     </>
   );
