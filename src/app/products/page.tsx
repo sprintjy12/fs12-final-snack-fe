@@ -102,11 +102,12 @@ export default function ProductListPage() {
   // 새 페이지 데이터가 오면 누적
   useEffect(() => {
     if (isLoading) return;
-    setAccumulated((prev) =>
-      page === 1 ? pageProducts : [...prev, ...pageProducts],
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageProducts, page]);
+    if (page === 1) {
+      setAccumulated(pageProducts);
+    } else {
+      setAccumulated((prev) => [...prev, ...pageProducts]);
+    }
+  }, [pageProducts, page, isLoading]);
 
   // 이번 페이지가 꽉 찬 8개면 다음 페이지가 있을 수 있다고 추정
   const hasMore = pageProducts.length === PAGE_SIZE;
@@ -254,14 +255,14 @@ export default function ProductListPage() {
           </div>
         </div>
 
-        {isLoading && page === 1 ? (
+        {isLoading || (isFetching && page === 1 && accumulated.length === 0) ? (
           <ProductsSkeleton />
         ) : isError ? (
           <ProductsEmpty
             title="상품을 불러오지 못했습니다"
             description="잠시 후 다시 시도해 주세요."
           />
-        ) : accumulated.length === 0 ? (
+        ) : accumulated.length === 0 && !isFetching ? (
           <ProductsEmpty onReset={resetFilters} />
         ) : (
           <>
