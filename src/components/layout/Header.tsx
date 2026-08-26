@@ -7,10 +7,7 @@ import { useState } from "react";
 
 import { MobileSidebar } from "@/components/layout/MobileSidebar";
 import { Icon } from "@/components/ui";
-import {
-  ALL_NAV_ITEMS,
-  type AppNavItem,
-} from "@/constants/accessControl";
+import { ALL_NAV_ITEMS, type AppNavItem } from "@/constants/accessControl";
 import {
   CATEGORY_MENU_ORDERED,
   findCategoryMenuItem,
@@ -131,8 +128,7 @@ export function Header({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const showCartBadge = cartCount > 0;
-  const isCartActive =
-    pathname === "/cart" || pathname.startsWith("/cart/");
+  const isCartActive = pathname === "/cart" || pathname.startsWith("/cart/");
   const activeHref = getActiveNavHref(navItems, pathname);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -160,7 +156,11 @@ export function Header({
               <Icon name="menu" size="sm" />
             </button>
 
-            <Link href="/products" aria-label="상품 리스트" className="shrink-0">
+            <Link
+              href="/products"
+              aria-label="상품 리스트"
+              className="shrink-0"
+            >
               <picture>
                 <source
                   media="(min-width: 1280px)"
@@ -205,9 +205,7 @@ export function Header({
             <Link
               href="/cart"
               aria-label={
-                showCartBadge
-                  ? `장바구니, 상품 ${cartCount}개`
-                  : "장바구니"
+                showCartBadge ? `장바구니, 상품 ${cartCount}개` : "장바구니"
               }
               aria-current={isCartActive ? "page" : undefined}
               className={[
@@ -239,8 +237,15 @@ export function Header({
             <Link
               href="/profile"
               aria-label="프로필"
-              aria-current={pathname.startsWith("/profile") ? "page" : undefined}
-              className="xl:px-4"
+              aria-current={
+                pathname.startsWith("/profile") ? "page" : undefined
+              }
+              className={[
+                "flex items-center xl:px-4",
+                pathname.startsWith("/profile")
+                  ? "text-accent"
+                  : "text-snack-gray-400",
+              ].join(" ")}
             >
               <Icon name="profile" size="sm" className="xl:hidden" />
               <span
@@ -277,8 +282,7 @@ export function Header({
                 const routeId = categoryRouteId(category);
                 const isActive =
                   categoryId !== undefined &&
-                  (category.id === categoryId ||
-                    category.apiId === categoryId);
+                  (category.id === categoryId || category.apiId === categoryId);
 
                 return (
                   <Link
@@ -311,8 +315,7 @@ export function Header({
                   const subRouteId = sub.apiId;
                   const isActive =
                     subCategoryId !== undefined &&
-                    (sub.id === subCategoryId ||
-                      sub.apiId === subCategoryId);
+                    (sub.id === subCategoryId || sub.apiId === subCategoryId);
 
                   return (
                     <Link
