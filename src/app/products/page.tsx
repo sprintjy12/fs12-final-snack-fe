@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -54,7 +52,6 @@ export default function ProductListPage() {
       e.preventDefault();
       const query = searchInput.trim();
       const params = new URLSearchParams(searchParams.toString());
-      params.delete("page");
       if (query) {
         params.set("search", query);
       } else {
@@ -69,7 +66,6 @@ export default function ProductListPage() {
   const handleSearchClear = useCallback(() => {
     setSearchInput("");
     const params = new URLSearchParams(searchParams.toString());
-    params.delete("page");
     params.delete("search");
     const queryString = params.toString();
     router.push(queryString ? `/products?${queryString}` : "/products");
@@ -109,7 +105,8 @@ export default function ProductListPage() {
     setAccumulated((prev) =>
       page === 1 ? pageProducts : [...prev, ...pageProducts],
     );
-  }, [pageProducts, page, isLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageProducts, page]);
 
   // 이번 페이지가 꽉 찬 8개면 다음 페이지가 있을 수 있다고 추정
   const hasMore = pageProducts.length === PAGE_SIZE;
