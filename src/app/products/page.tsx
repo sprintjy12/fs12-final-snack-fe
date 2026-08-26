@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -56,7 +54,6 @@ export default function ProductListPage() {
       e.preventDefault();
       const query = searchInput.trim();
       const params = new URLSearchParams(searchParams.toString());
-      params.delete("page");
       if (query) {
         params.set("search", query);
       } else {
@@ -75,7 +72,6 @@ export default function ProductListPage() {
     setSearchInput("");
     setActiveSearch("");
     const params = new URLSearchParams(searchParams.toString());
-    params.delete("page");
     params.delete("search");
     const queryString = params.toString();
     setPage(1);
