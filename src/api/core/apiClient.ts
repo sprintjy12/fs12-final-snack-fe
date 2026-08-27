@@ -1,8 +1,29 @@
-import axios from "axios";
+import axios, {
+  type AxiosError,
+  type InternalAxiosRequestConfig,
+} from "axios";
 
-import { getAccessToken } from "@/lib/authStorage";
+import { refreshAccessToken } from "@/api/core/refreshAccessToken";
+import { clearAccessToken, getAccessToken } from "@/lib/authStorage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
+type RetryableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
+
+const shouldSkipAuthRefresh = (url: string | undefined) => {
+  if (!url) {
+    return false;
+  }
+
+  return (
+    url.includes("/api/auth/login") ||
+    url.includes("/api/auth/logout") ||
+    url.includes("/api/auth/refresh") ||
+    url.includes("/api/auth/super-admin/signup")
+  );
+};
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -25,3 +46,30 @@ apiClient.interceptors.request.use((config) => {
   }
   return config;
 });
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const original = error.config as RetryableRequestConfig | undefined;
+
+    if (
+      !original ||
+      error.response?.status !== 401 ||
+      original._retry ||
+      shouldSkipAuthRefresh(original.url)
+    ) {
+      return Promise.reject(error);
+    }
+
+    original._retry = true;
+
+    try {
+      const token = await refreshAccessToken();
+      original.headers.Authorization = `Bearer ${token}`;
+      return apiClient.request(original);
+    } catch {
+      clearAccessToken();
+      return Promise.reject(error);
+    }
+  },
+);
