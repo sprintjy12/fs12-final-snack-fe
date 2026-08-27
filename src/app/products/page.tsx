@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -35,9 +37,11 @@ export default function ProductListPage() {
   // ── Search ──────────────────────────────────────────
   const searchParam = searchParams.get("search") ?? "";
   const [searchInput, setSearchInput] = useState(searchParam);
+  const [activeSearch, setActiveSearch] = useState(searchParam);
 
   useEffect(() => {
     setSearchInput(searchParam);
+    setActiveSearch(searchParam);
   }, [searchParam]);
 
   const handleSearchChange = useCallback(
@@ -58,6 +62,9 @@ export default function ProductListPage() {
         params.delete("search");
       }
       const queryString = params.toString();
+      setActiveSearch(query);
+      setPage(1);
+      setAccumulated([]);
       router.push(queryString ? `/products?${queryString}` : "/products");
     },
     [searchInput, searchParams, router],
@@ -65,9 +72,12 @@ export default function ProductListPage() {
 
   const handleSearchClear = useCallback(() => {
     setSearchInput("");
+    setActiveSearch("");
     const params = new URLSearchParams(searchParams.toString());
     params.delete("search");
     const queryString = params.toString();
+    setPage(1);
+    setAccumulated([]);
     router.push(queryString ? `/products?${queryString}` : "/products");
   }, [searchParams, router]);
 
@@ -81,9 +91,9 @@ export default function ProductListPage() {
       subCategoryId,
       page,
       pageSize: PAGE_SIZE,
-      ...(searchParam ? { search: searchParam } : {}),
+      ...(activeSearch ? { search: activeSearch } : {}),
     }),
-    [sort, categoryId, subCategoryId, page, searchParam],
+    [sort, categoryId, subCategoryId, page, activeSearch],
   );
 
   const {
@@ -97,16 +107,17 @@ export default function ProductListPage() {
   useEffect(() => {
     setPage(1);
     setAccumulated([]);
-  }, [sort, categoryId, subCategoryId, searchParam]);
+  }, [sort, categoryId, subCategoryId, activeSearch]);
 
   // 새 페이지 데이터가 오면 누적
   useEffect(() => {
     if (isLoading) return;
-    setAccumulated((prev) =>
-      page === 1 ? pageProducts : [...prev, ...pageProducts],
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageProducts, page]);
+    if (page === 1) {
+      setAccumulated(pageProducts);
+    } else {
+      setAccumulated((prev) => [...prev, ...pageProducts]);
+    }
+  }, [pageProducts, page, isLoading]);
 
   // 이번 페이지가 꽉 찬 8개면 다음 페이지가 있을 수 있다고 추정
   const hasMore = pageProducts.length === PAGE_SIZE;
@@ -254,14 +265,14 @@ export default function ProductListPage() {
           </div>
         </div>
 
-        {isLoading && page === 1 ? (
+        {isLoading || (isFetching && page === 1 && accumulated.length === 0) ? (
           <ProductsSkeleton />
         ) : isError ? (
           <ProductsEmpty
             title="상품을 불러오지 못했습니다"
             description="잠시 후 다시 시도해 주세요."
           />
-        ) : accumulated.length === 0 ? (
+        ) : accumulated.length === 0 && !isFetching ? (
           <ProductsEmpty onReset={resetFilters} />
         ) : (
           <>
