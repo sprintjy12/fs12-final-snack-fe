@@ -12,6 +12,7 @@ import {
   buildPaginationItems,
 } from "@/components/ui";
 import { useMyProducts } from "@/hooks/queries/useMyProducts";
+import { useUrlPage } from "@/hooks/useUrlPage";
 import { getProductPhotoSrc } from "@/lib/productMedia";
 import type {
   MyProductListItem,
@@ -80,8 +81,8 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
 export default function MyProductsPage() {
   const router = useRouter();
+  const { page, setPage } = useUrlPage();
   const [sort, setSort] = useState<SortValue>("latest");
-  const [page, setPage] = useState(1);
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -376,13 +377,9 @@ export default function MyProductsPage() {
                   currentPage={String(currentPage)}
                   previousDisabled={currentPage <= 1}
                   nextDisabled={currentPage >= totalPages}
-                  onPrevious={() =>
-                    setPage((current) => Math.max(1, current - 1))
-                  }
+                  onPrevious={() => setPage(Math.max(1, page - 1))}
                   onNext={() =>
-                    setPage((current) =>
-                      current < totalPages ? current + 1 : current,
-                    )
+                    setPage(page < totalPages ? page + 1 : page)
                   }
                   onPageSelect={(selected) => {
                     const nextPage = Number(selected);

@@ -17,6 +17,7 @@ import {
 } from "@/app/(private)/admin/AdminMemberList";
 import { EmptyState, Icon, buildPaginationItems } from "@/components/ui";
 import { useUsers } from "@/hooks/queries/useUsers";
+import { useUrlPage } from "@/hooks/useUrlPage";
 
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 300;
@@ -35,7 +36,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 export default function AdminPage() {
-  const [page, setPage] = useState(1);
+  const { page, setPage } = useUrlPage();
   const [nameInput, setNameInput] = useState("");
   const [name, setName] = useState("");
 
@@ -222,12 +223,8 @@ export default function AdminPage() {
                   currentPage={String(currentPage)}
                   previousDisabled={currentPage <= 1}
                   nextDisabled={!hasNextPage}
-                  onPrevious={() =>
-                    setPage((current) => Math.max(1, current - 1))
-                  }
-                  onNext={() =>
-                    setPage((current) => (hasNextPage ? current + 1 : current))
-                  }
+                  onPrevious={() => setPage(Math.max(1, page - 1))}
+                  onNext={() => setPage(hasNextPage ? page + 1 : page)}
                   onPageSelect={(selected) => {
                     const nextPage = Number(selected);
                     if (Number.isInteger(nextPage) && nextPage > 0) {

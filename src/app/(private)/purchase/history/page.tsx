@@ -12,6 +12,7 @@ import {
 } from "@/components/ui";
 import { useBudgetSummary } from "@/hooks/queries/useBudgetSummary";
 import { useOrders } from "@/hooks/queries/useOrders";
+import { useUrlPage } from "@/hooks/useUrlPage";
 import type { BudgetSummaryData } from "@/types/budgetTypes";
 import type { OrderListItem, OrderListSort } from "@/types/orderTypes";
 
@@ -97,7 +98,7 @@ const formatProductName = (order: OrderListItem) => {
 };
 
 export default function PurchaseHistoryPage() {
-  const [page, setPage] = useState(1);
+  const { page, setPage } = useUrlPage();
   const [sort, setSort] = useState<OrderListSort>("latest");
 
   const { data, isPending, isError, error } = useOrders({
@@ -336,11 +337,9 @@ export default function PurchaseHistoryPage() {
               previousDisabled={(pagination?.currentPage ?? page) <= 1}
               nextDisabled={!pagination?.hasNextPage}
               collapseMiddlePages
-              onPrevious={() => setPage((current) => Math.max(1, current - 1))}
+              onPrevious={() => setPage(Math.max(1, page - 1))}
               onNext={() =>
-                setPage((current) =>
-                  pagination?.hasNextPage ? current + 1 : current,
-                )
+                setPage(pagination?.hasNextPage ? page + 1 : page)
               }
               onPageSelect={(selected) => {
                 const nextPage = Number(selected);

@@ -11,6 +11,7 @@ import {
   buildPaginationItems,
 } from "@/components/ui";
 import { useOrderRequests } from "@/hooks/queries/useOrderRequests";
+import { useUrlPage } from "@/hooks/useUrlPage";
 import type { OrderRequestListSort } from "@/types/orderTypes";
 
 const PAGE_SIZE = 10;
@@ -29,7 +30,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 };
 
 export default function PurchaseRequestsPage() {
-  const [page, setPage] = useState(1);
+  const { page, setPage } = useUrlPage();
   const [sort, setSort] = useState<OrderRequestListSort>("latest");
 
   const { data, isPending, isError, error } = useOrderRequests({
@@ -109,13 +110,9 @@ export default function PurchaseRequestsPage() {
                 currentPage={String(pagination?.currentPage ?? page)}
                 previousDisabled={(pagination?.currentPage ?? page) <= 1}
                 nextDisabled={!pagination?.hasNextPage}
-                onPrevious={() =>
-                  setPage((current) => Math.max(1, current - 1))
-                }
+                onPrevious={() => setPage(Math.max(1, page - 1))}
                 onNext={() =>
-                  setPage((current) =>
-                    pagination?.hasNextPage ? current + 1 : current,
-                  )
+                  setPage(pagination?.hasNextPage ? page + 1 : page)
                 }
                 onPageSelect={(selected) => {
                   const nextPage = Number(selected);

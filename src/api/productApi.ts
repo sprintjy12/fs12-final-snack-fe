@@ -3,6 +3,7 @@ import {
   findCategoryMenuItem,
   resolveApiLeafCategoryId,
   resolveApiParentCategoryId,
+  sortCategoryMenuByDisplayOrder,
   type CategoryMenuItem,
 } from "@/constants/categoryConstants";
 import { setRuntimeCategoryMenu } from "@/lib/categoryMenuRegistry";
@@ -107,17 +108,19 @@ function mapBeProduct(product: BeProduct): Product {
 }
 
 function buildMenuFromBe(nodes: BeCategoryTreeNode[]): CategoryMenuItem[] {
-  return nodes.map((parent) => ({
-    id: parent.id,
-    apiId: parent.id,
-    name: parent.name,
-    subCategories: (parent.children ?? []).map((child) => ({
-      id: child.id,
-      apiId: child.id,
-      name: child.name,
-      categoryId: parent.id,
+  return sortCategoryMenuByDisplayOrder(
+    nodes.map((parent) => ({
+      id: parent.id,
+      apiId: parent.id,
+      name: parent.name,
+      subCategories: (parent.children ?? []).map((child) => ({
+        id: child.id,
+        apiId: child.id,
+        name: child.name,
+        categoryId: parent.id,
+      })),
     })),
-  }));
+  );
 }
 
 /** 목록 category에 parent가 없으면 parentId로 상위 이름을 채웁니다. */
