@@ -262,13 +262,13 @@ export function PurchaseRequestDecisionModal({
                         >
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex min-w-0 items-start gap-4">
-                              <div className="flex size-16 shrink-0 items-center justify-center rounded-lg border border-solid border-border bg-surface-muted shadow-[4px_4px_10px_rgba(250,247,243,0.25)] xl:size-20">
+                              <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-solid border-border bg-surface-muted shadow-[4px_4px_10px_rgba(250,247,243,0.25)] xl:size-20">
                                 {item.imageSrc ? (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img
                                     src={item.imageSrc}
                                     alt=""
-                                    className="h-[49px] w-7 object-contain"
+                                    className="size-full object-cover"
                                     onError={(event) => {
                                       event.currentTarget.src =
                                         "/images/purchase-history-product.png";

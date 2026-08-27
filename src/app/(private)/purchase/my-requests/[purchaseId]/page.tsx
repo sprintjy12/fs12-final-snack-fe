@@ -73,13 +73,13 @@ export default function MyRequestDetailPage() {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 xl:gap-4">
-                          <div className="flex size-16 shrink-0 items-center justify-center rounded-lg border border-solid border-border bg-surface-muted shadow-[4px_4px_10px_rgba(250,247,243,0.25)] xl:size-20">
+                          <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-solid border-border bg-surface-muted shadow-[4px_4px_10px_rgba(250,247,243,0.25)] xl:size-20">
                             {product.imageUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={product.imageUrl}
                                 alt=""
-                                className="h-[39px] w-[22px] object-contain xl:h-[49px] xl:w-7"
+                                className="size-full object-cover"
                                 onError={(event) => {
                                   event.currentTarget.src = PLACEHOLDER_IMAGE;
                                 }}

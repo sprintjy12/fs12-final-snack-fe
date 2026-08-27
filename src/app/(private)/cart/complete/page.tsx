@@ -146,7 +146,7 @@ function CartPurchaseCompleteContent() {
                   <img
                     src={summary.imageSrc}
                     alt=""
-                    className="max-h-full max-w-full object-contain"
+                    className="size-full object-cover"
                     onError={() => setImageFailed(true)}
                   />
                 ) : (

@@ -1,0 +1,31 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches:
+      - dev
+
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::823633849268:role/snack-frontend-github-actions-role
+          aws-region: ap-northeast-2
+
+      - name: Deploy with CodeDeploy
+        run: |
+          aws deploy create-deployment \
+            --application-name snack-frontend \
+            --deployment-group-name snack-frontend-group \
+            --github-location repository=sprintjy12/fs12-final-snack-fe,commitId=${{ github.sha }} \
+            --file-exists-behavior OVERWRITE

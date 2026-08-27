@@ -501,7 +501,7 @@ export default function CartPage() {
                                 <img
                                   src={photoSrc!}
                                   alt=""
-                                  className="relative h-auto max-h-[98px] w-14 object-contain"
+                                  className="size-full object-cover"
                                   onError={() => markImageFailed(item.id)}
                                 />
                               ) : null}
@@ -587,7 +587,7 @@ export default function CartPage() {
                                 <img
                                   src={photoSrc!}
                                   alt=""
-                                  className="h-auto max-h-12 w-8 object-contain"
+                                  className="size-full object-cover"
                                   onError={() => markImageFailed(item.id)}
                                 />
                               ) : null}
