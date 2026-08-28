@@ -77,10 +77,15 @@ export const parseAccessTokenFromBody = (body: unknown): string | null => {
   return accessToken;
 };
 
+type InFlightRefresh = {
+  generation: number;
+  promise: Promise<string>;
+};
+
 let authGeneration = 0;
 let loggedOut = false;
 let refreshAbortController: AbortController | null = null;
-let inFlightRefresh: Promise<string> | null = null;
+let inFlightRefresh: InFlightRefresh | null = null;
 let didBindStorageListener = false;
 
 export const getAuthGeneration = () => authGeneration;
@@ -131,17 +136,14 @@ const handleAuthStorageEvent = (event: StorageEvent) => {
     return;
   }
 
-  if (event.key !== ACCESS_TOKEN_KEY) {
+  // Access Token 삭제만으로는 logout이 아닙니다.
+  // Refresh Cookie가 살아 있으면 이 탭에서 refresh로 복구할 수 있어야 합니다.
+  if (event.key !== ACCESS_TOKEN_KEY || !event.newValue) {
     return;
   }
 
-  if (event.newValue === null) {
-    invalidateAuthSession({ broadcast: false });
-    return;
-  }
-
-  // 다른 탭이 로그인·refresh로 새 토큰을 저장함. 불필요한 refresh를 막기 위해
-  // loggedOut만 해제하고, in-flight는 abort하지 않습니다. (락 대기 후 토큰 재사용)
+  // 다른 탭이 로그인·refresh로 새 토큰을 저장함.
+  // 명시적 logout 이후에만 loggedOut이 true이므로, 그때만 해제합니다.
   loggedOut = false;
 };
 
@@ -345,8 +347,11 @@ export const refreshAccessToken = (): Promise<string> => {
     return Promise.reject(new AuthSessionInvalidatedError());
   }
 
-  if (inFlightRefresh) {
-    return inFlightRefresh;
+  if (
+    inFlightRefresh &&
+    inFlightRefresh.generation === authGeneration
+  ) {
+    return inFlightRefresh.promise;
   }
 
   const existing = getAccessToken();
@@ -358,7 +363,7 @@ export const refreshAccessToken = (): Promise<string> => {
   const controller = new AbortController();
   refreshAbortController = controller;
 
-  inFlightRefresh = (async () => {
+  const promise = (async () => {
     return withCrossTabRefreshLock(
       () => requestNewAccessToken(generation, controller.signal),
       controller.signal,
@@ -367,8 +372,12 @@ export const refreshAccessToken = (): Promise<string> => {
     if (refreshAbortController === controller) {
       refreshAbortController = null;
     }
-    inFlightRefresh = null;
+    // 세션이 바뀐 뒤 새 refresh가 슬롯을 차지했으면 건드리지 않습니다.
+    if (inFlightRefresh?.promise === promise) {
+      inFlightRefresh = null;
+    }
   });
 
-  return inFlightRefresh;
+  inFlightRefresh = { generation, promise };
+  return promise;
 };
