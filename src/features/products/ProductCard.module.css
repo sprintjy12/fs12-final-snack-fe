@@ -1,4 +1,4 @@
-﻿/* Figma DS: Card/상품리스트 md — node 1:10544
+/* Figma DS: Card/상품리스트 md — node 1:10544
  * bg #FBF8F4, gap 24
  * thumb white radius 20
  * meta: 소분류(#999) | 뱃지(illustration-02 + orange-400)
@@ -40,11 +40,9 @@
 }
 
 .image {
-  width: auto;
-  max-width: 45%;
-  height: auto;
-  max-height: 70%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .placeholder {

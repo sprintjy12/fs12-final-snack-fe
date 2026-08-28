@@ -160,12 +160,14 @@ async function fetchBeProductPage(params: {
   sort?: ProductListParams["sort"];
   page?: number;
   pageSize?: number;
+  search?: string;
 }): Promise<Product[]> {
   const response = await apiClient.get<BeListResponse>("/api/products", {
     params: {
       ...(params.categoryId ? { categoryId: params.categoryId } : {}),
       ...(params.sort ? { sort: params.sort } : {}),
       ...(params.page !== undefined ? { page: params.page } : {}),
+      ...(params.search ? { search: params.search } : {}),
       limit: params.pageSize ?? 8,
     },
   });
@@ -214,6 +216,7 @@ export async function getProducts(
     sort: params.sort,
     page: params.page,
     pageSize: params.pageSize ?? 8,
+    search: params.search,
   });
 }
 

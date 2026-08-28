@@ -3,7 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import {
   BELOW_HEADER_MIN_H,
@@ -45,10 +45,13 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const hasToken = Boolean(getAccessToken());
+  // SSR·클라 첫 렌더는 토큰 없음으로 맞춰 hydration mismatch 방지
+  const [hasToken, setHasToken] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const protectedPath = isProtectedPath(pathname);
   const exemptPath = isGuardExemptPath(pathname);
-  const shouldFetchProfile = protectedPath && !exemptPath && hasToken;
+  const shouldFetchProfile =
+    authReady && protectedPath && !exemptPath && hasToken;
 
   const { data: profile, isPending, isError, error, refetch, isFetching } =
     useMyProfile({ enabled: shouldFetchProfile });
@@ -64,7 +67,12 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
     error.response?.status === 403;
 
   useEffect(() => {
-    if (exemptPath || !protectedPath) {
+    setHasToken(Boolean(getAccessToken()));
+    setAuthReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!authReady || exemptPath || !protectedPath) {
       return;
     }
 
@@ -93,6 +101,7 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
 
     // 권한 없음·5xx/네트워크 오류: URL 유지, 아래 render에서 fallback UI
   }, [
+    authReady,
     exemptPath,
     protectedPath,
     hasToken,
@@ -109,7 +118,7 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
     if (exemptPath || !protectedPath) {
       return "pass";
     }
-    if (!hasToken || isPending || isUnauthorized) {
+    if (!authReady || !hasToken || isPending || isUnauthorized) {
       return "waiting";
     }
     if (isForbidden) {

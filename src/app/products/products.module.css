@@ -1,4 +1,4 @@
-﻿/* Figma 상품 리스트 화면: Background/Background-400 — 높이는 콘텐츠에 맞춤 */
+/* Figma 상품 리스트 화면: Background/Background-400 — 높이는 콘텐츠에 맞춤 */
 
 .page {
   width: 100%;
@@ -20,8 +20,9 @@
 
 .toolbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
 
 .sort {
@@ -217,6 +218,10 @@
 }
 
 @media (max-width: 768px) {
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
   .inner {
     gap: 32px;
     /* FAB(52px) + bottom offset + safe spacing */
