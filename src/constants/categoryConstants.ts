@@ -154,7 +154,7 @@ export const CATEGORY_DISPLAY_ORDER = [
 export function sortCategoryMenuByDisplayOrder(
   items: CategoryMenuItem[],
 ): CategoryMenuItem[] {
-  const rank = new Map(
+  const rank = new Map<string, number>(
     CATEGORY_DISPLAY_ORDER.map((name, index) => [name, index]),
   );
 
