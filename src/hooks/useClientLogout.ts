@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 
 import { logout } from "@/api/authApi";
+import { invalidateAuthSession } from "@/api/core/refreshAccessToken";
 import { queryKeys } from "@/constants/queryKeys";
 import { clearAccessToken } from "@/lib/authStorage";
 
@@ -47,9 +48,10 @@ export const clearAuthUserQueries = async (queryClient: QueryClient) => {
 
 /**
  * access token + 인증 사용자 캐시 정리 (logout API 호출 없음).
- * 순서: cancel → token 제거 → remove
+ * 순서: in-flight refresh 취소 → cancel → token 제거 → remove
  */
 export const clearClientSession = async (queryClient: QueryClient) => {
+  invalidateAuthSession();
   await cancelAuthUserQueries(queryClient);
   clearAccessToken();
   removeAuthUserQueries(queryClient);
@@ -57,9 +59,10 @@ export const clearClientSession = async (queryClient: QueryClient) => {
 
 /**
  * 클라이언트 로그아웃.
- * 순서: cancel → logout API(토큰 정리) → remove
+ * 순서: in-flight refresh 취소 → cancel queries → logout API(토큰 정리) → remove
  */
 export const performClientLogout = async (queryClient: QueryClient) => {
+  invalidateAuthSession();
   await cancelAuthUserQueries(queryClient);
 
   try {

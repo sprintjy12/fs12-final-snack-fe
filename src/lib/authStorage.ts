@@ -1,4 +1,4 @@
-const ACCESS_TOKEN_KEY = "snack_access_token";
+export const ACCESS_TOKEN_KEY = "snack_access_token";
 
 /** 브라우저에 저장된 access token을 읽습니다. */
 export const getAccessToken = () => {
@@ -21,7 +21,7 @@ export const clearAccessToken = () => {
 
 /**
  * JWT exp를 클라이언트에서만 확인합니다. (서명 검증 없음)
- * 만료·파싱 실패 시 false → 재로그인 유도.
+ * 만료 30초 전이면 false → ensureAccessToken / 인터셉터가 refresh 합니다.
  */
 export const isAccessTokenValid = (token: string) => {
   try {

@@ -1,5 +1,11 @@
 import { apiClient } from "@/api/core/apiClient";
 import {
+  beginAuthSession,
+  invalidateAuthSession,
+  parseAccessTokenFromBody,
+  refreshAccessToken,
+} from "@/api/core/refreshAccessToken";
+import {
   clearAccessToken,
   getAccessToken,
   isAccessTokenValid,
@@ -30,33 +36,6 @@ type LoginResponse = {
   };
 };
 
-/** 로그인 JSON에서 비어 있지 않은 accessToken만 꺼냅니다. */
-const getAccessTokenFromLoginBody = (body: unknown): string | null => {
-  if (!body || typeof body !== "object") {
-    return null;
-  }
-
-  if (!("data" in body)) {
-    return null;
-  }
-
-  const { data } = body as { data: unknown };
-  if (!data || typeof data !== "object") {
-    return null;
-  }
-
-  if (!("accessToken" in data)) {
-    return null;
-  }
-
-  const { accessToken } = data as { accessToken: unknown };
-  if (typeof accessToken !== "string" || accessToken.trim() === "") {
-    return null;
-  }
-
-  return accessToken;
-};
-
 const getMessageFromBody = (body: unknown): string | undefined => {
   if (!body || typeof body !== "object") {
     return undefined;
@@ -78,9 +57,10 @@ const getMessageFromBody = (body: unknown): string | undefined => {
  * API 호출 전 access token을 확보합니다.
  *
  * 1) 유효한 토큰이 있으면 그대로 반환
- * 2) 없거나 만료면 정리 후, **개발 + NEXT_PUBLIC_ENABLE_DEV_LOGIN=true** 일 때만
+ * 2) 없거나 만료면 POST /api/auth/refresh (httpOnly 쿠키)로 재발급
+ * 3) 재발급 실패 시, **개발 + NEXT_PUBLIC_ENABLE_DEV_LOGIN=true** 일 때만
  *    `/api/fe-auth/dev-login`으로 자동 발급 (로컬 편의용)
- * 3) 그 외(프로덕션·플래그 미설정)에는 자동 로그인하지 않고 에러
+ * 4) 그 외에는 토큰을 지우고 에러
  *
  * RouteGuard의 "비로그인 → /login"과 충돌하지 않도록,
  * 기본값에서는 dev-login을 수행하지 않습니다.
@@ -92,8 +72,10 @@ export const ensureAccessToken = async () => {
     return existing;
   }
 
-  if (existing) {
-    clearAccessToken();
+  try {
+    return await refreshAccessToken();
+  } catch {
+    // refresh 쿠키가 없거나 만료된 경우 아래로 이어갑니다.
   }
 
   // production/test/staging 및 플래그 미설정 시 자동 로그인 금지
@@ -102,6 +84,7 @@ export const ensureAccessToken = async () => {
     process.env.NEXT_PUBLIC_ENABLE_DEV_LOGIN === "true";
 
   if (!allowDevLogin) {
+    clearAccessToken();
     throw new Error("로그인이 필요합니다.");
   }
 
@@ -112,28 +95,32 @@ export const ensureAccessToken = async () => {
   const body: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
+    clearAccessToken();
     throw new Error(
       getMessageFromBody(body) ??
         "로그인이 필요합니다. .env의 DEV_LOGIN_EMAIL/PASSWORD와 백엔드 서버를 확인하세요.",
     );
   }
 
-  const token = getAccessTokenFromLoginBody(body);
+  const token = parseAccessTokenFromBody(body);
   if (!token) {
+    clearAccessToken();
     throw new Error("로그인 응답에 accessToken이 없습니다.");
   }
 
+  beginAuthSession();
   setAccessToken(token);
   return token;
 };
 
 export const login = async (payload: LoginPayload) => {
   const response = await apiClient.post<LoginResponse>("/api/auth/login", payload);
-  const token = getAccessTokenFromLoginBody(response.data);
+  const token = parseAccessTokenFromBody(response.data);
   if (!token) {
     throw new Error("로그인 응답에 accessToken이 없습니다.");
   }
 
+  beginAuthSession();
   setAccessToken(token);
   return response.data;
 };
@@ -233,9 +220,13 @@ export const createInvitation = async (payload: CreateInvitationPayload) => {
  * 로그아웃 — POST /api/auth/logout
  * BE가 refreshToken DB 삭제 + refreshToken 쿠키 clearCookie 처리.
  * access token은 응답과 무관하게 항상 제거합니다.
+ * in-flight refresh는 쿠키 삭제 요청보다 먼저 취소해, 늦게 온 응답이
+ * Access Token을 다시 심지 못하게 합니다.
  * @see fs12-final-snack-be/src/controllers/authController.ts
  */
 export const logout = async () => {
+  invalidateAuthSession();
+
   try {
     await apiClient.post("/api/auth/logout");
   } catch {
