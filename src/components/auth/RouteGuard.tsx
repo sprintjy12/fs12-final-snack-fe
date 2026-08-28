@@ -24,6 +24,14 @@ type RouteGuardProps = {
 };
 
 /**
+ * 렌더 판단 결과: 렌더는 이 값 하나로만 분기합니다(다른 조건 재확인 없음).
+ * - pass: children 그대로 통과
+ * - waiting: 리다이렉트 대기 중 — 위 useEffect가 처리, 여기서는 아무것도 렌더하지 않음
+ * - forbidden / error: 각각의 fallback 컴포넌트 렌더
+ */
+type GuardState = "pass" | "waiting" | "forbidden" | "error";
+
+/**
  * path 정책(accessControl) 기준 인증·인가 가드.
  * - 비보호/면제 경로: 통과
  * - 보호 + 비로그인: /login
@@ -95,53 +103,57 @@ export const RouteGuard = ({ children }: RouteGuardProps) => {
     queryClient,
   ]);
 
-  if (exemptPath || !protectedPath) {
-    return children;
-  }
-
-  if (!hasToken) {
-    return null;
-  }
-
-  if (isPending) {
-    return null;
-  }
-
-  if (isUnauthorized) {
-    return null;
-  }
-
-  if (isForbidden) {
-    return <ForbiddenPage />;
-  }
-
-  if (isError) {
-    return (
-      <main
-        className={`flex w-full flex-col items-center justify-center gap-3 bg-surface-muted px-6 ${BELOW_HEADER_MIN_H}`}
-      >
-        <p className="m-0 text-center text-base text-snack-black-100">
-          사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          size="compact"
-          disabled={isFetching}
-          onClick={() => {
-            void refetch();
-          }}
-        >
-          다시 시도
-        </Button>
-      </main>
-    );
-  }
-
   const role = profile?.role;
-  if (!role || !canAccessPath(pathname, role)) {
-    return <ForbiddenPage />;
-  }
 
-  return children;
+  const resolveGuardState = (): GuardState => {
+    if (exemptPath || !protectedPath) {
+      return "pass";
+    }
+    if (!hasToken || isPending || isUnauthorized) {
+      return "waiting";
+    }
+    if (isForbidden) {
+      return "forbidden";
+    }
+    if (isError) {
+      return "error";
+    }
+    if (!role || !canAccessPath(pathname, role)) {
+      return "forbidden";
+    }
+    return "pass";
+  };
+
+  switch (resolveGuardState()) {
+    case "pass":
+      return children;
+
+    case "waiting":
+      return null;
+
+    case "forbidden":
+      return <ForbiddenPage />;
+
+    case "error":
+      return (
+        <main
+          className={`flex w-full flex-col items-center justify-center gap-3 bg-surface-muted px-6 ${BELOW_HEADER_MIN_H}`}
+        >
+          <p className="m-0 text-center text-base text-snack-black-100">
+            사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="compact"
+            disabled={isFetching}
+            onClick={() => {
+              void refetch();
+            }}
+          >
+            다시 시도
+          </Button>
+        </main>
+      );
+  }
 };
