@@ -3,7 +3,11 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 
-import { refreshAccessToken } from "@/api/core/refreshAccessToken";
+import {
+  getAuthGeneration,
+  isAuthSessionInvalidated,
+  refreshAccessToken,
+} from "@/api/core/refreshAccessToken";
 import { clearAccessToken, getAccessToken } from "@/lib/authStorage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -61,14 +65,27 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    const sessionAt401 = getAuthGeneration();
     original._retry = true;
 
     try {
       const token = await refreshAccessToken();
+      if (
+        isAuthSessionInvalidated() ||
+        getAuthGeneration() !== sessionAt401
+      ) {
+        return Promise.reject(error);
+      }
+
       original.headers.Authorization = `Bearer ${token}`;
       return apiClient.request(original);
     } catch {
-      clearAccessToken();
+      if (
+        !isAuthSessionInvalidated() &&
+        getAuthGeneration() === sessionAt401
+      ) {
+        clearAccessToken();
+      }
       return Promise.reject(error);
     }
   },

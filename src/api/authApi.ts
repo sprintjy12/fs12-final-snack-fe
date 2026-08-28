@@ -1,5 +1,7 @@
 import { apiClient } from "@/api/core/apiClient";
 import {
+  beginAuthSession,
+  invalidateAuthSession,
   parseAccessTokenFromBody,
   refreshAccessToken,
 } from "@/api/core/refreshAccessToken";
@@ -106,6 +108,7 @@ export const ensureAccessToken = async () => {
     throw new Error("로그인 응답에 accessToken이 없습니다.");
   }
 
+  beginAuthSession();
   setAccessToken(token);
   return token;
 };
@@ -117,6 +120,7 @@ export const login = async (payload: LoginPayload) => {
     throw new Error("로그인 응답에 accessToken이 없습니다.");
   }
 
+  beginAuthSession();
   setAccessToken(token);
   return response.data;
 };
@@ -216,9 +220,13 @@ export const createInvitation = async (payload: CreateInvitationPayload) => {
  * 로그아웃 — POST /api/auth/logout
  * BE가 refreshToken DB 삭제 + refreshToken 쿠키 clearCookie 처리.
  * access token은 응답과 무관하게 항상 제거합니다.
+ * in-flight refresh는 쿠키 삭제 요청보다 먼저 취소해, 늦게 온 응답이
+ * Access Token을 다시 심지 못하게 합니다.
  * @see fs12-final-snack-be/src/controllers/authController.ts
  */
 export const logout = async () => {
+  invalidateAuthSession();
+
   try {
     await apiClient.post("/api/auth/logout");
   } catch {

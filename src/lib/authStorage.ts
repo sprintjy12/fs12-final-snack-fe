@@ -1,4 +1,4 @@
-const ACCESS_TOKEN_KEY = "snack_access_token";
+export const ACCESS_TOKEN_KEY = "snack_access_token";
 
 /** 브라우저에 저장된 access token을 읽습니다. */
 export const getAccessToken = () => {
