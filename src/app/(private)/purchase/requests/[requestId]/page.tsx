@@ -100,7 +100,7 @@ export default function PurchaseRequestDetailPage() {
       {!isPending && !isError && detail ? (
         <div className="mx-auto flex max-w-[1680px] flex-col md:grid md:max-w-[744px] md:grid-cols-[327px_minmax(0,1fr)] md:gap-[18px] md:pt-6 md:pl-6 xl:max-w-[1680px] xl:grid-cols-[1041px_587px] xl:gap-[52px] xl:pt-0 xl:pl-0">
           <section className="order-1 md:order-2" aria-label="요청 및 예산 정보">
-            <div className="flex h-[380px] flex-col px-6 py-6 md:h-[332px] md:py-0 xl:h-[384px] xl:px-0">
+            <div className="flex min-h-[380px] flex-col px-6 py-6 md:min-h-[332px] md:py-0 xl:min-h-[384px] xl:px-0">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl leading-8 font-semibold text-foreground-strong xl:text-2xl xl:font-bold">
                   요청 정보
@@ -127,7 +127,7 @@ export default function PurchaseRequestDetailPage() {
                   <h3 className="text-sm leading-[26px] font-semibold text-foreground-strong xl:text-xl xl:leading-8">
                     요청 메시지
                   </h3>
-                  <div className="mt-4 min-h-[76px] rounded-2xl border border-border bg-surface-muted px-4 py-3 text-sm leading-6 whitespace-pre-line text-foreground-muted xl:min-h-20 xl:px-6 xl:py-3.5 xl:text-lg xl:leading-[26px]">
+                  <div className="mt-4 min-h-[76px] rounded-2xl border border-border bg-surface-muted px-4 py-3 text-sm leading-6 whitespace-pre-wrap text-foreground-muted [overflow-wrap:anywhere] xl:min-h-20 xl:px-6 xl:py-3.5 xl:text-lg xl:leading-[26px]">
                     {detail.requestMessage || "-"}
                   </div>
                 </div>
@@ -259,13 +259,15 @@ export default function PurchaseRequestDetailPage() {
               </strong>
             </div>
 
-            {detail.status === "PENDING" ? (
-              <PurchaseRequestDecisionActions
-                requestId={requestId}
-                approveDisabled={isBudgetExceeded}
-              />
-            ) : null}
           </section>
+
+          <div className="order-3 px-6 md:col-span-2 md:px-0 xl:col-span-1 xl:col-start-1">
+            <PurchaseRequestDecisionActions
+              requestId={requestId}
+              approveDisabled={isBudgetExceeded}
+              showActions={detail.status === "PENDING"}
+            />
+          </div>
         </div>
       ) : null}
     </main>

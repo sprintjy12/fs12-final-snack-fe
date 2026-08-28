@@ -141,12 +141,38 @@ export const CATEGORY_MENU: CategoryMenuItem[] = [
   },
 ];
 
-/** 표시 순서 (Figma): 스낵 → … → 원두커피 → 비품 */
-export const CATEGORY_MENU_ORDERED: CategoryMenuItem[] = [
-  ...CATEGORY_MENU.filter((item) => item.id !== 6 && item.id !== 7),
-  CATEGORY_MENU.find((item) => item.id === 7)!,
-  CATEGORY_MENU.find((item) => item.id === 6)!,
-];
+/** 상품 리스트 GNB 대분류 표시 순서. 목록에 없는 카테고리는 뒤에 유지합니다. */
+export const CATEGORY_DISPLAY_ORDER = [
+  "음료",
+  "간편식",
+  "스낵",
+  "신선식품",
+  "생수",
+  "비품",
+] as const;
+
+export function sortCategoryMenuByDisplayOrder(
+  items: CategoryMenuItem[],
+): CategoryMenuItem[] {
+  const rank = new Map(
+    CATEGORY_DISPLAY_ORDER.map((name, index) => [name, index]),
+  );
+
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => {
+      const aRank = rank.get(a.item.name) ?? Number.MAX_SAFE_INTEGER;
+      const bRank = rank.get(b.item.name) ?? Number.MAX_SAFE_INTEGER;
+      if (aRank !== bRank) {
+        return aRank - bRank;
+      }
+      return a.index - b.index;
+    })
+    .map(({ item }) => item);
+}
+
+export const CATEGORY_MENU_ORDERED: CategoryMenuItem[] =
+  sortCategoryMenuByDisplayOrder(CATEGORY_MENU);
 
 /** API/목록용 평면 카테고리 (대분류) */
 export const TEMP_CATEGORIES: Category[] = CATEGORY_MENU.map(
@@ -164,7 +190,7 @@ export function getActiveCategoryMenu(): CategoryMenuItem[] {
 
 export function getActiveCategoryMenuOrdered(): CategoryMenuItem[] {
   const runtime = getRuntimeCategoryMenu();
-  if (runtime) return runtime;
+  if (runtime) return sortCategoryMenuByDisplayOrder(runtime);
   return CATEGORY_MENU_ORDERED;
 }
 

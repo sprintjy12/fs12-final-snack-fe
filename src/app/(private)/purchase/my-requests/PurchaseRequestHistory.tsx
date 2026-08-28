@@ -15,6 +15,7 @@ import {
   buildPaginationItems,
 } from "@/components/ui";
 import { useMyOrderRequests } from "@/hooks/queries/useMyOrderRequests";
+import { useUrlPage } from "@/hooks/useUrlPage";
 import type {
   MyOrderRequestListItem,
   OrderListSort,
@@ -98,7 +99,7 @@ function CancelRequestButton({
  * 내 구매 요청 내역 목록 (+ 빈 상태).
  */
 export function PurchaseRequestHistory() {
-  const [page, setPage] = useState(1);
+  const { page, setPage } = useUrlPage();
   const [sort, setSort] = useState<OrderListSort>("latest");
   const [cancelTarget, setCancelTarget] =
     useState<CancelPurchaseRequestTarget | null>(null);
@@ -346,11 +347,9 @@ export function PurchaseRequestHistory() {
             previousDisabled={(pagination?.currentPage ?? page) <= 1}
             nextDisabled={!pagination?.hasNextPage}
             collapseMiddlePages
-            onPrevious={() => setPage((current) => Math.max(1, current - 1))}
+            onPrevious={() => setPage(Math.max(1, page - 1))}
             onNext={() =>
-              setPage((current) =>
-                pagination?.hasNextPage ? current + 1 : current,
-              )
+              setPage(pagination?.hasNextPage ? page + 1 : page)
             }
             onPageSelect={(selected) => {
               const nextPage = Number(selected);

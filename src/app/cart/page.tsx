@@ -6,7 +6,9 @@ import { useMemo, useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { ensureAccessToken } from "@/api/authApi";
+import { getMonthlyBudgetSummary } from "@/api/budgetApi";
 import { createDirectOrder, createPurchaseRequest } from "@/api/orderApi";
+import { BUDGET_EXCEEDED_MESSAGE } from "@/app/(private)/purchase/requests/orderRequestBudget";
 import { CommonImage, Icon, showToast } from "@/components/ui";
 import { PurchaseRequestModal } from "@/features/cart/PurchaseRequestModal";
 import { useCart } from "@/hooks/queries/useCart";
@@ -29,6 +31,12 @@ type CartItemId = string;
 
 function formatPrice(price: number) {
   return `${price.toLocaleString("ko-KR")}원`;
+}
+
+function getCurrentYearMonth() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  return `${now.getFullYear()}-${month}`;
 }
 
 function cx(...parts: Array<string | false | null | undefined>) {
@@ -189,6 +197,28 @@ export default function CartPage() {
       isAdmin =
         freshProfile?.role === "ADMIN" || freshProfile?.role === "SUPER_ADMIN";
 
+      if (isAdmin) {
+        const yearMonth = getCurrentYearMonth();
+        const budgetResponse = await queryClient.fetchQuery({
+          queryKey: queryKeys.budgets.monthlySummary(yearMonth),
+          queryFn: () => getMonthlyBudgetSummary(yearMonth),
+        });
+        const orderTotal =
+          items.reduce(
+            (total, item) => total + item.product.price * item.quantity,
+            0,
+          ) + SHIPPING_FEE;
+
+        if (
+          !budgetResponse.data.isUnlimited &&
+          budgetResponse.data.remaining !== null &&
+          orderTotal > budgetResponse.data.remaining
+        ) {
+          showToast(BUDGET_EXCEEDED_MESSAGE);
+          return;
+        }
+      }
+
       const response = isAdmin
         ? await createDirectOrder({ cartItemIds: items.map((item) => item.id) })
         : await createPurchaseRequest({
@@ -223,6 +253,11 @@ export default function CartPage() {
       });
 
       await queryClient.invalidateQueries({ queryKey: queryKeys.cart.all });
+      if (isAdmin) {
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.budgets.all,
+        });
+      }
       setRequestOpen(false);
       setRequestItems([]);
       router.push(

@@ -1,7 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useId, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import axios from "axios";
 import { z } from "zod";
 
@@ -99,15 +105,14 @@ const RESULT_COPY = {
   },
 } as const;
 
-/** 백엔드 processOrderSchema(10~100자)와 맞춤 */
-const createMessageSchema = (emptyMessage: string) =>
+const createMessageSchema = (emptyMessage: string, maxLength: number) =>
   z.object({
     message: z
       .string()
       .trim()
       .min(1, emptyMessage)
       .min(10, "메시지는 10자 이상 입력해 주세요.")
-      .max(100, "메시지는 100자 이하여야 합니다."),
+      .max(maxLength, `메시지는 ${maxLength}자 이하여야 합니다.`),
   });
 
 const getErrorMessage = (error: unknown, fallback: string) => {
@@ -139,6 +144,7 @@ export function PurchaseRequestDecisionModal({
   const titleId = useId();
   const messageId = useId();
   const [message, setMessage] = useState("");
+  const [isMessageLimitExceeded, setIsMessageLimitExceeded] = useState(false);
   const [completedMode, setCompletedMode] =
     useState<PurchaseRequestDecisionMode | null>(null);
   const { mutateAsync, isPending } = useProcessOrderRequest();
@@ -146,12 +152,26 @@ export function PurchaseRequestDecisionModal({
   const isOpen = open && Boolean(mode) && Boolean(request);
   const copy = mode ? COPY[mode] : null;
   const resultCopy = completedMode ? RESULT_COPY[completedMode] : null;
+  const maxMessageLength = mode === "reject" ? 500 : 100;
 
   useEffect(() => {
     if (!isOpen) {
       setMessage("");
+      setIsMessageLimitExceeded(false);
     }
   }, [isOpen]);
+
+  const handleMessageChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const nextMessage = event.target.value;
+    if (nextMessage.length > maxMessageLength) {
+      setMessage(nextMessage.slice(0, maxMessageLength));
+      setIsMessageLimitExceeded(true);
+      return;
+    }
+
+    setMessage(nextMessage);
+    setIsMessageLimitExceeded(false);
+  };
 
   const closeResultModal = () => {
     setCompletedMode(null);
@@ -169,9 +189,10 @@ export function PurchaseRequestDecisionModal({
       return;
     }
 
-    const result = createMessageSchema(copy.emptyMessage).safeParse({
-      message,
-    });
+    const result = createMessageSchema(
+      copy.emptyMessage,
+      maxMessageLength,
+    ).safeParse({ message });
 
     if (!result.success) {
       const { fieldErrors } = z.flattenError(result.error);
@@ -355,17 +376,46 @@ export function PurchaseRequestDecisionModal({
                   <textarea
                     id={messageId}
                     value={message}
-                    onChange={(event) => setMessage(event.target.value)}
+                    onChange={handleMessageChange}
                     placeholder={copy.placeholder}
                     rows={5}
                     disabled={isPending}
+                    aria-invalid={isMessageLimitExceeded}
+                    aria-describedby={`${messageId}-error ${messageId}-count`}
                     className={[
-                      "h-[120px] w-full resize-none rounded-2xl border border-solid border-snack-orange-300 bg-surface px-4 py-3.5",
+                      "h-[120px] w-full resize-none rounded-2xl border border-solid bg-surface px-4 py-3.5",
                       "text-sm leading-6 text-foreground outline-none placeholder:text-snack-gray-400",
                       "xl:h-40 xl:px-6 xl:text-lg xl:leading-[26px]",
                       "disabled:cursor-not-allowed disabled:opacity-60",
+                      isMessageLimitExceeded
+                        ? "border-danger focus:border-danger"
+                        : "border-snack-orange-300 focus:border-accent",
                     ].join(" ")}
                   />
+                  <div className="flex min-h-6 items-start justify-between gap-3 text-sm leading-6">
+                    {isMessageLimitExceeded ? (
+                      <p
+                        id={`${messageId}-error`}
+                        role="alert"
+                        className="text-danger"
+                      >
+                        {copy.messageLabel}는 {maxMessageLength}자까지 입력할
+                        수 있어요.
+                      </p>
+                    ) : (
+                      <span aria-hidden="true" />
+                    )}
+                    <p
+                      id={`${messageId}-count`}
+                      className={
+                        isMessageLimitExceeded
+                          ? "shrink-0 text-danger"
+                          : "shrink-0 text-foreground-muted"
+                      }
+                    >
+                      {message.length}/{maxMessageLength}
+                    </p>
+                  </div>
                 </label>
               </div>
 
